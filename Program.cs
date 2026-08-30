@@ -1,4 +1,4 @@
-namespace Invetation
+namespace Ibtikar
 {
     public class Program
     {

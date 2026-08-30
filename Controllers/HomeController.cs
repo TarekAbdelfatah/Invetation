@@ -1,8 +1,8 @@
-using Invetation.Models;
+using Ibtikar.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
-namespace Invetation.Controllers
+namespace Ibtikar.Controllers
 {
     public class HomeController : Controller
     {

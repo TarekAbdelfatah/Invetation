@@ -1,4 +1,4 @@
-namespace Invetation.Models
+namespace Ibtikar.Models
 {
     public class ErrorViewModel
     {

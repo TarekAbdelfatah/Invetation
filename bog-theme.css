@@ -1,0 +1,144 @@
+/* ============================================================
+   BOG (بوابة ديوان المظالم) — Design Tokens
+   مستخرج من bog_design-v2.2.8.css + ملفات الشعار الرسمية
+   للاستخدام في موقع يحاكي البوابة — ألصق/استورد هذه المتغيرات
+   ============================================================ */
+
+:root {
+  /* ---------- الخطوط ---------- */
+  --font-base: "IBM Plex Sans Arabic", "IBMPlexSansArabic", sans-serif;
+  --font-icon: "Material Icons";
+
+  /* ---------- الأخضر الأساسي (العلامة التجارية) ---------- */
+  --brand-25:  #F7FDF9;
+  --brand-50:  #F3FCF6;
+  --brand-100: #DFF6E7;
+  --brand-200: #B8EACB;
+  --brand-300: #88D8AD;
+  --brand-400: #54C08A;
+  --brand-500: #25935F;
+  --brand-600: #1B8354;   /* primary */
+  --brand-700: #166A45;   /* hover */
+  --brand-800: #14573A;
+  --brand-900: #104631;   /* active */
+  --brand-950: #092A1E;
+
+  /* ---------- الذهبي الثانوي ---------- */
+  --gold-25:  #FFFEF7;
+  --gold-50:  #FFFEF2;
+  --gold-100: #FFFCE6;
+  --gold-200: #FCF3BD;
+  --gold-300: #FAE996;
+  --gold-400: #F7D54D;
+  --gold-500: #F5BD02;
+  --gold-600: #DBA102;   /* secondary */
+  --gold-700: #B87B02;
+  --gold-800: #945C01;
+  --gold-900: #6E3C00;
+  --gold-950: #472400;
+
+  /* ---------- الرمادي المحايد ---------- */
+  --gray-25:  #FAFAFA;
+  --gray-50:  #F5F5F6;
+  --gray-100: #F0F1F1;
+  --gray-200: #ECECED;
+  --gray-300: #CECFD2;
+  --gray-400: #94969C;
+  --gray-500: #85888E;
+  --gray-600: #61646C;
+  --gray-700: #333741;
+  --gray-800: #1F242F;
+  --gray-900: #161B26;   /* نص أساسي */
+  --gray-950: #0C111D;
+
+  /* ---------- ألوان الحالة ---------- */
+  --success: #079455;  --success-50: #ECFDF3;  --success-100: #DCFAE6;
+  --error:   #D92D20;  --error-50:   #FEF3F2;  --error-100:   #FEE4E2;
+  --warning: #DC6803;  --warning-50: #FFFAEB;  --warning-100: #FEF0C7;
+  --info:    #1570EF;  --info-50:    #EFF8FF;  --info-100:    #D1E9FF;
+
+  /* ---------- ألوان أساسية مختصرة ---------- */
+  --primary:        var(--brand-600);
+  --primary-hover:  var(--brand-700);
+  --primary-active: var(--brand-900);
+  --secondary:      var(--gold-600);
+  --secondary-dark: var(--gold-800);
+  --text-primary:   var(--gray-900);
+  --text-secondary: var(--gray-700);
+  --text-tertiary:  var(--gray-600);
+  --text-muted:     var(--gray-500);
+  --border:         var(--gray-300);
+  --border-light:   var(--gray-200);
+  --footer-bg:      #074D31;   /* success-900 */
+
+  /* ---------- ألوان الشعار ---------- */
+  --logo-green:  #096B37;
+  --logo-green2: #106B38;
+  --logo-gold:   #BA8D2D;
+  --logo-red:    #991E21;
+  --logo-black:  #231F20;
+  --logo-gold-grad: linear-gradient(#C49931, #DCB765);
+  --logo-green-grad: linear-gradient(#1F4334, #306B58);
+
+  /* ---------- التدرّجات ---------- */
+  --grad-brand-90:  linear-gradient(90deg, #14573A 0%, #1B8354 100%);
+  --grad-brand-45:  linear-gradient(45deg, #14573A 0%, #1B8354 100%);
+  --grad-brand-700: linear-gradient(45deg, #166A45 0%, #1B8354 100%);
+  --grad-brand-900: linear-gradient(45deg, #104631 0%, #1B8354 100%);
+
+  /* ---------- نصف القطر ---------- */
+  --radius-xxs: 2px;
+  --radius-xs:  4px;
+  --radius-sm:  6px;
+  --radius-md:  8px;
+  --radius-lg:  10px;
+  --radius-xl:  12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --radius-4xl: 24px;
+  --radius-full: 9999px;
+
+  /* ---------- المسافات (أساس 4px) ---------- */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+
+  /* ---------- الظلال ---------- */
+  --shadow-xs:  0 1px 2px 0 rgba(16, 24, 40, .05);
+  --shadow-sm:  0 1px 2px 0 rgba(16, 24, 40, .06), 0 1px 3px 0 rgba(16, 24, 40, .1);
+  --shadow-md:  0 2px 4px -2px rgba(16, 24, 40, .06), 0 4px 8px -2px rgba(16, 24, 40, .1);
+  --shadow-lg:  0 4px 6px -2px rgba(16, 24, 40, .03), 0 12px 16px -4px rgba(16, 24, 40, .08);
+  --shadow-xl:  0 8px 8px -4px rgba(16, 24, 40, .03), 0 20px 24px -4px rgba(16, 24, 40, .08);
+  --shadow-2xl: 0 24px 48px -12px rgba(16, 24, 40, .18);
+  --shadow-3xl: 0 32px 64px -12px rgba(16, 24, 40, .14);
+  --btn-primary-shadow: 0 10px 5px 0 rgba(9, 107, 55, .16);
+
+  /* ---------- الحاوية ---------- */
+  --container-max: 1280px;
+  --container-pad-mobile: 16px;
+  --container-pad-desktop: 32px;
+}
+
+/* ---------- خط مقياس (اختياري، للاستخدام المباشر) ---------- */
+:root {
+  --text-xs: 12px/18px var(--font-base);
+  --text-sm: 14px/20px var(--font-base);
+  --text-md: 16px/24px var(--font-base);
+  --text-lg: 18px/28px var(--font-base);
+  --text-xl: 20px/30px var(--font-base);
+
+  --display-xs: 24px/32px var(--font-base);
+  --display-sm: 30px/38px var(--font-base);
+  --display-md: 36px/44px var(--font-base);
+  --display-lg: 48px/60px var(--font-base);
+  --display-xl: 60px/72px var(--font-base);
+  --display-2xl: 72px/90px var(--font-base);
+}

@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Tadweena daemon — auto-generated ignore rules
+.tadweena/
+.code-review-graph/
