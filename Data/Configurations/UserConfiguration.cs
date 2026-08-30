@@ -29,7 +29,7 @@ namespace Ibtikar.Data.Configurations
                 .OnDelete(DeleteBehavior.SetNull);
 
             builder.HasMany(u => u.UserRoles)
-                .WithOne(ur => ur.User!)
+                .WithOne(ur => ur.User)
                 .HasForeignKey(ur => ur.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         }

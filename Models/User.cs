@@ -16,6 +16,6 @@ namespace Ibtikar.Models
 
         public UserTypeLookup? UserType { get; set; }
         public Department? Department { get; set; }
-        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+        public List<UserRole> UserRoles { get; set; } = new();
     }
 }

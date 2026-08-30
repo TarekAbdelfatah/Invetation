@@ -11,11 +11,6 @@ namespace Ibtikar.Data.Configurations
             builder.HasKey(ur => new { ur.UserId, ur.RoleId });
             builder.Property(ur => ur.AssignedAt).IsRequired();
 
-            builder.HasOne(ur => ur.User)
-                .WithMany()
-                .HasForeignKey(ur => ur.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             builder.HasOne(ur => ur.Role)
                 .WithMany()
                 .HasForeignKey(ur => ur.RoleId)
