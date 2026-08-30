@@ -24,6 +24,7 @@ namespace Ibtikar.Data
         public DbSet<Technology> Technologies => Set<Technology>();
         public DbSet<ExecutionStage> ExecutionStages => Set<ExecutionStage>();
         public DbSet<InnovationIdea> InnovationIdeas => Set<InnovationIdea>();
+        public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -1,0 +1,65 @@
+- generic [active] [ref=f4e1]:
+  - banner [ref=f4e2]:
+    - navigation [ref=f4e3]:
+      - generic [ref=f4e4]:
+        - link "Ibtikar" [ref=f4e5] [cursor=pointer]:
+          - /url: /
+        - list [ref=f4e7]:
+          - listitem [ref=f4e8]:
+            - link "Home" [ref=f4e9] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=f4e10]:
+            - link "Privacy" [ref=f4e11] [cursor=pointer]:
+              - /url: /Home/Privacy
+  - main [ref=f4e13]:
+    - generic [ref=f4e14]:
+      - generic [ref=f4e15]:
+        - heading "سجل الأفكار الابتكارية" [level=2] [ref=f4e16]
+        - generic [ref=f4e17]: "عدد الأفكار: 4"
+      - table [ref=f4e19]:
+        - rowgroup [ref=f4e20]:
+          - row [ref=f4e21]:
+            - columnheader "المرجع" [ref=f4e22]
+            - columnheader "العنوان" [ref=f4e23]
+            - columnheader "المجال" [ref=f4e24]
+            - columnheader "الحالة" [ref=f4e25]
+            - columnheader "الجهة" [ref=f4e26]
+            - columnheader "تاريخ التقديم" [ref=f4e27]
+        - rowgroup [ref=f4e28]:
+          - row [ref=f4e29]:
+            - cell [ref=f4e30]:
+              - code [ref=f4e31]: IBT-2026-0003
+            - cell "لوحة متابعة أداء المحاكم في الزمن الحقيقي" [ref=f4e32]
+            - cell "تحول رقمي" [ref=f4e33]
+            - cell "محول للجنة" [ref=f4e34]
+            - cell "—" [ref=f4e36]
+            - cell "1448-03-14" [ref=f4e37]
+          - row [ref=f4e38]:
+            - cell [ref=f4e39]:
+              - code [ref=f4e40]: IBT-2026-0002
+            - cell "أرشفة ذكية لملفات التنفيذ الجبري" [ref=f4e41]
+            - cell "إجراءات إدارية" [ref=f4e42]
+            - cell "تحت الدراسة" [ref=f4e43]
+            - cell "—" [ref=f4e45]
+            - cell "1448-03-10" [ref=f4e46]
+          - row [ref=f4e47]:
+            - cell [ref=f4e48]:
+              - code [ref=f4e49]: IBT-2026-0001
+            - cell "منصة المواعيد الإلكترونية الموحدة لقاعات المحاكم" [ref=f4e50]
+            - cell "خدمات قضائية" [ref=f4e51]
+            - cell "جديد" [ref=f4e52]
+            - cell "—" [ref=f4e54]
+            - cell "1448-03-05" [ref=f4e55]
+          - row [ref=f4e56]:
+            - cell [ref=f4e57]:
+              - code [ref=f4e58]: IBT-2026-0004
+            - cell "إخطار الأطراف بالقرارات عبر الرسائل النصية" [ref=f4e59]
+            - cell "تحول رقمي" [ref=f4e60]
+            - cell "معتمد" [ref=f4e61]
+            - cell "—" [ref=f4e63]
+            - cell "1448-02-17" [ref=f4e64]
+  - contentinfo [ref=f4e65]:
+    - generic [ref=f4e66]:
+      - text: © 2026 - Ibtikar -
+      - link "Privacy" [ref=f4e67] [cursor=pointer]:
+        - /url: /Home/Privacy
