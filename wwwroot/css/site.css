@@ -188,3 +188,33 @@ body {
 [data-related-show-when][hidden] {
   display: none;
 }
+
+/* ---------- Alert ---------- */
+.bog-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  border: 0;
+  border-inline-start: 4px solid var(--info);
+  border-radius: var(--radius-md);
+}
+
+.bog-alert .bog-alert-icon {
+  font-size: 22px;
+  flex: 0 0 auto;
+}
+
+.bog-alert .bog-alert-text {
+  flex: 1 1 auto;
+}
+
+.bog-alert.alert-success { border-inline-start-color: var(--success); }
+.bog-alert.alert-success .bog-alert-icon { color: var(--success); }
+.bog-alert.alert-danger,
+.bog-alert.alert-error { border-inline-start-color: var(--error); }
+.bog-alert.alert-danger .bog-alert-icon,
+.bog-alert.alert-error .bog-alert-icon { color: var(--error); }
+.bog-alert.alert-warning { border-inline-start-color: var(--warning); }
+.bog-alert.alert-warning .bog-alert-icon { color: var(--warning); }
+.bog-alert.alert-info { border-inline-start-color: var(--info); }
+.bog-alert.alert-info .bog-alert-icon { color: var(--info); }
