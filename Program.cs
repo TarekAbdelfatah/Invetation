@@ -52,7 +52,9 @@ namespace Ibtikar
             {
                 db.Database.Migrate();
                 Ibtikar.Data.Seed.IdeaStatusSeed.SeedIdeaStatuses(db);
+                db.SaveChanges();
                 Ibtikar.Data.Seed.InnovationDomainSeed.SeedInnovationDomains(db);
+                db.SaveChanges();
                 Ibtikar.Data.Seed.InnovationIdeaSeed.SeedSampleIdeas(db);
                 db.SaveChanges();
             }

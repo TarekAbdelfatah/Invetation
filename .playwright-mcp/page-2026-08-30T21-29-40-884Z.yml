@@ -1,0 +1,24 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e4]:
+        - link "Ibtikar" [ref=e5] [cursor=pointer]:
+          - /url: /
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "Home" [ref=e9] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e10]:
+            - link "Privacy" [ref=e11] [cursor=pointer]:
+              - /url: /Home/Privacy
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - heading "سجل الأفكار الابتكارية" [level=2] [ref=e16]
+        - generic [ref=e17]: "عدد الأفكار: 0"
+      - alert [ref=e18]: لا توجد أفكار مسجلة بعد. ابدأ بتقديم فكرة جديدة من خلال نموذج التقديم.
+  - contentinfo [ref=e19]:
+    - generic [ref=e20]:
+      - text: © 2026 - Ibtikar -
+      - link "Privacy" [ref=e21] [cursor=pointer]:
+        - /url: /Home/Privacy
