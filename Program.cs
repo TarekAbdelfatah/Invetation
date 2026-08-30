@@ -14,8 +14,10 @@ namespace Ibtikar
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+            builder.Services.AddHttpContextAccessor();
             builder.Services.AddDbContext<IbtikarDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddScoped<Ibtikar.Services.AuditLogService>();
 
             var app = builder.Build();
 
