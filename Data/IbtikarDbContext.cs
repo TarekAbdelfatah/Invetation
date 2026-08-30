@@ -11,6 +11,7 @@ namespace Ibtikar.Data
         }
 
         public DbSet<Department> Departments => Set<Department>();
+        public DbSet<Role> Roles => Set<Role>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
