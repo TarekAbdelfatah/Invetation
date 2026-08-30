@@ -50,6 +50,8 @@ namespace Ibtikar
             var db = scope.ServiceProvider.GetRequiredService<IbtikarDbContext>();
             db.Database.Migrate();
             Ibtikar.Data.Seed.IdeaStatusSeed.SeedIdeaStatuses(db);
+            Ibtikar.Data.Seed.InnovationDomainSeed.SeedInnovationDomains(db);
+            Ibtikar.Data.Seed.InnovationIdeaSeed.SeedSampleIdeas(db);
             db.SaveChanges();
         }
 

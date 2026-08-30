@@ -23,6 +23,7 @@ namespace Ibtikar.Data
         public DbSet<InnovationDomain> InnovationDomains => Set<InnovationDomain>();
         public DbSet<Technology> Technologies => Set<Technology>();
         public DbSet<ExecutionStage> ExecutionStages => Set<ExecutionStage>();
+        public DbSet<InnovationIdea> InnovationIdeas => Set<InnovationIdea>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
