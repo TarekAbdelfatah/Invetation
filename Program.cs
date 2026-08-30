@@ -1,3 +1,6 @@
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
+
 namespace Ibtikar
 {
     public class Program
@@ -19,6 +22,8 @@ namespace Ibtikar
                 app.UseHsts();
             }
 
+            app.UseRequestLocalization(BuildArabicRequestLocalizationOptions());
+
             app.UseHttpsRedirection();
             app.UseRouting();
 
@@ -31,6 +36,20 @@ namespace Ibtikar
                 .WithStaticAssets();
 
             app.Run();
+        }
+
+        private static RequestLocalizationOptions BuildArabicRequestLocalizationOptions()
+        {
+            var arabicCulture = new CultureInfo("ar-SA");
+
+            return new RequestLocalizationOptions
+            {
+                DefaultRequestCulture = new RequestCulture(arabicCulture),
+                SupportedCultures = new List<CultureInfo> { arabicCulture },
+                SupportedUICultures = new List<CultureInfo> { arabicCulture },
+                FallBackToParentCultures = true,
+                ApplyCurrentCultureToResponseHeaders = true
+            };
         }
     }
 }

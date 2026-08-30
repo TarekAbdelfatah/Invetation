@@ -6,4 +6,8 @@ sessions:
     model: cursor-grok-4.6
     session_id: fe7d8225-9ab7-497a-b261-02ca2402a615
     started_at: 2026-08-30T16:30:46.6907081Z
+  opencode:
+    model: minimax-coding-plan/MiniMax-M3
+    session_id: bb928015-db43-468d-9996-4ff2af0c40eb
+    started_at: 2026-08-30T23:43:00Z
 ---
