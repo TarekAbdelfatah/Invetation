@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "AGENTS.md",
+    "tadweena-protocol/init.md",
+    "tadweena-protocol/create.md",
+    "tadweena-protocol/edit.md",
+    "tadweena-protocol/tasks.md"
+  ]
+}

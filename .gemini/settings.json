@@ -1,0 +1,6 @@
+{
+  "context": {
+    "fileName": "./AGENTS.md"
+  },
+  "systemInstructions": "Follow Tadweena protocol from AGENTS.md. Read tadweena.md in CURRENT WORKING DIRECTORY ONLY for project_id \u2014 NEVER walk up to parent folders. Generate one sessionId per chat, use project_pulse before broad exploration, begin_task before implementation, and finish_task for completion. gitHash is optional; pass it only for a real commit, otherwise pass reason."
+}
