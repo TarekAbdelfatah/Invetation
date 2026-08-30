@@ -1,3 +1,4 @@
+using Ibtikar.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Data
@@ -8,6 +9,8 @@ namespace Ibtikar.Data
             : base(options)
         {
         }
+
+        public DbSet<Department> Departments => Set<Department>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
