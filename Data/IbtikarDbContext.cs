@@ -20,6 +20,7 @@ namespace Ibtikar.Data
         public DbSet<CriterionScoring> CriterionScorings => Set<CriterionScoring>();
         public DbSet<ExpectedImpact> ExpectedImpacts => Set<ExpectedImpact>();
         public DbSet<TargetAudience> TargetAudiences => Set<TargetAudience>();
+        public DbSet<InnovationDomain> InnovationDomains => Set<InnovationDomain>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
