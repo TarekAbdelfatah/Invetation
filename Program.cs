@@ -1,5 +1,7 @@
 using System.Globalization;
+using Ibtikar.Data;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar
 {
@@ -11,6 +13,8 @@ namespace Ibtikar
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+            builder.Services.AddDbContext<IbtikarDbContext>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             var app = builder.Build();
 
