@@ -21,6 +21,7 @@ namespace Ibtikar.Data
         public DbSet<ExpectedImpact> ExpectedImpacts => Set<ExpectedImpact>();
         public DbSet<TargetAudience> TargetAudiences => Set<TargetAudience>();
         public DbSet<InnovationDomain> InnovationDomains => Set<InnovationDomain>();
+        public DbSet<Technology> Technologies => Set<Technology>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
