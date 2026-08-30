@@ -52,8 +52,8 @@ namespace Ibtikar
             {
                 db.Database.Migrate();
                 Ibtikar.Data.Seed.IdeaStatusSeed.SeedIdeaStatuses(db);
-                db.SaveChanges();
                 Ibtikar.Data.Seed.InnovationDomainSeed.SeedInnovationDomains(db);
+                Ibtikar.Data.Seed.UserTypeSeed.SeedUserTypes(db);
                 db.SaveChanges();
                 Ibtikar.Data.Seed.InnovationIdeaSeed.SeedSampleIdeas(db);
                 db.SaveChanges();

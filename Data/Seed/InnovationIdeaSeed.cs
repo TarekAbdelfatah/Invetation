@@ -14,6 +14,8 @@ namespace Ibtikar.Data.Seed
             var statuses = db.IdeaStatuses.ToList();
             if (domains.Count == 0 || statuses.Count == 0) return;
 
+            var applicantUserId = EnsurePlaceholderApplicant(db);
+
             var judicialDomain = domains.FirstOrDefault(d => d.Code == "judicial-services");
             var adminDomain = domains.FirstOrDefault(d => d.Code == "administrative-procedures");
             var digitalDomain = domains.FirstOrDefault(d => d.Code == "digital-transformation");
@@ -33,7 +35,7 @@ namespace Ibtikar.Data.Seed
                     Description = "نظام يتيح لأطراف الدعوى حجز موعد مسبق لمراجعة القاضي عبر البوابة الإلكترونية مع تنبيه آلي قبل الموعد.",
                     InnovationDomainId = judicialDomain?.Id ?? domains[0].Id,
                     CurrentStatusId = newStatus.Id,
-                    ApplicantUserId = Guid.Empty,
+                    ApplicantUserId = applicantUserId,
                     IsDraft = false,
                     CreatedAt = DateTime.UtcNow.AddDays(-12),
                     SubmittedAt = DateTime.UtcNow.AddDays(-12)
@@ -46,7 +48,7 @@ namespace Ibtikar.Data.Seed
                     Description = "حل يعتمد على التعرف الضوئي على الأحكام لفهرسة ملفات التنفيذ وتمكين البحث اللحظي بدل الجرد اليدوي.",
                     InnovationDomainId = adminDomain?.Id ?? domains[0].Id,
                     CurrentStatusId = underReview.Id,
-                    ApplicantUserId = Guid.Empty,
+                    ApplicantUserId = applicantUserId,
                     IsDraft = false,
                     CreatedAt = DateTime.UtcNow.AddDays(-7),
                     SubmittedAt = DateTime.UtcNow.AddDays(-7)
@@ -59,7 +61,7 @@ namespace Ibtikar.Data.Seed
                     Description = "لوحة بيانات حية تعرض متوسط زمن الفصل، نسبة الإنجاز، وأعداد الجلسات لكل محكمة مع تنبيهات الانحراف.",
                     InnovationDomainId = digitalDomain?.Id ?? domains[0].Id,
                     CurrentStatusId = referred.Id,
-                    ApplicantUserId = Guid.Empty,
+                    ApplicantUserId = applicantUserId,
                     IsDraft = false,
                     CreatedAt = DateTime.UtcNow.AddDays(-3),
                     SubmittedAt = DateTime.UtcNow.AddDays(-3)
@@ -72,7 +74,7 @@ namespace Ibtikar.Data.Seed
                     Description = "خدمة ترسل نص الحكم وملخصه إلى أطراف الدعوى فور صدوره مع رابط للاطلاع على النسخة الكاملة.",
                     InnovationDomainId = digitalDomain?.Id ?? domains[0].Id,
                     CurrentStatusId = approved.Id,
-                    ApplicantUserId = Guid.Empty,
+                    ApplicantUserId = applicantUserId,
                     IsDraft = false,
                     CreatedAt = DateTime.UtcNow.AddDays(-30),
                     SubmittedAt = DateTime.UtcNow.AddDays(-30)
@@ -80,6 +82,31 @@ namespace Ibtikar.Data.Seed
             };
 
             db.InnovationIdeas.AddRange(ideas);
+        }
+
+        private static Guid EnsurePlaceholderApplicant(IbtikarDbContext db)
+        {
+            var existing = db.Users.FirstOrDefault(u => u.Username == "system-applicant");
+            if (existing != null) return existing.Id;
+
+            var externalUserType = db.UserTypes.FirstOrDefault(t => t.Code == "external");
+            var userTypeId = externalUserType?.Id ?? db.UserTypes.First().Id;
+
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Username = "system-applicant",
+                FullName = "مقدّم نموذجي",
+                Email = "system-applicant@ibtikar.local",
+                PasswordHash = "placeholder-not-usable",
+                PasswordSalt = "placeholder",
+                UserTypeId = userTypeId,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            db.Users.Add(user);
+            db.SaveChanges();
+            return user.Id;
         }
     }
 }
