@@ -18,6 +18,7 @@ namespace Ibtikar.Data
         public DbSet<UserRole> UserRoles => Set<UserRole>();
         public DbSet<AssessmentCriterion> AssessmentCriteria => Set<AssessmentCriterion>();
         public DbSet<CriterionScoring> CriterionScorings => Set<CriterionScoring>();
+        public DbSet<ExpectedImpact> ExpectedImpacts => Set<ExpectedImpact>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
