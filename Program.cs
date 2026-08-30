@@ -1,5 +1,6 @@
 using System.Globalization;
 using Ibtikar.Data;
+using Ibtikar.Services;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 
@@ -58,6 +59,7 @@ namespace Ibtikar
                 db.SaveChanges();
                 Ibtikar.Data.Seed.InnovationIdeaSeed.SeedSampleIdeas(db);
                 db.SaveChanges();
+                Ibtikar.Data.Seed.UserSeed.SeedTestUsers(db, new Pbkdf2PasswordHasher());
             }
             catch (Exception ex)
             {
