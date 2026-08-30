@@ -27,6 +27,11 @@ namespace Ibtikar.Data.Configurations
                 .WithMany()
                 .HasForeignKey(u => u.DepartmentId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasMany(u => u.UserRoles)
+                .WithOne(ur => ur.User!)
+                .HasForeignKey(ur => ur.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

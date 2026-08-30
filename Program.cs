@@ -1,7 +1,10 @@
 using System.Globalization;
+using System.Threading.RateLimiting;
 using Ibtikar.Data;
 using Ibtikar.Services;
+using Ibtikar.Services.Security;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar
@@ -12,31 +15,54 @@ namespace Ibtikar
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            builder.Services.AddControllersWithViews();
+            builder.Services.AddControllersWithViews(options =>
+            {
+                options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
+            });
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddDbContext<IbtikarDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddScoped<Pbkdf2PasswordHasher>();
+            builder.Services.AddScoped<AuthService>();
             builder.Services.AddScoped<Ibtikar.Services.AuditLogService>();
+
+            builder.Services.AddIbtikarCookieAuth(builder.Configuration);
+
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.AddPolicy("login", httpContext =>
+                    RateLimitPartition.GetSlidingWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new SlidingWindowRateLimiterOptions
+                        {
+                            PermitLimit = 10,
+                            Window = TimeSpan.FromMinutes(1),
+                            SegmentsPerWindow = 6,
+                            QueueLimit = 0,
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            AutoReplenishment = true
+                        }));
+            });
 
             var app = builder.Build();
 
             ApplyPendingMigrations(app);
 
-            // Configure the HTTP request pipeline.
             app.UseMiddleware<Ibtikar.Middleware.ExceptionMiddleware>();
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
             app.UseRequestLocalization(BuildArabicRequestLocalizationOptions());
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
             app.UseRouting();
 
+            app.UseRateLimiter();
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapStaticAssets();
@@ -78,7 +104,6 @@ namespace Ibtikar
         private static RequestLocalizationOptions BuildArabicRequestLocalizationOptions()
         {
             var arabicCulture = new CultureInfo("ar-SA");
-
             return new RequestLocalizationOptions
             {
                 DefaultRequestCulture = new RequestCulture(arabicCulture),

@@ -273,3 +273,76 @@ body {
 .bog-pagination .material-icons {
   font-size: 18px;
 }
+
+/* ---------- Login page ---------- */
+.bog-login-page {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8) var(--spacing-4);
+  background: var(--grad-brand-90);
+}
+
+.bog-login-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-2xl);
+  padding: var(--spacing-8);
+}
+
+.bog-login-brand {
+  text-align: center;
+  margin-bottom: var(--spacing-4);
+}
+
+.bog-login-brand .bog-logo {
+  height: 64px;
+  width: auto;
+}
+
+.bog-login-title {
+  margin: 0;
+  text-align: center;
+  font-size: var(--display-xs);
+  color: var(--text-primary);
+}
+
+.bog-login-subtitle {
+  text-align: center;
+  color: var(--text-tertiary);
+  margin-bottom: var(--spacing-6);
+}
+
+.bog-login-form .form-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.bog-login-form .form-control {
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.bog-login-form .form-control:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 0.2rem rgba(27, 131, 84, 0.15);
+}
+
+.bog-login-form .btn-primary {
+  margin-top: var(--spacing-4);
+  padding: var(--spacing-3);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+}
+
+.bog-login-hint {
+  margin-top: var(--spacing-4);
+  text-align: center;
+}
