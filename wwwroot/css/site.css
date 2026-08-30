@@ -108,3 +108,83 @@ body {
 .bog-page-icon .material-icons {
   font-size: 26px;
 }
+
+/* ---------- Modal ---------- */
+.bog-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bog-modal[hidden] {
+  display: none;
+}
+
+.bog-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(22, 27, 38, 0.55);
+}
+
+.bog-modal-dialog {
+  position: relative;
+  background: #fff;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-2xl);
+  max-width: 440px;
+  width: calc(100% - 2rem);
+  margin: 1rem;
+}
+
+.bog-modal-dialog-centered {
+  margin: auto;
+}
+
+.bog-modal-content {
+  padding: var(--spacing-6);
+}
+
+.bog-modal-title {
+  margin: 0 0 var(--spacing-3);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bog-modal-body {
+  margin: 0 0 var(--spacing-6);
+  color: var(--text-secondary);
+}
+
+.bog-modal-actions {
+  display: flex;
+  gap: var(--spacing-3);
+  justify-content: flex-end;
+}
+
+/* ---------- Toast / alert ---------- */
+[data-toast] {
+  position: relative;
+  padding: var(--spacing-4) var(--spacing-12) var(--spacing-4) var(--spacing-4);
+}
+
+[data-toast] [data-toast-close] {
+  position: absolute;
+  top: var(--spacing-2);
+  inset-inline-end: var(--spacing-2);
+  background: transparent;
+  border: 0;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+/* ---------- Related toggle ---------- */
+[data-related-toggle] + [data-related-show-when],
+[data-related-show-when][hidden] {
+  display: none;
+}
