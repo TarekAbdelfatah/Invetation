@@ -4,8 +4,8 @@ mcp_key: mcp_xYWcPDwNDQ3bXQNw0DsJp0jxgHuRjHJdjKZg3fK5jY
 sessions:
   other:
     model: cursor-grok-4.6
-    session_id: fe7d8225-9ab7-497a-b261-02ca2402a615
-    started_at: 2026-08-30T16:30:46.6907081Z
+    session_id: 7c4e8a91-2f3b-4d6e-9a10-b8c5d1e4f702
+    started_at: 2026-08-30T22:08:00.0000000Z
   opencode:
     model: minimax-coding-plan/MiniMax-M3
     session_id: a069d669-9c9e-4e02-9ce7-1dc676a23c66
