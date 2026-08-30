@@ -56,6 +56,7 @@ namespace Ibtikar
                 Ibtikar.Data.Seed.InnovationDomainSeed.SeedInnovationDomains(db);
                 Ibtikar.Data.Seed.UserTypeSeed.SeedUserTypes(db);
                 Ibtikar.Data.Seed.RoleSeed.SeedRoles(db);
+                Ibtikar.Data.Seed.AssessmentCriterionSeed.SeedCriteria(db);
                 db.SaveChanges();
                 Ibtikar.Data.Seed.InnovationIdeaSeed.SeedSampleIdeas(db);
                 db.SaveChanges();
