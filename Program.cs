@@ -24,6 +24,7 @@ namespace Ibtikar
             ApplyPendingMigrations(app);
 
             // Configure the HTTP request pipeline.
+            app.UseMiddleware<Ibtikar.Middleware.ExceptionMiddleware>();
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
