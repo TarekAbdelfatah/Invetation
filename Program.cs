@@ -18,6 +18,8 @@ namespace Ibtikar
 
             var app = builder.Build();
 
+            ApplyPendingMigrations(app);
+
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
@@ -40,6 +42,13 @@ namespace Ibtikar
                 .WithStaticAssets();
 
             app.Run();
+        }
+
+        private static void ApplyPendingMigrations(WebApplication app)
+        {
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<IbtikarDbContext>();
+            db.Database.Migrate();
         }
 
         private static RequestLocalizationOptions BuildArabicRequestLocalizationOptions()
