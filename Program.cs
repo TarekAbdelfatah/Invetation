@@ -48,11 +48,19 @@ namespace Ibtikar
         {
             using var scope = app.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IbtikarDbContext>();
-            db.Database.Migrate();
-            Ibtikar.Data.Seed.IdeaStatusSeed.SeedIdeaStatuses(db);
-            Ibtikar.Data.Seed.InnovationDomainSeed.SeedInnovationDomains(db);
-            Ibtikar.Data.Seed.InnovationIdeaSeed.SeedSampleIdeas(db);
-            db.SaveChanges();
+            try
+            {
+                db.Database.Migrate();
+                Ibtikar.Data.Seed.IdeaStatusSeed.SeedIdeaStatuses(db);
+                Ibtikar.Data.Seed.InnovationDomainSeed.SeedInnovationDomains(db);
+                Ibtikar.Data.Seed.InnovationIdeaSeed.SeedSampleIdeas(db);
+                db.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Migration");
+                logger.LogWarning(ex, "Database migration/seed skipped: {Message}", ex.Message);
+            }
         }
 
         private static RequestLocalizationOptions BuildArabicRequestLocalizationOptions()
