@@ -5,26 +5,17 @@ layer: engineering
 gate: before_finish
 ---
 
-# eng.testing
+# eng.testing — ابتكار
 
 ## HOW
-
-Identify what the tick can break. Add or update tests at the **same layer** as the change (unit next to a pure scorer; MCP/HTTP for a tool contract).
-
-Rules:
-
-- Name the tests after the behavior (`SkipGate_DoesNotBypassRequiredBeforeFinishSkills`), not after the ticket id.
-- Exercise the new branch and one regression path. Empty "tests exist" is not coverage.
-- Report **what you ran** (`dotnet test --filter FullyQualifiedName~SkillSkipGateBypassTests`) or waive with a real `waiveReason`.
-- Do not claim you ran the suite if you did not. Do not skip failing tests to finish.
-- Fixtures and shared DB: follow `TadweenaAiBackend.Test` existing patterns; do not hit production `TadweenaAI` from tests.
-
-If the change is protocol/docs only, waive with `not_applicable` and say why in `waiveReason` — do not invent passing tests.
+- اختبر في نفس الطبقة: unit لـ Service خالص؛ تكامل لـ Repository/DbContext.
+- سمّي الاختبار بالسلوك (`Login_InvalidPassword_ReturnsError`) مش برقم التذكرة.
+- اذكر اللي شغّلته فعلاً (`dotnet test --filter ...`). متدّعيش حاجة ما شغلتهاش.
+- مفيش اختبار يلمس إنتاج DB — استخدم InMemory/connection مخصص.
+- تغيير وثائق/بروتوكول فقط → waive بـ `not_applicable` + سبب.
 
 ## WHEN
-
-Required for migrations/DbContext, public API, or wide scope. Evidence must name real tick files.
+Required لـ migrations/DbContext أو public API أو نطاق واسع. Evidence لازم يسمي ملفات تيك حقيقية.
 
 ## EVIDENCE
-
-`filesReviewed` must include the test file you added/updated **or** the production file whose behavior you proved, and must intersect the tick files. Findings must state the filter/command run or the waive. ≥40 characters. No `LGTM`.
+`filesReviewed` يشمل ملف الاختبار المضاف أو ملف الإنتاج المثبت سلوكه، ويتقاطع مع ملفات التيك. findings تذكر الفلتر/الأمر المشغَّل أو الـ waive (≥40 حرف). ممنوع LGTM.

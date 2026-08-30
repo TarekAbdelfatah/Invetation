@@ -1,0 +1,27 @@
+@model string
+@{
+    var rawType = (ViewData["Type"] as string ?? "info").Trim().ToLowerInvariant();
+    var type = rawType == "danger" || rawType == "error" ? "danger" : rawType;
+    var dismissible = ViewData["Dismissible"] as bool? ?? true;
+    var ttl = (int)(ViewData["Ttl"] ?? (type == "danger" ? 0 : 5000));
+    var icon = type switch
+    {
+        "success" => "check_circle",
+        "danger"  => "error",
+        "warning" => "warning",
+        _         => "info"
+    };
+    if (string.IsNullOrWhiteSpace(Model)) { /* nothing to render */ }
+}
+@if (!string.IsNullOrWhiteSpace(Model))
+{
+    <div class="alert bog-alert alert-@type @(dismissible ? "alert-dismissible fade show" : "")"
+         role="alert" data-toast data-toast-ttl="@ttl">
+        <span class="material-icons bog-alert-icon" aria-hidden="true">@icon</span>
+        <span class="bog-alert-text">@Model</span>
+        @if (dismissible)
+        {
+            <button type="button" class="btn-close" data-toast-close aria-label="إغلاق"></button>
+        }
+    </div>
+}

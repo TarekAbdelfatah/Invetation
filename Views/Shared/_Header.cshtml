@@ -1,0 +1,67 @@
+@using Ibtikar.Services.Security
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    string IsActive(string controller, string action = "Index") =>
+        string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase)
+            ? "active"
+            : string.Empty;
+
+    var isAuth = User.Identity?.IsAuthenticated == true;
+    var userName = isAuth ? User.Identity!.Name : null;
+    var fullName = isAuth ? User.FindFirst(RoleCodes.FullNameClaim)?.Value : null;
+    var roles = isAuth ? User.FindAll(RoleCodes.ClaimType).Select(c => c.Value).ToList() : new List<string>();
+}
+
+<header class="bog-header navbar navbar-expand-lg bg-white border-bottom shadow-sm">
+    <div class="container">
+        <a class="navbar-brand d-inline-flex align-items-center" asp-controller="Home" asp-action="Index">
+            <img src="~/img/BOG_Logo.svg" alt="بوابة ديوان المظالم - ابتكار" class="bog-logo" />
+        </a>
+        <button class="navbar-toggler" type="button" data-nav-toggle="#mainNav"
+                aria-controls="mainNav" aria-expanded="false" aria-label="تبديل التنقل">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link @IsActive("Home")" asp-controller="Home" asp-action="Index">الرئيسية</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @IsActive("Ideas")" asp-controller="Ideas" asp-action="Index">سجل الأفكار</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav">
+                @if (isAuth)
+                {
+                    <li class="nav-item d-flex align-items-center gap-2 px-3">
+                        <span class="material-icons" aria-hidden="true">account_circle</span>
+                        <span class="d-flex flex-column">
+                            <span class="fw-semibold">@fullName</span>
+                            <small class="text-muted">@string.Join("، ", roles)</small>
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <form method="post" asp-controller="Account" asp-action="Logout" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                <span class="material-icons" aria-hidden="true">logout</span>
+                                خروج
+                            </button>
+                        </form>
+                    </li>
+                }
+                else
+                {
+                    <li class="nav-item">
+                        <a class="btn btn-primary btn-sm" asp-controller="Account" asp-action="Login">
+                            <span class="material-icons" aria-hidden="true">login</span>
+                            دخول
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</header>

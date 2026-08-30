@@ -1,0 +1,85 @@
+@*
+    Reusable pagination partial.
+    Model: PagedResult or anonymous object with: Page, PageSize, TotalCount, TotalPages, HasPrevious, HasPrevious, HasNext
+    Optional ViewData:
+      "Route"    — the route name used to build links (default: current request path)
+      "ParamName"— query string key for the page number (default: "page")
+*@
+@using System.Web
+@{
+    int page = ViewData.Model is int p ? p : 0;
+    int totalPages = (int)(ViewData["TotalPages"] ?? 0);
+    int pageSize = (int)(ViewData["PageSize"] ?? 10);
+    int totalCount = (int)(ViewData["TotalCount"] ?? 0);
+    var query = Context.Request.Query;
+    var route = ViewData["Route"] as string ?? Context.Request.Path;
+    var paramName = (ViewData["ParamName"] as string ?? "page").ToString();
+    bool hasPrev = page > 1;
+    bool hasNext = page < totalPages;
+
+    string BuildHref(int p)
+    {
+        var pairs = query
+            .Where(kv => !string.Equals(kv.Key, paramName, StringComparison.OrdinalIgnoreCase))
+            .Select(kv => HttpUtility.UrlEncode(kv.Key) + "=" + HttpUtility.UrlEncode(kv.Value.ToString()))
+            .ToList();
+        pairs.Add(paramName + "=" + p);
+        return route + "?" + string.Join("&", pairs);
+    }
+}
+@if (totalPages > 1)
+{
+    <nav class="bog-pagination" aria-label="صفحات">
+        <div class="bog-pagination-meta">
+            عرض
+            <strong>@(((page - 1) * pageSize) + 1)</strong>–<strong>@Math.Min(page * pageSize, totalCount)</strong>
+            من <strong>@totalCount</strong>
+        </div>
+        <ul class="pagination mb-0">
+            <li class="page-item @(hasPrev ? "" : "disabled")">
+                @if (hasPrev)
+                {
+                    <a class="page-link" href="@BuildHref(page - 1)" rel="prev" aria-label="السابق">
+                        <span class="material-icons" aria-hidden="true">chevron_right</span>
+                    </a>
+                }
+                else
+                {
+                    <span class="page-link" aria-disabled="true">
+                        <span class="material-icons" aria-hidden="true">chevron_right</span>
+                    </span>
+                }
+            </li>
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                var active = i == page ? "active" : "";
+                if (active == "active")
+                {
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">@i</span>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@BuildHref(i)">@i</a>
+                    </li>
+                }
+            }
+            <li class="page-item @(hasNext ? "" : "disabled")">
+                @if (hasNext)
+                {
+                    <a class="page-link" href="@BuildHref(page + 1)" rel="next" aria-label="التالي">
+                        <span class="material-icons" aria-hidden="true">chevron_left</span>
+                    </a>
+                }
+                else
+                {
+                    <span class="page-link" aria-disabled="true">
+                        <span class="material-icons" aria-hidden="true">chevron_left</span>
+                    </span>
+                }
+            </li>
+        </ul>
+    </nav>
+}

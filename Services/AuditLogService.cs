@@ -1,0 +1,56 @@
+using System.Security.Claims;
+using Ibtikar.Data;
+using Ibtikar.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace Ibtikar.Services
+{
+    public class AuditLogService
+    {
+        private readonly IbtikarDbContext _db;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public AuditLogService(IbtikarDbContext db, IHttpContextAccessor httpContextAccessor)
+        {
+            _db = db;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        public async Task WriteAsync(string action, string entityName, string? entityId, string? newValues, string? oldValues, CancellationToken ct)
+        {
+            var (userId, ip, userAgent) = ResolveCallerContext();
+
+            var entry = new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Action = action,
+                EntityName = entityName,
+                EntityId = entityId,
+                OldValues = oldValues,
+                NewValues = newValues,
+                IpAddress = ip,
+                UserAgent = userAgent,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _db.AuditLogs.AddAsync(entry, ct);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        private (Guid? userId, string? ip, string? userAgent) ResolveCallerContext()
+        {
+            var context = _httpContextAccessor.HttpContext;
+            if (context == null) return (null, null, null);
+
+            var userIdValue = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            Guid? userId = Guid.TryParse(userIdValue, out var parsed) ? parsed : null;
+
+            var ip = context.Connection.RemoteIpAddress?.ToString();
+            var userAgent = context.Request.Headers["User-Agent"].ToString();
+            if (userAgent.Length > 512) userAgent = userAgent[..512];
+
+            return (userId, ip, userAgent);
+        }
+    }
+}

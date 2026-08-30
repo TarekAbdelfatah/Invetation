@@ -1,0 +1,10 @@
+@using Ibtikar.Models
+@model IdeaStatus
+@{
+    var code = Model?.Code ?? string.Empty;
+    var name = Model?.Name ?? string.Empty;
+    var color = Model?.Color ?? "#6c757d";
+}
+<span class="status-badge badge rounded-pill" data-status-code="@code" style="background-color:@color">
+    @name
+</span>

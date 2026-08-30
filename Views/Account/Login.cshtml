@@ -1,0 +1,42 @@
+@{
+    ViewData["Title"] = "تسجيل الدخول";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var error = ViewData["Error"] as string;
+}
+<div class="bog-login-page">
+    <div class="bog-login-card">
+        <div class="bog-login-brand">
+            <img src="~/img/BOG_Logo.svg" alt="ابتكار" class="bog-logo" />
+        </div>
+        <h1 class="bog-login-title">تسجيل الدخول</h1>
+        <p class="bog-login-subtitle">بوابة الأفكار الابتكارية</p>
+
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="alert bog-alert alert-danger" role="alert" data-toast data-toast-ttl="0">
+                <span class="material-icons bog-alert-icon" aria-hidden="true">error</span>
+                <span class="bog-alert-text">@error</span>
+            </div>
+        }
+
+        <form method="post" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@returnUrl" class="bog-login-form">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <label for="username" class="form-label">اسم المستخدم</label>
+                <input type="text" id="username" name="username" class="form-control" required autocomplete="username" autofocus />
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">كلمة المرور</label>
+                <input type="password" id="password" name="password" class="form-control" required autocomplete="current-password" />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">
+                <span class="material-icons" aria-hidden="true">login</span>
+                <span>دخول</span>
+            </button>
+        </form>
+
+        <div class="bog-login-hint">
+            <small class="text-muted">كلمة المرور الافتراضية للمستخدمين التجريبيين: Ibtikar@2026</small>
+        </div>
+    </div>
+</div>
