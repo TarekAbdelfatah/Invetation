@@ -49,6 +49,8 @@ namespace Ibtikar
             using var scope = app.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IbtikarDbContext>();
             db.Database.Migrate();
+            Ibtikar.Data.Seed.IdeaStatusSeed.SeedIdeaStatuses(db);
+            db.SaveChanges();
         }
 
         private static RequestLocalizationOptions BuildArabicRequestLocalizationOptions()
