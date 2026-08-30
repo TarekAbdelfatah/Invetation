@@ -16,6 +16,7 @@ namespace Ibtikar.Data
         public DbSet<User> Users => Set<User>();
         public DbSet<IdeaStatus> IdeaStatuses => Set<IdeaStatus>();
         public DbSet<UserRole> UserRoles => Set<UserRole>();
+        public DbSet<AssessmentCriterion> AssessmentCriteria => Set<AssessmentCriterion>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
