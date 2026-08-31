@@ -25,6 +25,7 @@
             if (!res.ok) { return; }
             var html = await res.text();
             tbody.innerHTML = html;
+            document.dispatchEvent(new CustomEvent('inbox:refreshed'));
         } catch (err) {
             console.warn('Inbox poll failed', err);
         }

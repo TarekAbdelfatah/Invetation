@@ -26,7 +26,7 @@
             </div>
             <div class="card-body p-0">
                 <form method="get" asp-action="Inbox" asp-controller="Audit" class="row g-2 px-3 pt-3 pb-0" id="inboxFilterForm">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label small text-muted mb-1" for="applicantType">نوع مقدم الفكرة</label>
                         <select id="applicantType" name="applicantType" class="form-select form-select-sm">
                             <option value="" selected="@(string.IsNullOrEmpty(Model.ApplicantType))">الكل</option>
@@ -34,7 +34,7 @@
                             <option value="external" selected="@(Model.ApplicantType == "external")">خارجي</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label small text-muted mb-1" for="status">الحالة</label>
                         <select id="status" name="status" class="form-select form-select-sm">
                             <option value="" selected="@(string.IsNullOrEmpty(Model.Status))">الكل (جديد + معاد تقديمها)</option>
@@ -43,7 +43,11 @@
                             <option value="rejected" selected="@(Model.Status == "rejected")">مرفوض</option>
                         </select>
                     </div>
-                    <div class="col-md-4 d-flex align-items-end gap-2">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1" for="inboxSearch">بحث في الصندوق</label>
+                        <input id="inboxSearch" name="inboxSearch" type="search" class="form-control form-control-sm" placeholder="ابحث بالمرجع أو العنوان أو الاسم" autocomplete="off" />
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end gap-2">
                         <button type="submit" class="btn btn-sm btn-primary">
                             <span class="material-icons align-middle" style="font-size:16px">filter_alt</span>
                             تطبيق
@@ -78,4 +82,5 @@
 
 @section Scripts {
     <script src="~/js/inbox-poll.js" asp-append-version="true"></script>
+    <script src="~/js/inbox-search.js" asp-append-version="true"></script>
 }
