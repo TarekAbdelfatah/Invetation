@@ -14,10 +14,10 @@ namespace Ibtikar.Services.Security
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 [AuditEmployee]            = "/Audit/Inbox",
-                [SpecializedDepartment]    = "/Specialized/Inbox",
-                [PartnerDepartment]        = "/Partner/Inbox",
-                [InnovationCommitteeMember]= "/Committee/Inbox",
-                [SystemAdmin]              = "/Admin/Overview",
+                [SpecializedDepartment]    = "/SpecializedDashboard",
+                [PartnerDepartment]        = "/PartnerDashboard",
+                [InnovationCommitteeMember]= "/Committee",
+                [SystemAdmin]              = "/AdminOverview",
                 [ExternalBeneficiary]      = "/MyRequests",
                 [InternalBeneficiary]      = "/MyRequests"
             };

@@ -346,3 +346,56 @@ body {
   margin-top: var(--spacing-4);
   text-align: center;
 }
+
+/* ---------- Sections / cards ---------- */
+.bog-section {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+}
+
+.bog-section .card-header {
+  border-bottom: 1px solid var(--border-light);
+  padding: var(--spacing-4) var(--spacing-6);
+}
+
+.bog-kpi-card {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: var(--shadow-xs);
+}
+
+.bog-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.bog-kpi-label {
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  margin-bottom: var(--spacing-2);
+}
+
+.bog-kpi-value {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.1;
+  margin-bottom: var(--spacing-2);
+}
+
+.bog-kpi-meta {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.bog-status-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
