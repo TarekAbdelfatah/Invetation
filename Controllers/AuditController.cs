@@ -29,16 +29,34 @@ namespace Ibtikar.Controllers
             await _db.IdeaStatuses.Where(s => s.Code == code).Select(s => (Guid?)s.Id).FirstOrDefaultAsync(ct);
 
         [HttpGet]
-        public async Task<IActionResult> Inbox(CancellationToken ct)
+        public async Task<IActionResult> Inbox(string? applicantType, string? status, CancellationToken ct)
         {
-            var inbox = await _db.IdeaStatuses
-                .Where(s => s.Code == IdeaStatusCodes.New || s.Code == IdeaStatusCodes.Resubmitted)
-                .Select(s => s.Id)
-                .ToListAsync(ct);
+            var applicantTypeNorm = (applicantType ?? string.Empty).Trim().ToLowerInvariant();
+            var statusNorm = (status ?? string.Empty).Trim().ToLowerInvariant();
 
-            var items = await _db.InnovationIdeas
+            var statusCodes = statusNorm switch
+            {
+                "new" => new[] { IdeaStatusCodes.New },
+                "resubmitted" => new[] { IdeaStatusCodes.Resubmitted },
+                "rejected" => new[] { IdeaStatusCodes.Rejected },
+                _ => new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted }
+            };
+
+            var ideasQuery = _db.InnovationIdeas
                 .AsNoTracking()
-                .Where(i => inbox.Contains(i.CurrentStatusId))
+                .Where(i => _db.IdeaStatuses
+                    .Where(s => statusCodes.Contains(s.Code))
+                    .Select(s => s.Id)
+                    .Contains(i.CurrentStatusId));
+
+            ideasQuery = applicantTypeNorm switch
+            {
+                "internal" => ideasQuery.Where(i => i.ApplicantDepartmentId != null),
+                "external" => ideasQuery.Where(i => i.ApplicantDepartmentId == null),
+                _ => ideasQuery
+            };
+
+            var items = await ideasQuery
                 .Include(i => i.CurrentStatus)
                 .Include(i => i.InnovationDomain)
                 .Include(i => i.ApplicantDepartment)
@@ -55,7 +73,7 @@ namespace Ibtikar.Controllers
                     i.CreatedAt))
                 .ToListAsync(ct);
 
-            return View(new AuditInboxVm(items));
+            return View(new AuditInboxVm(items, applicantTypeNorm, statusNorm));
         }
 
         [HttpGet]
@@ -299,7 +317,14 @@ namespace Ibtikar.Controllers
     public class AuditInboxVm
     {
         public List<Row> Items { get; }
-        public AuditInboxVm(List<Row> items) => Items = items;
+        public string ApplicantType { get; }
+        public string Status { get; }
+        public AuditInboxVm(List<Row> items, string applicantType, string status)
+        {
+            Items = items;
+            ApplicantType = applicantType ?? string.Empty;
+            Status = status ?? string.Empty;
+        }
         public record Row(Guid Id, string Reference, string Title, string Domain, string ApplicantName, string Department, DateTime SubmittedAt);
     }
 

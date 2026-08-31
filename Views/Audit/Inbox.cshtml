@@ -25,6 +25,32 @@
                 <span class="badge bg-secondary">@Model.Items.Count</span>
             </div>
             <div class="card-body p-0">
+                <form method="get" asp-action="Inbox" asp-controller="Audit" class="row g-2 px-3 pt-3 pb-0" id="inboxFilterForm">
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted mb-1" for="applicantType">نوع مقدم الفكرة</label>
+                        <select id="applicantType" name="applicantType" class="form-select form-select-sm">
+                            <option value="" selected="@(string.IsNullOrEmpty(Model.ApplicantType))">الكل</option>
+                            <option value="internal" selected="@(Model.ApplicantType == "internal")">داخلي</option>
+                            <option value="external" selected="@(Model.ApplicantType == "external")">خارجي</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted mb-1" for="status">الحالة</label>
+                        <select id="status" name="status" class="form-select form-select-sm">
+                            <option value="" selected="@(string.IsNullOrEmpty(Model.Status))">الكل (جديد + معاد تقديمها)</option>
+                            <option value="new" selected="@(Model.Status == "new")">جديد</option>
+                            <option value="resubmitted" selected="@(Model.Status == "resubmitted")">معاد تقديمها</option>
+                            <option value="rejected" selected="@(Model.Status == "rejected")">مرفوض</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <span class="material-icons align-middle" style="font-size:16px">filter_alt</span>
+                            تطبيق
+                        </button>
+                        <a asp-action="Inbox" class="btn btn-sm btn-outline-secondary">إعادة ضبط</a>
+                    </div>
+                </form>
                 @if (Model.Items.Any())
                 {
                     <div class="table-responsive">
