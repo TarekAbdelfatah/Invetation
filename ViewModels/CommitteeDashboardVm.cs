@@ -28,4 +28,27 @@ namespace Ibtikar.ViewModels
         public string StatusFilter { get; set; } = string.Empty;
         public string? CommitteeName { get; set; }
     }
+
+    public class CommitteeAssessVm
+    {
+        public Guid IdeaId { get; set; }
+        public string Reference { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string StatusName { get; set; } = string.Empty;
+        public string StatusColor { get; set; } = "#6c757d";
+        public bool IsDraftSaved { get; set; }
+        public bool IsLocked { get; set; }
+        public Guid? DraftHeaderId { get; set; }
+        public DateTime? DraftSavedAt { get; set; }
+        public List<CommitteeCriterionVm> Criteria { get; set; } = new();
+        public List<CommitteeAssessLineVm> Lines { get; set; } = new();
+        public decimal? TotalScore { get; set; }
+        public string? Comment { get; set; }
+        public int? DepartmentPercent { get; set; }
+        public int? CommitteePercent { get; set; }
+        public int? CombinedAverage { get; set; }
+    }
+
+    public sealed record CommitteeCriterionVm(Guid Id, string Code, string Name, string? Description, int DisplayOrder);
+    public sealed record CommitteeAssessLineVm(Guid CriterionId, string CriterionCode, string CriterionName, int? Score, string? Comment);
 }

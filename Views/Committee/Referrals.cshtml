@@ -61,6 +61,11 @@
                                 <td class="@(i.IsOverdue ? "text-danger fw-semibold" : "text-muted")">
                                     @i.StayDays.ToString("0.#") يوم
                                 </td>
+                                <td>
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Assess" asp-route-id="@i.IdeaId">
+                                        تقييم
+                                    </a>
+                                </td>
                             </tr>
                         }
                     </tbody>
