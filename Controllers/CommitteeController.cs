@@ -129,6 +129,42 @@ namespace Ibtikar.Controllers
             return RedirectToAction(nameof(Votes));
         }
 
+        [HttpGet("Committee/Decision/{id:guid}")]
+        public async Task<IActionResult> Decision(Guid id, CancellationToken ct)
+        {
+            var dto = await _dashboardService.GetDecisionAsync(ResolveUserId(), id, ct);
+            if (dto is null) return Forbid();
+
+            var vm = new CommitteeDecisionVm
+            {
+                IdeaId = dto.IdeaId,
+                Reference = dto.Reference,
+                Title = dto.Title,
+                CombinedAverage = dto.CombinedAverage,
+                CanAccept = dto.CanAccept,
+                ExtraConfirmWarning = dto.ExtraConfirmWarning
+            };
+            return View(vm);
+        }
+
+        [HttpPost("Committee/Accept")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Accept(Guid ideaId, bool extraConfirmed, CancellationToken ct)
+        {
+            var result = await _dashboardService.AcceptAsync(ResolveUserId(), ideaId, extraConfirmed, ct);
+
+            if (!result.Success)
+            {
+                TempData["AlertError"] = result.Message;
+                TempData["AlertType"] = "danger";
+                return RedirectToAction(nameof(Decision), new { id = ideaId });
+            }
+
+            TempData["AlertMessage"] = result.Message;
+            TempData["AlertType"] = "success";
+            return RedirectToAction("Index", "Committee");
+        }
+
         private Guid ResolveUserId()
         {
             var raw = User.FindFirst(RoleCodes.UserIdClaim)?.Value;

@@ -62,9 +62,17 @@
                                     @i.StayDays.ToString("0.#") يوم
                                 </td>
                                 <td>
-                                    <a class="btn btn-sm btn-outline-primary" asp-action="Assess" asp-route-id="@i.IdeaId">
-                                        تقييم
-                                    </a>
+                                    <div class="d-flex gap-1">
+                                        <a class="btn btn-sm btn-outline-primary" asp-action="Assess" asp-route-id="@i.IdeaId">
+                                            تقييم
+                                        </a>
+                                        @if (i.StatusCode == "referred-committee")
+                                        {
+                                            <a class="btn btn-sm btn-outline-success" asp-action="Decision" asp-route-id="@i.IdeaId">
+                                                قرار
+                                            </a>
+                                        }
+                                    </div>
                                 </td>
                             </tr>
                         }

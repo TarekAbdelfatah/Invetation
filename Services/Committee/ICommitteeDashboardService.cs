@@ -11,5 +11,7 @@ namespace Ibtikar.Services.Committee
         Task<CommitteeAssessOutcomeDto> SaveAssessmentAsync(Guid userId, CommitteeAssessmentSubmissionDto submission, CancellationToken ct);
         Task<CommitteeVotesDto?> GetVotesAsync(Guid userId, CancellationToken ct);
         Task<CommitteeVoteOutcomeDto> SubmitVoteAsync(Guid userId, CommitteeVoteSubmitDto submission, CancellationToken ct);
+        Task<CommitteeDecisionDto?> GetDecisionAsync(Guid userId, Guid ideaId, CancellationToken ct);
+        Task<CommitteeVoteOutcomeDto> AcceptAsync(Guid userId, Guid ideaId, bool extraConfirmed, CancellationToken ct);
     }
 }

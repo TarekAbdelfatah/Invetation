@@ -42,4 +42,16 @@ namespace Ibtikar.DTOs.Committee
         bool SaveDraft);
 
     public sealed record CommitteeAssessOutcomeDto(bool Success, string Message, bool RequiresExtraConfirm);
+
+    public sealed record CommitteeAcceptDto(
+        Guid IdeaId,
+        bool ExtraConfirmed);
+
+    public sealed record CommitteeDecisionDto(
+        Guid IdeaId,
+        string Reference,
+        string Title,
+        int? CombinedAverage,
+        bool CanAccept,
+        string? ExtraConfirmWarning);
 }

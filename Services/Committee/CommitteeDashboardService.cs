@@ -2,6 +2,7 @@ using Ibtikar.Data;
 using Ibtikar.DTOs.Committee;
 using Ibtikar.Models;
 using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Notifications;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Services.Committee
@@ -12,10 +13,17 @@ namespace Ibtikar.Services.Committee
         private const int MaxScore = 5;
 
         private readonly IbtikarDbContext _db;
+        private readonly INotificationClient _notifier;
+        private readonly ILogger<CommitteeDashboardService> _logger;
 
-        public CommitteeDashboardService(IbtikarDbContext db)
+        public CommitteeDashboardService(
+            IbtikarDbContext db,
+            INotificationClient notifier,
+            ILogger<CommitteeDashboardService> logger)
         {
             _db = db;
+            _notifier = notifier;
+            _logger = logger;
         }
 
         public async Task<CommitteeDashboardDto> GetSnapshotAsync(Guid userId, CancellationToken ct)
@@ -303,6 +311,140 @@ namespace Ibtikar.Services.Committee
 
             await _db.SaveChangesAsync(ct);
             return new(true, "تم تسجيل تصويتك.");
+        }
+
+        public async Task<CommitteeDecisionDto?> GetDecisionAsync(Guid userId, Guid ideaId, CancellationToken ct)
+        {
+            var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
+            if (committeeId is null) return null;
+
+            var idea = await _db.InnovationIdeas.AsNoTracking()
+                .Where(i => i.Id == ideaId)
+                .Select(i => new
+                {
+                    i.Id,
+                    i.ReferenceNumber,
+                    i.Title,
+                    StatusCode = i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty
+                })
+                .FirstOrDefaultAsync(ct);
+
+            if (idea is null) return null;
+
+            var combined = await GetCombinedPercentAsync(ideaId, ct);
+            var canAccept = idea.StatusCode == IdeaStatusCodes.ReferredCommittee;
+            var warning = combined < 40
+                ? "النسبة المجمعة أقل من 40%. هل تريد الموافقة على الفكرة رغم ذلك؟"
+                : null;
+
+            return new CommitteeDecisionDto(idea.Id, idea.ReferenceNumber, idea.Title, combined, canAccept, warning);
+        }
+
+        public async Task<CommitteeVoteOutcomeDto> AcceptAsync(Guid userId, Guid ideaId, bool extraConfirmed, CancellationToken ct)
+        {
+            var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
+            if (committeeId is null)
+                return new(false, "لست عضواً نشطاً في أي لجنة.");
+
+            var idea = await _db.InnovationIdeas
+                .Include(i => i.CurrentStatus)
+                .FirstOrDefaultAsync(i => i.Id == ideaId, ct);
+            if (idea is null)
+                return new(false, "الفكرة غير موجودة.");
+
+            if (idea.CurrentStatus?.Code != IdeaStatusCodes.ReferredCommittee)
+                return new(false, "الفكرة ليست في حالة (محوّلة للجنة) للقبول.");
+
+            var combined = await GetCombinedPercentAsync(ideaId, ct);
+            if (combined < 40 && !extraConfirmed)
+                return new(false, "النسبة المجمعة أقل من 40%. يلزم تأكيد إضافي لقبول الفكرة.");
+
+            var approvedId = await GetStatusIdByCodeAsync(IdeaStatusCodes.Approved, ct);
+            if (approvedId is null)
+                return new(false, "لم يتم إعداد حالة (قبول الفكرة) بعد.");
+
+            var fromId = idea.CurrentStatusId;
+            idea.CurrentStatusId = approvedId.Value;
+
+            _db.IdeaStatusHistories.Add(new IdeaStatusHistory
+            {
+                InnovationIdeaId = idea.Id,
+                FromStatusId = fromId,
+                ToStatusId = approvedId.Value,
+                ChangedByUserId = userId,
+                Note = combined < 40
+                    ? $"قبول اللجنة مع تأكيد إضافي (نسبة مجمعة {combined}%)."
+                    : $"قبول اللجنة (نسبة مجمعة {combined}%)."
+            });
+
+            await _db.SaveChangesAsync(ct);
+
+            await SafeNotifyAsync("Committee.Accept", idea.Id.ToString(), new Dictionary<string, string>
+            {
+                ["ideaId"] = idea.Id.ToString(),
+                ["reference"] = idea.ReferenceNumber,
+                ["title"] = idea.Title,
+                ["combinedPercent"] = combined.ToString(),
+                ["actorUserId"] = userId.ToString()
+            }, ct);
+
+            _logger.LogInformation("Committee accepted idea {Idea} (combined {Combined}%, extraConfirm={Extra})",
+                idea.ReferenceNumber, combined, extraConfirmed);
+
+            return new(true, $"تم قبول الفكرة. النسبة المجمعة: {combined}%.");
+        }
+
+        private async Task<int> GetCombinedPercentAsync(Guid ideaId, CancellationToken ct)
+        {
+            var departmentPercent = await GetSpecializedPercentAsync(ideaId, ct);
+            var committeePercent = await GetCommitteePercentAsync(ideaId, ct);
+
+            if (departmentPercent.HasValue && committeePercent.HasValue)
+                return CalculateCombined(departmentPercent.Value, committeePercent.Value);
+            if (departmentPercent.HasValue)
+                return departmentPercent.Value;
+            return committeePercent ?? 0;
+        }
+
+        private async Task<int?> GetCommitteePercentAsync(Guid ideaId, CancellationToken ct)
+        {
+            var criteriaCount = await _db.AssessmentCriteria.CountAsync(c => c.IsActive, ct);
+            if (criteriaCount == 0) return null;
+
+            var committeeHeader = await _db.AssessmentHeaders.AsNoTracking()
+                .Include(h => h.Details)
+                .Where(h => h.InnovationIdeaId == ideaId
+                    && h.Source == AssessmentHeader.SourceCommittee
+                    && !h.IsDraft)
+                .OrderByDescending(h => h.SubmittedAt ?? h.CreatedAt)
+                .FirstOrDefaultAsync(ct);
+
+            if (committeeHeader is null || committeeHeader.Details.Count == 0) return null;
+            return CalculatePercent(committeeHeader.Details.Sum(d => d.Score), criteriaCount);
+        }
+
+        private async Task<Guid?> GetStatusIdByCodeAsync(string code, CancellationToken ct)
+        {
+            return await _db.IdeaStatuses.AsNoTracking()
+                .Where(s => s.Code == code)
+                .Select(s => (Guid?)s.Id)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        private async Task SafeNotifyAsync(string action, string entityId, IDictionary<string, string>? payload, CancellationToken ct)
+        {
+            try
+            {
+                await _notifier.SendAsync(action, entityId, payload, ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // request cancelled; accept already committed and must not roll back.
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Notify {Action} failed for {Entity}", action, entityId);
+            }
         }
 
         private async Task<int?> GetSpecializedPercentAsync(Guid ideaId, CancellationToken ct)

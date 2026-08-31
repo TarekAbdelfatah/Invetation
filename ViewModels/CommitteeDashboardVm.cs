@@ -66,4 +66,14 @@ namespace Ibtikar.ViewModels
     {
         public List<CommitteeVoteRowVm> Items { get; set; } = new();
     }
+
+    public class CommitteeDecisionVm
+    {
+        public Guid IdeaId { get; set; }
+        public string Reference { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public int? CombinedAverage { get; set; }
+        public bool CanAccept { get; set; }
+        public string? ExtraConfirmWarning { get; set; }
+    }
 }
