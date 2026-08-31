@@ -1,6 +1,7 @@
 using Ibtikar.Data;
 using Ibtikar.Models;
 using Ibtikar.Services.Attachments;
+using Ibtikar.Services.Ideas;
 using Ibtikar.Services.Integrations;
 using Ibtikar.Services.Security;
 using Ibtikar.ViewModels;
@@ -134,7 +135,7 @@ namespace Ibtikar.Controllers
             {
                 idea.ReferenceNumber = await NextReferenceNumberAsync(ct);
                 var newStatus = await _db.IdeaStatuses.AsNoTracking()
-                    .FirstOrDefaultAsync(s => s.Code == "new", ct);
+                    .FirstOrDefaultAsync(s => s.Code == IdeaStatusCodes.New, ct);
                 if (newStatus is null)
                 {
                     _logger.LogError("IdeaStatus with code 'new' is missing from seed.");
@@ -148,7 +149,7 @@ namespace Ibtikar.Controllers
             {
                 idea.ReferenceNumber = string.Empty;
                 var draftStatus = await _db.IdeaStatuses.AsNoTracking()
-                    .FirstOrDefaultAsync(s => s.Code == "new", ct);
+                    .FirstOrDefaultAsync(s => s.Code == IdeaStatusCodes.New, ct);
                 idea.CurrentStatusId = draftStatus?.Id ?? Guid.Empty;
             }
 

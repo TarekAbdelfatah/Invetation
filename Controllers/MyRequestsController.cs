@@ -80,6 +80,7 @@ namespace Ibtikar.Controllers
                 .Include(i => i.ExpectedImpact)
                 .Include(i => i.TargetAudience)
                 .Include(i => i.Attachments)
+                .Include(i => i.StatusHistory).ThenInclude(h => h.ToStatus)
                 .FirstOrDefaultAsync(i => i.Id == id, ct);
 
             if (idea is null) return NotFound();
@@ -158,7 +159,7 @@ namespace Ibtikar.Controllers
                 .FirstOrDefaultAsync(i => i.Id == id, ct);
 
             if (idea is null) return NotFound();
-            if (!string.Equals(idea.CurrentStatus?.Code, "waiting_for_completion", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(idea.CurrentStatus?.Code, IdeaStatusCodes.WaitingForCompletion, StringComparison.OrdinalIgnoreCase))
                 return BadRequest("لا يمكن إعادة التقديم خارج حالة انتظار الاستكمال.");
 
             var newDescription = description?.Trim() ?? string.Empty;
@@ -181,12 +182,63 @@ namespace Ibtikar.Controllers
             idea.ExpectedBenefits = string.IsNullOrWhiteSpace(newBenefits) ? null : newBenefits;
 
             var underStudy = await _db.IdeaStatuses.AsNoTracking()
-                .FirstOrDefaultAsync(s => s.Code == "under_study", ct);
+                .FirstOrDefaultAsync(s => s.Code == IdeaStatusCodes.UnderStudy, ct);
             if (underStudy is not null) idea.CurrentStatusId = underStudy.Id;
 
             await _db.SaveChangesAsync(ct);
 
             TempData["IdeaResubmitted"] = "تم إعادة تقديم الفكرة للمراجعة.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResubmitDeveloped(
+            Guid id,
+            string description,
+            string? problemStatement,
+            string? proposedSolution,
+            string? expectedBenefits,
+            CancellationToken ct)
+        {
+            var applicantId = ResolveApplicantId();
+            if (applicantId == Guid.Empty) return Challenge();
+
+            var idea = await _ownerQuery
+                .ForCurrentApplicant(_db.InnovationIdeas, applicantId)
+                .Include(i => i.CurrentStatus)
+                .FirstOrDefaultAsync(i => i.Id == id, ct);
+
+            if (idea is null) return NotFound();
+            if (!string.Equals(idea.CurrentStatus?.Code, IdeaStatusCodes.ReturnedForDevelopment, StringComparison.OrdinalIgnoreCase))
+                return BadRequest("لا يمكن إعادة التقديم خارج حالة الإعادة للتطوير.");
+
+            var newDescription = description?.Trim() ?? string.Empty;
+            var newProblem = problemStatement?.Trim();
+            var newSolution = proposedSolution?.Trim();
+            var newBenefits = expectedBenefits?.Trim();
+
+            if (string.IsNullOrWhiteSpace(newDescription))
+                return BadRequest("وصف الفكرة مطلوب.");
+
+            if (!IsMaterialChange(idea, newDescription, newProblem, newSolution, newBenefits))
+                return UnprocessableEntity(new
+                {
+                    error = "يجب إجراء تغيير حقيقي على فكرة واحدة على الأقل قبل إعادة التقديم."
+                });
+
+            idea.Description = newDescription;
+            idea.ProblemStatement = string.IsNullOrWhiteSpace(newProblem) ? null : newProblem;
+            idea.ProposedSolution = string.IsNullOrWhiteSpace(newSolution) ? null : newSolution;
+            idea.ExpectedBenefits = string.IsNullOrWhiteSpace(newBenefits) ? null : newBenefits;
+
+            var underStudy = await _db.IdeaStatuses.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Code == IdeaStatusCodes.UnderStudy, ct);
+            if (underStudy is not null) idea.CurrentStatusId = underStudy.Id;
+
+            await _db.SaveChangesAsync(ct);
+
+            TempData["IdeaResubmitted"] = "تم إعادة تقديم الفكرة للتطوير.";
             return RedirectToAction(nameof(Details), new { id });
         }
 
@@ -205,7 +257,7 @@ namespace Ibtikar.Controllers
         }
 
         private static bool IsDeletableNewIdea(InnovationIdea idea) =>
-            !idea.IsDraft && string.Equals(idea.CurrentStatus?.Code, "new", StringComparison.OrdinalIgnoreCase);
+            !idea.IsDraft && string.Equals(idea.CurrentStatus?.Code, IdeaStatusCodes.New, StringComparison.OrdinalIgnoreCase);
 
         private Guid ResolveApplicantId()
         {
@@ -250,32 +302,48 @@ namespace Ibtikar.Controllers
         string? TargetAudienceName,
         DateTime CreatedAt,
         DateTime? SubmittedAt,
+        string? DevelopmentNotes,
         List<MyRequestAttachmentVm> Attachments)
     {
-        public static MyRequestDetailsVm FromEntity(InnovationIdea i) => new(
-            i.Id,
-            i.ReferenceNumber,
-            i.Title,
-            i.Description,
-            i.ProblemStatement,
-            i.ProposedSolution,
-            i.ExpectedBenefits,
-            i.ExpectedImpactOther,
-            i.TargetAudienceOther,
-            i.UsesEmergingTech,
-            i.TechnologyOther,
-            i.CurrentStatus?.Code ?? string.Empty,
-            i.CurrentStatus?.Name ?? "—",
-            i.CurrentStatus?.Color ?? "#6c757d",
-            i.InnovationDomain?.Name,
-            i.ExpectedImpact?.Name,
-            i.TargetAudience?.Name,
-            i.CreatedAt,
-            i.SubmittedAt,
-            (i.Attachments ?? new List<IdeaAttachment>())
-                .OrderBy(a => a.UploadedAt)
-                .Select(a => new MyRequestAttachmentVm(a.Id, a.FileName, a.SizeBytes, a.UploadedAt))
-                .ToList());
+        public static MyRequestDetailsVm FromEntity(InnovationIdea i)
+        {
+            string? developmentNotes = null;
+            if (string.Equals(i.CurrentStatus?.Code, IdeaStatusCodes.ReturnedForDevelopment, StringComparison.OrdinalIgnoreCase))
+            {
+                developmentNotes = (i.StatusHistory ?? new List<IdeaStatusHistory>())
+                    .Where(h => h.ToStatus != null
+                        && string.Equals(h.ToStatus.Code, IdeaStatusCodes.ReturnedForDevelopment, StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(h => h.ChangedAt)
+                    .Select(h => h.Note)
+                    .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n));
+            }
+
+            return new MyRequestDetailsVm(
+                i.Id,
+                i.ReferenceNumber,
+                i.Title,
+                i.Description,
+                i.ProblemStatement,
+                i.ProposedSolution,
+                i.ExpectedBenefits,
+                i.ExpectedImpactOther,
+                i.TargetAudienceOther,
+                i.UsesEmergingTech,
+                i.TechnologyOther,
+                i.CurrentStatus?.Code ?? string.Empty,
+                i.CurrentStatus?.Name ?? "—",
+                i.CurrentStatus?.Color ?? "#6c757d",
+                i.InnovationDomain?.Name,
+                i.ExpectedImpact?.Name,
+                i.TargetAudience?.Name,
+                i.CreatedAt,
+                i.SubmittedAt,
+                developmentNotes,
+                (i.Attachments ?? new List<IdeaAttachment>())
+                    .OrderBy(a => a.UploadedAt)
+                    .Select(a => new MyRequestAttachmentVm(a.Id, a.FileName, a.SizeBytes, a.UploadedAt))
+                    .ToList());
+        }
     }
 
     public record MyRequestAttachmentVm(Guid Id, string FileName, long SizeBytes, DateTime UploadedAt);

@@ -1,8 +1,10 @@
 @using Ibtikar.Controllers
+@using Ibtikar.Services.Ideas
 @model MyRequestDetailsVm
 @{
     ViewData["Title"] = string.IsNullOrEmpty(Model.Reference) ? "تفاصيل المسودة" : $"تفاصيل الطلب {Model.Reference}";
-    var isResubmittable = Model.StatusCode == "waiting_for_completion";
+    var isResubmittable = Model.StatusCode == IdeaStatusCodes.WaitingForCompletion;
+    var isResubmittableForDevelopment = Model.StatusCode == IdeaStatusCodes.ReturnedForDevelopment;
 }
 
 <div class="bog-main">
@@ -34,7 +36,7 @@
                 </strong>
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge rounded-pill" style="background-color:@Model.StatusColor">@Model.StatusName</span>
-                    @if (Model.StatusCode == "new" && !string.IsNullOrEmpty(Model.Reference))
+                    @if (Model.StatusCode == IdeaStatusCodes.New && !string.IsNullOrEmpty(Model.Reference))
                     {
                         <form method="post" asp-action="Delete" asp-route-id="@Model.Id" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا الطلب نهائياً؟');">
                             @Html.AntiForgeryToken()
@@ -184,19 +186,64 @@
                 </div>
             </div>
         }
+
+        @if (isResubmittableForDevelopment)
+        {
+            <div class="card bog-section mb-3 border-primary">
+                <div class="card-header bg-white"><strong>إعادة التطوير بعد ملاحظات اللجنة</strong></div>
+                <div class="card-body">
+                    @if (!string.IsNullOrWhiteSpace(Model.DevelopmentNotes))
+                    {
+                        <div class="alert alert-info mb-3" role="alert">
+                            <strong>ملاحظات اللجنة:</strong>
+                            <p class="mb-0 mt-2" style="white-space:pre-line">@Model.DevelopmentNotes</p>
+                        </div>
+                    }
+                    <form method="post" asp-action="ResubmitDeveloped" asp-route-id="@Model.Id" id="resubmitDevelopedForm">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label class="form-label">وصف الفكرة</label>
+                            <textarea name="description" class="form-control" rows="4" required>@Model.Description</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">المشكلة</label>
+                            <textarea name="problemStatement" class="form-control" rows="3">@Model.ProblemStatement</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">الحل المقترح</label>
+                            <textarea name="proposedSolution" class="form-control" rows="3">@Model.ProposedSolution</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">الفوائد المتوقعة</label>
+                            <textarea name="expectedBenefits" class="form-control" rows="3">@Model.ExpectedBenefits</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="resubmitDevelopedBtn">
+                            <span class="material-icons align-middle" style="font-size:18px">send</span>
+                            إعادة التطوير
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
     </div>
 </div>
 
 @section Scripts {
     <script>
         (function () {
-            const form = document.getElementById('resubmitCompletionForm');
-            const btn = document.getElementById('resubmitCompletionBtn');
-            if (form && btn) {
-                form.addEventListener('submit', function () {
-                    btn.disabled = true;
-                    btn.innerHTML = '<span class="spinner-border spinner-border-sm align-middle"></span> جاري الإرسال...';
-                });
+            const forms = [
+                { formId: 'resubmitCompletionForm', btnId: 'resubmitCompletionBtn' },
+                { formId: 'resubmitDevelopedForm', btnId: 'resubmitDevelopedBtn' }
+            ];
+            for (const { formId, btnId } of forms) {
+                const form = document.getElementById(formId);
+                const btn = document.getElementById(btnId);
+                if (form && btn) {
+                    form.addEventListener('submit', function () {
+                        btn.disabled = true;
+                        btn.innerHTML = '<span class="spinner-border spinner-border-sm align-middle"></span> جاري الإرسال...';
+                    });
+                }
             }
         })();
     </script>

@@ -1,5 +1,6 @@
 using Ibtikar.Data;
 using Ibtikar.Models;
+using Ibtikar.Services.Ideas;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Data.Seed
@@ -20,10 +21,10 @@ namespace Ibtikar.Data.Seed
             var adminDomain = domains.FirstOrDefault(d => d.Code == "administrative-procedures");
             var digitalDomain = domains.FirstOrDefault(d => d.Code == "digital-transformation");
 
-            var newStatus = statuses.First(s => s.Code == "new");
-            var underReview = statuses.First(s => s.Code == "under-review");
-            var referred = statuses.First(s => s.Code == "referred-committee");
-            var approved = statuses.First(s => s.Code == "approved");
+            var newStatus = statuses.First(s => s.Code == IdeaStatusCodes.New);
+            var underReview = statuses.First(s => s.Code == IdeaStatusCodes.UnderReview);
+            var referred = statuses.First(s => s.Code == IdeaStatusCodes.ReferredCommittee);
+            var approved = statuses.First(s => s.Code == IdeaStatusCodes.Approved);
 
             var ideas = new List<InnovationIdea>
             {

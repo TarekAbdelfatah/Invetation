@@ -1,5 +1,6 @@
 using Ibtikar.Data;
 using Ibtikar.Models;
+using Ibtikar.Services.Ideas;
 using Ibtikar.Services.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +17,7 @@ namespace Ibtikar.Controllers
         public async Task<IActionResult> Inbox(CancellationToken ct)
         {
             var inbox = await _db.IdeaStatuses
-                .Where(s => s.Code == "new" || s.Code == "resubmitted")
+                .Where(s => s.Code == IdeaStatusCodes.New || s.Code == IdeaStatusCodes.Resubmitted)
                 .Select(s => s.Id)
                 .ToListAsync(ct);
 
