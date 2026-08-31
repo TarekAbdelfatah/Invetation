@@ -10,6 +10,8 @@ namespace Ibtikar.Data.Seed
         {
             EnsureDepartment(db, "tech", "التقنية", "Technology");
             EnsureDepartment(db, "infrastructure", "البنية التحتية", "Infrastructure");
+            EnsureDepartment(db, "judicial", "الشؤون القضائية", "Judicial");
+            EnsureDepartment(db, "administrative", "الشؤون الإدارية", "Administrative");
         }
 
         private static void EnsureDepartment(IbtikarDbContext db, string code, string name, string? nameEn)

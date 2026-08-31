@@ -14,6 +14,10 @@ sessions:
     model: opencode/mimo-v2.5-free
     session_id: b7e3f1a2-4c8d-4e9b-a1f6-3d2e8c5b9a74
     started_at: 2026-08-31T22:15:00Z
+  current:
+    model: minimax-coding-plan/MiniMax-M3
+    session_id: b7e3f1a2-4c8d-4e9b-a1f6-3d2e8c5b9a74
+    started_at: 2026-08-31T22:30:00Z
 ---
 
 # Graph note (requires direction)

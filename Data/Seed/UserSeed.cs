@@ -17,18 +17,41 @@ namespace Ibtikar.Data.Seed
             EnsureUserForRole(db, hasher, "committee", "committee", "عضو لجنة", "innovation-committee-member", "internal");
             EnsureUserForRole(db, hasher, "admin", "admin", "مدير النظام", "system-admin", "internal");
             EnsureUserForRole(db, hasher, "ext-beneficiary", "ext", "مستفيد خارجي", "external-beneficiary", "external");
-            EnsureUserForRole(db, hasher, "int-beneficiary", "int", "مستفيد داخلي", "internal-beneficiary", "internal");
+            EnsureUserForRole(db, hasher, "int-beneficiary", "int", "مستفيد داخلي", "internal-beneficiary", "internal", "judicial");
         }
 
-        private static void EnsureUserForRole(IbtikarDbContext db, Pbkdf2PasswordHasher hasher, string username, string emailLocal, string fullName, string roleCode, string userTypeCode)
+        private static void EnsureUserForRole(IbtikarDbContext db, Pbkdf2PasswordHasher hasher, string username, string emailLocal, string fullName, string roleCode, string userTypeCode, string? departmentCode = null)
         {
-            if (db.Users.Any(u => u.Username == username)) return;
+            if (db.Users.Any(u => u.Username == username))
+            {
+                if (!string.IsNullOrWhiteSpace(departmentCode))
+                {
+                    var dept = db.Departments.FirstOrDefault(d => d.Code == departmentCode);
+                    if (dept is not null)
+                    {
+                        var existing = db.Users.First(u => u.Username == username);
+                        if (existing.DepartmentId != dept.Id)
+                        {
+                            existing.DepartmentId = dept.Id;
+                            db.SaveChanges();
+                        }
+                    }
+                }
+                return;
+            }
 
             var role = db.Roles.FirstOrDefault(r => r.Code == roleCode);
             if (role == null) return;
 
             var userType = db.UserTypes.FirstOrDefault(t => t.Code == userTypeCode);
             if (userType == null) return;
+
+            Guid? departmentId = null;
+            if (!string.IsNullOrWhiteSpace(departmentCode))
+            {
+                var dept = db.Departments.FirstOrDefault(d => d.Code == departmentCode);
+                departmentId = dept?.Id;
+            }
 
             var hashResult = hasher.Hash(DefaultPassword);
 
@@ -41,6 +64,7 @@ namespace Ibtikar.Data.Seed
                 PasswordHash = hashResult.Hash,
                 PasswordSalt = hashResult.Salt,
                 UserTypeId = userType.Id,
+                DepartmentId = departmentId,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
