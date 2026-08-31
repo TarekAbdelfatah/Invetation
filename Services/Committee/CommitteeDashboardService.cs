@@ -234,6 +234,77 @@ namespace Ibtikar.Services.Committee
             return new(true, message, combined < 40);
         }
 
+        public async Task<CommitteeVotesDto?> GetVotesAsync(Guid userId, CancellationToken ct)
+        {
+            var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
+            if (committeeId is null) return null;
+
+            var ideas = await _db.InnovationIdeas.AsNoTracking()
+                .Where(i => i.CurrentStatus != null
+                    && (i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee
+                        || i.CurrentStatus.Code == IdeaStatusCodes.UnderAssessment))
+                .OrderByDescending(i => i.CreatedAt)
+                .Select(i => new
+                {
+                    i.Id,
+                    i.ReferenceNumber,
+                    i.Title,
+                    StatusCode = i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty,
+                    StatusName = i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
+                    StatusColor = i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d"
+                })
+                .ToListAsync(ct);
+
+            var ideaIds = ideas.Select(i => i.Id).ToList();
+            var myVotes = await _db.CommitteeVotes.AsNoTracking()
+                .Where(v => v.MemberUserId == userId && ideaIds.Contains(v.InnovationIdeaId))
+                .ToDictionaryAsync(v => v.InnovationIdeaId, v => v.Decision, ct);
+
+            var items = ideas.Select(i => new CommitteeVoteRowDto(
+                i.Id, i.ReferenceNumber, i.Title,
+                i.StatusCode, i.StatusName, i.StatusColor,
+                myVotes.ContainsKey(i.Id),
+                myVotes.TryGetValue(i.Id, out var d) ? d : null)).ToList();
+
+            return new CommitteeVotesDto(items);
+        }
+
+        public async Task<CommitteeVoteOutcomeDto> SubmitVoteAsync(Guid userId, CommitteeVoteSubmitDto submission, CancellationToken ct)
+        {
+            var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
+            if (committeeId is null)
+                return new(false, "لست عضواً نشطاً في أي لجنة.");
+
+            if (submission.Decision != CommitteeVote.DecisionAgree
+                && submission.Decision != CommitteeVote.DecisionDisagree
+                && submission.Decision != CommitteeVote.DecisionNeedsDevelopment)
+            {
+                return new(false, "قرار التصويت غير معروف.");
+            }
+
+            var idea = await _db.InnovationIdeas.AsNoTracking()
+                .FirstOrDefaultAsync(i => i.Id == submission.IdeaId, ct);
+            if (idea is null)
+                return new(false, "الفكرة غير موجودة.");
+
+            var alreadyVoted = await _db.CommitteeVotes.AsNoTracking()
+                .AnyAsync(v => v.InnovationIdeaId == submission.IdeaId && v.MemberUserId == userId, ct);
+            if (alreadyVoted)
+                return new(false, "سبق لك التصويت على هذه الفكرة (تصويت واحد لكل عضو).");
+
+            _db.CommitteeVotes.Add(new CommitteeVote
+            {
+                Id = Guid.NewGuid(),
+                InnovationIdeaId = submission.IdeaId,
+                MemberUserId = userId,
+                Decision = submission.Decision,
+                VotedAt = DateTime.UtcNow
+            });
+
+            await _db.SaveChangesAsync(ct);
+            return new(true, "تم تسجيل تصويتك.");
+        }
+
         private async Task<int?> GetSpecializedPercentAsync(Guid ideaId, CancellationToken ct)
         {
             var criteriaCount = await _db.AssessmentCriteria.CountAsync(c => c.IsActive, ct);

@@ -100,6 +100,41 @@ namespace Ibtikar.Controllers
             return View(vm);
         }
 
+        [HttpGet("Committee/Votes")]
+        public async Task<IActionResult> Votes(CancellationToken ct)
+        {
+            var dto = await _dashboardService.GetVotesAsync(ResolveUserId(), ct);
+            if (dto is null) return Forbid();
+
+            var vm = new CommitteeVotesVm
+            {
+                Items = dto.Items.Select(i => new CommitteeVoteRowVm(
+                    i.IdeaId, i.Reference, i.Title,
+                    i.StatusCode, i.StatusName, i.StatusColor,
+                    i.HasVoted, i.MyVote)).ToList()
+            };
+            return View(vm);
+        }
+
+        [HttpPost("Committee/Votes")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitVote(Guid ideaId, string decision, CancellationToken ct)
+        {
+            var submission = new CommitteeVoteSubmitDto(ideaId, decision);
+            var result = await _dashboardService.SubmitVoteAsync(ResolveUserId(), submission, ct);
+
+            TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
+            TempData["AlertType"] = result.Success ? "success" : "danger";
+
+            return RedirectToAction(nameof(Votes));
+        }
+
+        private Guid ResolveUserId()
+        {
+            var raw = User.FindFirst(RoleCodes.UserIdClaim)?.Value;
+            return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
+        }
+
         [HttpPost("Committee/Assess")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveAssess(
@@ -130,12 +165,6 @@ namespace Ibtikar.Controllers
                 return RedirectToAction("Index", "Committee");
 
             return RedirectToAction(nameof(Assess), new { id = ideaId });
-        }
-
-        private Guid ResolveUserId()
-        {
-            var raw = User.FindFirst(RoleCodes.UserIdClaim)?.Value;
-            return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
         }
 
         private string? ResolveCommitteeName()

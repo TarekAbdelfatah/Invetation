@@ -28,6 +28,17 @@
         {
             <div class="alert alert-danger">@err</div>
         }
+
+        <div class="d-flex justify-content-end mb-3 gap-2">
+            <a asp-action="Votes" class="btn btn-outline-primary">
+                <span class="material-icons align-middle" style="font-size:18px">how_to_vote</span>
+                التصويت
+            </a>
+            <a asp-action="Referrals" class="btn btn-outline-secondary">
+                <span class="material-icons align-middle" style="font-size:18px">inbox</span>
+                الأفكار المحوّلة
+            </a>
+        </div>
         @if (ViewBag.DatabaseError is string dbErr)
         {
             <div class="alert alert-danger">تعذر الاتصال بقاعدة البيانات: @dbErr</div>

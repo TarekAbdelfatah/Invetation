@@ -51,4 +51,19 @@ namespace Ibtikar.ViewModels
 
     public sealed record CommitteeCriterionVm(Guid Id, string Code, string Name, string? Description, int DisplayOrder);
     public sealed record CommitteeAssessLineVm(Guid CriterionId, string CriterionCode, string CriterionName, int? Score, string? Comment);
+
+    public sealed record CommitteeVoteRowVm(
+        Guid IdeaId,
+        string Reference,
+        string Title,
+        string StatusCode,
+        string StatusName,
+        string StatusColor,
+        bool HasVoted,
+        string? MyVote);
+
+    public class CommitteeVotesVm
+    {
+        public List<CommitteeVoteRowVm> Items { get; set; } = new();
+    }
 }
