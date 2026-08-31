@@ -1,8 +1,8 @@
+using Ibtikar.DTOs.Ideas;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
 using Ibtikar.Services.Attachments;
 using Ibtikar.Services.Integrations;
-using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Http;
 
 namespace Ibtikar.Services.Ideas
@@ -27,14 +27,14 @@ namespace Ibtikar.Services.Ideas
         }
 
         public async Task<IdeaCreateOutcome> CreateIdeaAsync(
-            IdeaCreateViewModel model,
+            CreateIdeaRequestDto request,
             Guid userId,
             Guid? departmentId,
             bool isSaveDraft,
             List<IFormFile>? attachments,
             CancellationToken ct)
         {
-            var idea = BuildIdea(model, userId, departmentId, isSaveDraft);
+            var idea = BuildIdea(request, userId, departmentId, isSaveDraft);
 
             if (!isSaveDraft)
             {
@@ -91,30 +91,20 @@ namespace Ibtikar.Services.Ideas
             return IdeaCreateOutcome.DraftSaved();
         }
 
-        public async Task<InnovationIdea?> GetByReferenceForUserAsync(string referenceNumber, Guid userId, CancellationToken ct)
-            => await _repo.GetByReferenceForUserAsync(referenceNumber, userId, ct);
+        public async Task<IdeaDetailsDto?> GetDetailsAsync(string referenceNumber, Guid userId, CancellationToken ct)
+            => await _repo.GetDetailsAsync(referenceNumber, userId, ct);
 
-        public async Task<IdeaSuccessVm?> GetSuccessVmByReferenceAsync(string referenceNumber, Guid userId, CancellationToken ct)
-            => await _repo.GetSuccessVmByReferenceAsync(referenceNumber, userId, ct);
-
-        public async Task<IReadOnlyList<InnovationIdea>> GetLatestAsync(int take, CancellationToken ct)
+        public async Task<IReadOnlyList<IdeaSummaryDto>> GetLatestAsync(int take, CancellationToken ct)
             => await _repo.GetLatestAsync(take, ct);
 
-        public async Task<IdeaLookups> GetLookupsAsync(CancellationToken ct)
-        {
-            var domains = await _repo.GetActiveDomainsAsync(ct);
-            var impacts = await _repo.GetActiveImpactsAsync(ct);
-            var audiences = await _repo.GetActiveAudiencesAsync(ct);
-            var technologies = await _repo.GetActiveTechnologiesAsync(ct);
+        public async Task<IdeaLookupsDto> GetLookupsAsync(CancellationToken ct)
+            => await _repo.GetLookupsAsync(ct);
 
-            return new IdeaLookups(domains, impacts, audiences, technologies);
-        }
-
-        public async Task<User?> GetUserWithDepartmentAsync(Guid userId, CancellationToken ct)
-            => await _repo.GetUserWithDepartmentAsync(userId, ct);
+        public async Task<UserSummaryDto?> GetUserSummaryAsync(Guid userId, CancellationToken ct)
+            => await _repo.GetUserSummaryAsync(userId, ct);
 
         private static InnovationIdea BuildIdea(
-            IdeaCreateViewModel model,
+            CreateIdeaRequestDto request,
             Guid userId,
             Guid? departmentId,
             bool isSaveDraft)
@@ -122,18 +112,18 @@ namespace Ibtikar.Services.Ideas
             return new InnovationIdea
             {
                 Id = Guid.NewGuid(),
-                Title = model.Title.Trim(),
-                Description = model.Description.Trim(),
-                ProblemStatement = NullIfBlank(model.ProblemStatement),
-                ProposedSolution = NullIfBlank(model.ProposedSolution),
-                ExpectedBenefits = NullIfBlank(model.ExpectedBenefits),
-                ExpectedImpactOther = NullIfBlank(model.ExpectedImpactOther),
-                TargetAudienceOther = NullIfBlank(model.TargetAudienceOther),
-                UsesEmergingTech = model.UsesEmergingTech,
-                TechnologyOther = NullIfBlank(model.TechnologyOther),
-                InnovationDomainId = model.InnovationDomainId ?? Guid.Empty,
-                ExpectedImpactId = model.ExpectedImpactId,
-                TargetAudienceId = model.TargetAudienceId,
+                Title = request.Title.Trim(),
+                Description = request.Description.Trim(),
+                ProblemStatement = NullIfBlank(request.ProblemStatement),
+                ProposedSolution = NullIfBlank(request.ProposedSolution),
+                ExpectedBenefits = NullIfBlank(request.ExpectedBenefits),
+                ExpectedImpactOther = NullIfBlank(request.ExpectedImpactOther),
+                TargetAudienceOther = NullIfBlank(request.TargetAudienceOther),
+                UsesEmergingTech = request.UsesEmergingTech,
+                TechnologyOther = NullIfBlank(request.TechnologyOther),
+                InnovationDomainId = request.InnovationDomainId ?? Guid.Empty,
+                ExpectedImpactId = request.ExpectedImpactId,
+                TargetAudienceId = request.TargetAudienceId,
                 ApplicantUserId = userId,
                 ApplicantDepartmentId = departmentId,
                 IsDraft = isSaveDraft,

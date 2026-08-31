@@ -1,34 +1,25 @@
-using Ibtikar.Models;
-using Ibtikar.ViewModels;
+using Ibtikar.DTOs.Ideas;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Ibtikar.Services.Ideas
 {
     public interface IIdeaService
     {
         Task<IdeaCreateOutcome> CreateIdeaAsync(
-            IdeaCreateViewModel model,
+            CreateIdeaRequestDto request,
             Guid userId,
             Guid? departmentId,
             bool isSaveDraft,
             List<IFormFile>? attachments,
             CancellationToken ct);
 
-        Task<InnovationIdea?> GetByReferenceForUserAsync(string referenceNumber, Guid userId, CancellationToken ct);
-        Task<IdeaSuccessVm?> GetSuccessVmByReferenceAsync(string referenceNumber, Guid userId, CancellationToken ct);
-        Task<IReadOnlyList<InnovationIdea>> GetLatestAsync(int take, CancellationToken ct);
+        Task<IdeaDetailsDto?> GetDetailsAsync(string referenceNumber, Guid userId, CancellationToken ct);
+        Task<IReadOnlyList<IdeaSummaryDto>> GetLatestAsync(int take, CancellationToken ct);
 
-        Task<IdeaLookups> GetLookupsAsync(CancellationToken ct);
+        Task<IdeaLookupsDto> GetLookupsAsync(CancellationToken ct);
 
-        Task<User?> GetUserWithDepartmentAsync(Guid userId, CancellationToken ct);
+        Task<UserSummaryDto?> GetUserSummaryAsync(Guid userId, CancellationToken ct);
     }
-
-    public sealed record IdeaLookups(
-        IReadOnlyList<SelectListItem> InnovationDomains,
-        IReadOnlyList<SelectListItem> ExpectedImpacts,
-        IReadOnlyList<SelectListItem> TargetAudiences,
-        IReadOnlyList<SelectListItem> Technologies);
 
     public sealed record IdeaCreateOutcome(
         bool Success,

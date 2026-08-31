@@ -1,4 +1,4 @@
-@model IReadOnlyList<Ibtikar.Models.InnovationIdea>
+@model IReadOnlyList<Ibtikar.ViewModels.IdeaListItemVm>
 @{
     ViewData["Title"] = "سجل الأفكار";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -46,11 +46,11 @@
                             <a class="bog-idea-card" asp-action="Details" asp-route-id="@idea.Id">
                                 <div class="bog-idea-card__head">
                                     <span class="bog-idea-card__ref"><code>@idea.ReferenceNumber</code></span>
-                                    @if (idea.CurrentStatus is not null)
+                                    @if (!string.IsNullOrEmpty(idea.StatusName))
                                     {
-                                        <span class="bog-idea-card__status" style="--chip-bg:@idea.CurrentStatus.Color">
-                                            <span class="bog-idea-card__status-dot" style="background-color:@idea.CurrentStatus.Color"></span>
-                                            @idea.CurrentStatus.Name
+                                        <span class="bog-idea-card__status" style="--chip-bg:@idea.StatusColor">
+                                            <span class="bog-idea-card__status-dot" style="background-color:@idea.StatusColor"></span>
+                                            @idea.StatusName
                                         </span>
                                     }
                                 </div>
@@ -87,18 +87,20 @@
                                     <tr>
                                         <td data-label="المرجع"><code>@idea.ReferenceNumber</code></td>
                                         <td data-label="العنوان">@idea.Title</td>
-                                        <td class="d-none d-lg-table-cell" data-label="المجال">@idea.InnovationDomain?.Name</td>
+                                        <td class="d-none d-lg-table-cell" data-label="المجال">@idea.DomainName</td>
                                         <td data-label="الحالة">
-                                            @if (idea.CurrentStatus is not null)
+                                            @if (!string.IsNullOrEmpty(idea.StatusName))
                                             {
-                                                <partial name="_StatusBadge" model="idea.CurrentStatus" />
+                                                <span class="status-badge badge rounded-pill" style="background-color:@idea.StatusColor">
+                                                    @idea.StatusName
+                                                </span>
                                             }
                                             else
                                             {
                                                 <span class="text-muted">—</span>
                                             }
                                         </td>
-                                        <td class="d-none d-md-table-cell" data-label="الجهة">@(idea.ApplicantDepartment?.Name ?? "—")</td>
+                                        <td class="d-none d-md-table-cell" data-label="الجهة">@(idea.DepartmentName ?? "—")</td>
                                         <td class="d-none d-md-table-cell" data-label="تاريخ التقديم">@(idea.SubmittedAt?.ToString("yyyy-MM-dd") ?? idea.CreatedAt.ToString("yyyy-MM-dd"))</td>
                                     </tr>
                                 }

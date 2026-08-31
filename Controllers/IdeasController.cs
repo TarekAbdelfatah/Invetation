@@ -1,4 +1,4 @@
-using Ibtikar.Models;
+using Ibtikar.DTOs.Ideas;
 using Ibtikar.Services.Ideas;
 using Ibtikar.Services.Security;
 using Ibtikar.ViewModels;
@@ -25,14 +25,15 @@ namespace Ibtikar.Controllers
         {
             try
             {
-                var ideas = await _ideaService.GetLatestAsync(50, ct);
-                return View(ideas);
+                var dtos = await _ideaService.GetLatestAsync(50, ct);
+                var items = dtos.Select(ToListItemVm).ToList();
+                return View(items);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Ideas index fallback (database unavailable): {Message}", ex.Message);
                 ViewBag.DatabaseError = ex.Message;
-                return View(Array.Empty<InnovationIdea>());
+                return View(Array.Empty<IdeaListItemVm>());
             }
         }
 
@@ -45,12 +46,12 @@ namespace Ibtikar.Controllers
             var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (Guid.TryParse(userIdRaw, out var userId))
             {
-                var currentUser = await _ideaService.GetUserWithDepartmentAsync(userId, ct);
+                var currentUser = await _ideaService.GetUserSummaryAsync(userId, ct);
                 if (currentUser is not null && !User.IsInRole(RoleCodes.ExternalBeneficiary))
                 {
                     model.IsInternalApplicant = true;
                     model.ApplicantFullName = currentUser.FullName;
-                    model.ApplicantDepartmentName = currentUser.Department?.Name;
+                    model.ApplicantDepartmentName = currentUser.DepartmentName;
                 }
             }
 
@@ -91,8 +92,9 @@ namespace Ibtikar.Controllers
                 ? depGuid
                 : (Guid?)null;
 
+            var request = ToCreateRequest(model);
             var result = await _ideaService.CreateIdeaAsync(
-                model,
+                request,
                 userId,
                 departmentId,
                 isSaveDraft,
@@ -133,13 +135,14 @@ namespace Ibtikar.Controllers
                 return Challenge();
             }
 
-            var vm = await _ideaService.GetSuccessVmByReferenceAsync(referenceNumber, userId, ct);
+            var dto = await _ideaService.GetDetailsAsync(referenceNumber, userId, ct);
 
-            if (vm is null)
+            if (dto is null)
             {
                 return RedirectToAction("Index", "MyRequests");
             }
 
+            var vm = ToSuccessVm(dto);
             return View(vm);
         }
 
@@ -151,5 +154,42 @@ namespace Ibtikar.Controllers
             ViewBag.TargetAudiences = new SelectList(lookups.TargetAudiences, "Value", "Text");
             ViewBag.Technologies = new SelectList(lookups.Technologies, "Value", "Text");
         }
+
+        private static CreateIdeaRequestDto ToCreateRequest(IdeaCreateViewModel model)
+            => new(
+                model.Title,
+                model.Description,
+                model.ProblemStatement,
+                model.ProposedSolution,
+                model.ExpectedBenefits,
+                model.InnovationDomainId,
+                model.ExpectedImpactId,
+                model.ExpectedImpactOther,
+                model.TargetAudienceId,
+                model.TargetAudienceOther,
+                model.UsesEmergingTech,
+                model.TechnologyIds,
+                model.TechnologyOther);
+
+        private static IdeaListItemVm ToListItemVm(IdeaSummaryDto dto)
+            => new(
+                dto.Id,
+                dto.ReferenceNumber,
+                dto.Title,
+                dto.StatusName,
+                dto.StatusColor,
+                dto.DomainName,
+                dto.DepartmentName,
+                dto.SubmittedAt,
+                dto.CreatedAt);
+
+        private static IdeaSuccessVm ToSuccessVm(IdeaDetailsDto dto)
+            => new(
+                dto.ReferenceNumber,
+                dto.Title,
+                dto.StatusName,
+                dto.StatusColor,
+                dto.DomainName,
+                dto.SubmittedAt);
     }
 }

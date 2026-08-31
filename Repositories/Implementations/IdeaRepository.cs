@@ -1,6 +1,6 @@
 using Ibtikar.Data;
+using Ibtikar.DTOs.Ideas;
 using Ibtikar.Models;
-using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,44 +12,31 @@ namespace Ibtikar.Repositories
 
         public IdeaRepository(IbtikarDbContext db) => _db = db;
 
-        public async Task<IReadOnlyList<InnovationIdea>> GetLatestAsync(int take, CancellationToken ct)
+        public async Task<IReadOnlyList<IdeaSummaryDto>> GetLatestAsync(int take, CancellationToken ct)
         {
             return await _db.InnovationIdeas
                 .AsNoTracking()
-                .Include(i => i.CurrentStatus)
-                .Include(i => i.InnovationDomain)
-                .Include(i => i.ApplicantDepartment)
                 .OrderByDescending(i => i.CreatedAt)
                 .Take(take)
+                .Select(i => new IdeaSummaryDto(
+                    i.Id,
+                    i.ReferenceNumber,
+                    i.Title,
+                    i.CurrentStatus != null ? i.CurrentStatus.Name : null,
+                    i.CurrentStatus != null ? i.CurrentStatus.Color : null,
+                    i.InnovationDomain != null ? i.InnovationDomain.Name : null,
+                    i.ApplicantDepartment != null ? i.ApplicantDepartment.Name : null,
+                    i.SubmittedAt,
+                    i.CreatedAt))
                 .ToListAsync(ct);
         }
 
-        public async Task<InnovationIdea?> GetByReferenceForUserAsync(string referenceNumber, Guid userId, CancellationToken ct)
-        {
-            return await _db.InnovationIdeas
-                .AsNoTracking()
-                .Include(i => i.CurrentStatus)
-                .Include(i => i.InnovationDomain)
-                .Where(i => i.ReferenceNumber == referenceNumber && i.ApplicantUserId == userId)
-                .Select(i => new InnovationIdea
-                {
-                    Id = i.Id,
-                    ReferenceNumber = i.ReferenceNumber,
-                    Title = i.Title,
-                    CurrentStatus = i.CurrentStatus,
-                    InnovationDomain = i.InnovationDomain,
-                    SubmittedAt = i.SubmittedAt,
-                    CreatedAt = i.CreatedAt
-                })
-                .FirstOrDefaultAsync(ct);
-        }
-
-        public async Task<IdeaSuccessVm?> GetSuccessVmByReferenceAsync(string referenceNumber, Guid userId, CancellationToken ct)
+        public async Task<IdeaDetailsDto?> GetDetailsAsync(string referenceNumber, Guid userId, CancellationToken ct)
         {
             return await _db.InnovationIdeas
                 .AsNoTracking()
                 .Where(i => i.ReferenceNumber == referenceNumber && i.ApplicantUserId == userId)
-                .Select(i => new IdeaSuccessVm(
+                .Select(i => new IdeaDetailsDto(
                     i.ReferenceNumber,
                     i.Title,
                     i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
@@ -94,15 +81,29 @@ namespace Ibtikar.Repositories
             await _db.SaveChangesAsync(ct);
         }
 
-        public async Task<User?> GetUserWithDepartmentAsync(Guid userId, CancellationToken ct)
+        public async Task<UserSummaryDto?> GetUserSummaryAsync(Guid userId, CancellationToken ct)
         {
             return await _db.Users
                 .AsNoTracking()
-                .Include(u => u.Department)
-                .FirstOrDefaultAsync(u => u.Id == userId, ct);
+                .Where(u => u.Id == userId)
+                .Select(u => new UserSummaryDto(
+                    u.Id,
+                    u.FullName,
+                    u.Department != null ? u.Department.Name : null))
+                .FirstOrDefaultAsync(ct);
         }
 
-        public async Task<IReadOnlyList<SelectListItem>> GetActiveDomainsAsync(CancellationToken ct)
+        public async Task<IdeaLookupsDto> GetLookupsAsync(CancellationToken ct)
+        {
+            var domains = await GetActiveDomainsAsync(ct);
+            var impacts = await GetActiveImpactsAsync(ct);
+            var audiences = await GetActiveAudiencesAsync(ct);
+            var technologies = await GetActiveTechnologiesAsync(ct);
+
+            return new IdeaLookupsDto(domains, impacts, audiences, technologies);
+        }
+
+        private async Task<IReadOnlyList<SelectListItem>> GetActiveDomainsAsync(CancellationToken ct)
         {
             return await _db.InnovationDomains
                 .Where(d => d.IsActive)
@@ -111,7 +112,7 @@ namespace Ibtikar.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<IReadOnlyList<SelectListItem>> GetActiveImpactsAsync(CancellationToken ct)
+        private async Task<IReadOnlyList<SelectListItem>> GetActiveImpactsAsync(CancellationToken ct)
         {
             return await _db.ExpectedImpacts
                 .Where(d => d.IsActive)
@@ -120,7 +121,7 @@ namespace Ibtikar.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<IReadOnlyList<SelectListItem>> GetActiveAudiencesAsync(CancellationToken ct)
+        private async Task<IReadOnlyList<SelectListItem>> GetActiveAudiencesAsync(CancellationToken ct)
         {
             return await _db.TargetAudiences
                 .Where(d => d.IsActive)
@@ -129,7 +130,7 @@ namespace Ibtikar.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<IReadOnlyList<SelectListItem>> GetActiveTechnologiesAsync(CancellationToken ct)
+        private async Task<IReadOnlyList<SelectListItem>> GetActiveTechnologiesAsync(CancellationToken ct)
         {
             return await _db.Technologies
                 .Where(t => t.IsActive)
