@@ -85,5 +85,104 @@ namespace Ibtikar.Services.Committee
                                && d.StartAt < endAt
                                && d.EndAt > startAt, ct);
         }
+
+        public async Task<Guid?> GetCommitteeIdForMemberAsync(Guid userId, CancellationToken ct)
+        {
+            return await _db.CommitteeMembers.AsNoTracking()
+                .Where(m => m.UserId == userId && m.InnovationCommittee != null && m.InnovationCommittee.IsActive)
+                .Select(m => (Guid?)m.InnovationCommitteeId)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        public async Task<Guid?> GetCommitteeIdForHeadAsync(Guid userId, CancellationToken ct)
+        {
+            return await _db.CommitteeMembers.AsNoTracking()
+                .Where(m => m.UserId == userId && m.IsHead && m.InnovationCommittee != null && m.InnovationCommittee.IsActive)
+                .Select(m => (Guid?)m.InnovationCommitteeId)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        public async Task<IReadOnlyList<DelegationMemberOptionDto>> GetDelegateCandidatesAsync(Guid committeeId, CancellationToken ct)
+        {
+            return await _db.CommitteeMembers.AsNoTracking()
+                .Where(m => m.InnovationCommitteeId == committeeId && !m.IsHead && m.User != null)
+                .OrderBy(m => m.User!.FullName)
+                .Select(m => new DelegationMemberOptionDto(m.UserId, m.User!.FullName, m.User!.Username))
+                .ToListAsync(ct);
+        }
+
+        public async Task<IReadOnlyList<DelegationRowDto>> GetDelegationsAsync(Guid committeeId, CancellationToken ct)
+        {
+            var now = DateTime.UtcNow;
+            return await _db.CommitteeDelegations.AsNoTracking()
+                .Where(d => d.InnovationCommitteeId == committeeId)
+                .OrderByDescending(d => d.StartAt)
+                .Select(d => new DelegationRowDto(
+                    d.Id,
+                    d.DelegateMember != null ? d.DelegateMember.FullName : "—",
+                    d.StartAt,
+                    d.EndAt,
+                    d.StartAt <= now && d.EndAt >= now))
+                .ToListAsync(ct);
+        }
+
+        public async Task<DelegationCreateResultDto> AddAsync(
+            Guid committeeId,
+            Guid headUserId,
+            Guid delegateMemberUserId,
+            DateTime startAt,
+            DateTime endAt,
+            CancellationToken ct)
+        {
+            var isHead = await _db.CommitteeMembers.AsNoTracking()
+                .AnyAsync(m => m.InnovationCommitteeId == committeeId
+                               && m.UserId == headUserId
+                               && m.IsHead, ct);
+            if (!isHead)
+                return new(false, "أنت لست رئيس اللجنة ولا يمكنك التفويض.");
+
+            var existingActive = await _db.CommitteeDelegations.AsNoTracking()
+                .AnyAsync(d => d.InnovationCommitteeId == committeeId && d.StartAt <= endAt && d.EndAt >= startAt, ct);
+            if (existingActive)
+                return new(false, "يوجد تفويض قائم متداخل مع هذه الفترة. لا يمكن إنشاء أكثر من تفويض واحد للجنة.");
+
+            var validation = await ValidateNewAsync(committeeId, delegateMemberUserId, startAt, endAt, ct);
+            if (!validation.Ok)
+                return new(false, validation.Error ?? "تعذر التحقق من التفويض.");
+
+            _db.CommitteeDelegations.Add(new CommitteeDelegation
+            {
+                Id = Guid.NewGuid(),
+                InnovationCommitteeId = committeeId,
+                HeadUserId = headUserId,
+                DelegateMemberUserId = delegateMemberUserId,
+                StartAt = startAt,
+                EndAt = endAt,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _db.SaveChangesAsync(ct);
+
+            return new(true, "تم إنشاء التفويض.");
+        }
+
+        public async Task<DelegationCreateResultDto> CancelAsync(Guid committeeId, Guid headUserId, Guid delegationId, CancellationToken ct)
+        {
+            var isHead = await _db.CommitteeMembers.AsNoTracking()
+                .AnyAsync(m => m.InnovationCommitteeId == committeeId
+                               && m.UserId == headUserId
+                               && m.IsHead, ct);
+            if (!isHead)
+                return new(false, "أنت لست رئيس اللجنة ولا يمكنك إلغاء التفويض.");
+
+            var delegation = await _db.CommitteeDelegations
+                .FirstOrDefaultAsync(d => d.Id == delegationId && d.InnovationCommitteeId == committeeId, ct);
+            if (delegation is null)
+                return new(false, "التفويض غير موجود.");
+
+            _db.CommitteeDelegations.Remove(delegation);
+            await _db.SaveChangesAsync(ct);
+
+            return new(true, "تم إلغاء التفويض.");
+        }
     }
 }

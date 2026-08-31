@@ -76,4 +76,17 @@ namespace Ibtikar.ViewModels
         public bool CanAccept { get; set; }
         public string? ExtraConfirmWarning { get; set; }
     }
+
+    public class CommitteeDelegationsVm
+    {
+        public bool IsHead { get; set; }
+        public string? DelegateName { get; set; }
+        public DateTime? ActiveFrom { get; set; }
+        public DateTime? ActiveTo { get; set; }
+        public List<DelegationMemberOptionVm> Candidates { get; set; } = new();
+        public List<DelegationRowVm> Rows { get; set; } = new();
+    }
+
+    public sealed record DelegationMemberOptionVm(Guid UserId, string FullName, string Username);
+    public sealed record DelegationRowVm(Guid Id, string DelegateName, DateTime StartAt, DateTime EndAt, bool IsActive);
 }

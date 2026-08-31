@@ -12,13 +12,16 @@ namespace Ibtikar.Controllers
     public class CommitteeController : Controller
     {
         private readonly ICommitteeDashboardService _dashboardService;
+        private readonly IDelegationService _delegations;
         private readonly ILogger<CommitteeController> _logger;
 
         public CommitteeController(
             ICommitteeDashboardService dashboardService,
+            IDelegationService delegations,
             ILogger<CommitteeController> logger)
         {
             _dashboardService = dashboardService;
+            _delegations = delegations;
             _logger = logger;
         }
 
@@ -164,6 +167,75 @@ namespace Ibtikar.Controllers
             TempData["AlertType"] = "success";
             return RedirectToAction("Index", "Committee");
         }
+
+        [HttpGet("Committee/Delegations")]
+        public async Task<IActionResult> Delegations(CancellationToken ct)
+        {
+            var userId = ResolveUserId();
+            var committeeId = await _delegations.GetCommitteeIdForHeadAsync(userId, ct);
+            if (committeeId is null)
+            {
+                var memberCommitteeId = await _delegations.GetCommitteeIdForMemberAsync(userId, ct);
+                if (memberCommitteeId is null) return Forbid();
+
+                var active = await _delegations.GetActiveAsync(memberCommitteeId.Value, ct);
+                var viewOnlyVm = new CommitteeDelegationsVm
+                {
+                    IsHead = false,
+                    DelegateName = active?.DelegateMember?.FullName,
+                    ActiveFrom = active?.StartAt,
+                    ActiveTo = active?.EndAt,
+                    Rows = (await _delegations.GetDelegationsAsync(memberCommitteeId.Value, ct))
+                        .Select(ToDelegationRowVm)
+                        .ToList()
+                };
+                return View(viewOnlyVm);
+            }
+
+            var candidates = await _delegations.GetDelegateCandidatesAsync(committeeId.Value, ct);
+            var delegations = await _delegations.GetDelegationsAsync(committeeId.Value, ct);
+
+            var vm = new CommitteeDelegationsVm
+            {
+                IsHead = true,
+                Candidates = candidates.Select(c => new DelegationMemberOptionVm(c.UserId, c.FullName, c.Username)).ToList(),
+                Rows = delegations.Select(ToDelegationRowVm).ToList()
+            };
+            return View(vm);
+        }
+
+        [HttpPost("Committee/Delegations")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddDelegation(Guid delegateMemberUserId, DateTime startAt, DateTime endAt, CancellationToken ct)
+        {
+            var userId = ResolveUserId();
+            var committeeId = await _delegations.GetCommitteeIdForHeadAsync(userId, ct);
+            if (committeeId is null) return Forbid();
+
+            var result = await _delegations.AddAsync(committeeId.Value, userId, delegateMemberUserId, startAt, endAt, ct);
+
+            TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message;
+            TempData["AlertType"] = result.Success ? "success" : "danger";
+            return RedirectToAction(nameof(Delegations));
+        }
+
+        [HttpPost("Committee/Delegations/Cancel")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelDelegation(Guid delegationId, CancellationToken ct)
+        {
+            var userId = ResolveUserId();
+            var committeeId = await _delegations.GetCommitteeIdForHeadAsync(userId, ct);
+            if (committeeId is null) return Forbid();
+
+            var result = await _delegations.CancelAsync(committeeId.Value, userId, delegationId, ct);
+
+            TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message;
+            TempData["AlertType"] = result.Success ? "success" : "danger";
+            return RedirectToAction(nameof(Delegations));
+        }
+
+        private static DelegationRowVm ToDelegationRowVm(DelegationRowDto d)
+            => new(d.Id, d.DelegateName, d.StartAt, d.EndAt, d.IsActive);
 
         private Guid ResolveUserId()
         {
