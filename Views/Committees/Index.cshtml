@@ -1,0 +1,88 @@
+@model Ibtikar.ViewModels.CommitteesIndexVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = "لجان الابتكار";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="bog-page-header">
+            <h1>
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">groups</span>
+                </span>
+                لجان الابتكار
+            </h1>
+            <span class="bog-page-role">
+                <span class="material-icons" aria-hidden="true">admin_panel_settings</span>
+                إدارة النظام
+            </span>
+        </div>
+
+        @if (TempData["AlertMessage"] is string ok)
+        {
+            <div class="alert alert-success">@ok</div>
+        }
+        @if (TempData["AlertError"] is string err)
+        {
+            <div class="alert alert-danger">@err</div>
+        }
+        @if (ViewBag.DatabaseError is string dbErr)
+        {
+            <div class="alert alert-danger">تعذر الاتصال بقاعدة البيانات: @dbErr</div>
+        }
+
+        <div class="d-flex justify-content-end mb-3">
+            <a class="btn btn-primary" asp-action="Create">
+                <span class="material-icons" aria-hidden="true">add</span>
+                إنشاء لجنة
+            </a>
+        </div>
+
+        @if (Model.Committees.Count == 0)
+        {
+            <div class="alert alert-light border text-center py-5">
+                <span class="material-icons text-muted d-block mb-2" style="font-size:3rem">groups</span>
+                <div class="text-muted">لم يتم إنشاء أي لجنة بعد.</div>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>رئيس اللجنة</th>
+                            <th>عدد الأعضاء</th>
+                            <th>الحالة</th>
+                            <th>تاريخ الإنشاء</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.Committees)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@c.Name</td>
+                                <td>@c.HeadUserName</td>
+                                <td>@c.MemberCount</td>
+                                <td>
+                                    @if (c.IsActive)
+                                    {
+                                        <span class="badge bg-success">نشطة</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">غير مفعّلة</span>
+                                    }
+                                </td>
+                                <td>@c.CreatedAt.ToString("yyyy-MM-dd")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
