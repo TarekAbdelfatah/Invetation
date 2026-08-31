@@ -8,12 +8,12 @@
     @foreach (var i in Model)
     {
         <tr class="@(i.IsOverdue ? "table-danger" : null)" data-inbox-row>
-            <td><code>@i.Reference</code></td>
-            <td>@i.Title</td>
-            <td><small>@i.Domain</small></td>
-            <td><small>@i.Department</small></td>
-            <td class="d-none d-md-table-cell"><small>@i.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
-            <td>
+            <td data-label="المرجع"><code>@i.Reference</code></td>
+            <td data-label="العنوان">@i.Title</td>
+            <td class="d-none d-lg-table-cell" data-label="المجال"><small>@i.Domain</small></td>
+            <td data-label="الإدارة"><small>@i.Department</small></td>
+            <td class="d-none d-md-table-cell" data-label="تاريخ التقديم"><small dir="ltr">@i.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
+            <td class="bog-card-list__actions" data-label="">
                 @if (i.IsOverdue)
                 {
                     <span class="badge bg-danger mb-1 d-inline-flex align-items-center gap-1" title="لم تتم مراجعة الفكرة منذ أكثر من 48 ساعة">

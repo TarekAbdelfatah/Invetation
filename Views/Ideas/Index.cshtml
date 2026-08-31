@@ -4,60 +4,80 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0 d-flex align-items-center gap-2">
-            <span class="bog-page-icon" aria-hidden="true">
-                <span class="material-icons">lightbulb</span>
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="bog-page-header">
+            <h1>
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">lightbulb</span>
+                </span>
+                سجل الأفكار الابتكارية
+            </h1>
+            <span class="bog-page-role">
+                <span class="material-icons" aria-hidden="true">numbers</span>
+                عدد الأفكار: @Model.Count
             </span>
-            <span>سجل الأفكار الابتكارية</span>
-        </h2>
-        <span class="text-muted">عدد الأفكار: @Model.Count</span>
-    </div>
+        </div>
 
-    @if (!Model.Any())
-    {
-        <div class="alert alert-info" role="alert">
-            لا توجد أفكار مسجلة بعد. ابدأ بتقديم فكرة جديدة من خلال نموذج التقديم.
-        </div>
-    }
-    else
-    {
-        <div class="table-responsive">
-            <table class="table table-striped table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>المرجع</th>
-                        <th>العنوان</th>
-                        <th>المجال</th>
-                        <th>الحالة</th>
-                        <th>الجهة</th>
-                        <th>تاريخ التقديم</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var idea in Model)
-                    {
-                        <tr>
-                            <td><code>@idea.ReferenceNumber</code></td>
-                            <td>@idea.Title</td>
-                            <td>@idea.InnovationDomain?.Name</td>
-                            <td>
-                                @if (idea.CurrentStatus is not null)
+        @if (!Model.Any())
+        {
+            <div class="card bog-section">
+                <div class="card-body text-center text-muted p-5">
+                    <span class="material-icons" style="font-size:48px;color:var(--text-muted)">lightbulb</span>
+                    <p class="mb-1 mt-2">لا توجد أفكار مسجلة بعد.</p>
+                    <a class="btn btn-primary mt-3" asp-controller="Ideas" asp-action="Create">
+                        <span class="material-icons align-middle" style="font-size:18px">add</span>
+                        ابدأ بتقديم فكرتك الأولى
+                    </a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card bog-section">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-primary">inventory_2</span>
+                    <strong>جميع الأفكار</strong>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="bog-card-list">
+                            <thead>
+                                <tr>
+                                    <th>المرجع</th>
+                                    <th>العنوان</th>
+                                    <th class="d-none d-lg-table-cell">المجال</th>
+                                    <th>الحالة</th>
+                                    <th class="d-none d-md-table-cell">الجهة</th>
+                                    <th class="d-none d-md-table-cell">تاريخ التقديم</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var idea in Model)
                                 {
-                                    <partial name="_StatusBadge" model="idea.CurrentStatus" />
+                                    <tr>
+                                        <td data-label="المرجع"><code>@idea.ReferenceNumber</code></td>
+                                        <td data-label="العنوان">@idea.Title</td>
+                                        <td class="d-none d-lg-table-cell" data-label="المجال">@idea.InnovationDomain?.Name</td>
+                                        <td data-label="الحالة">
+                                            @if (idea.CurrentStatus is not null)
+                                            {
+                                                <partial name="_StatusBadge" model="idea.CurrentStatus" />
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td class="d-none d-md-table-cell" data-label="الجهة">@(idea.ApplicantDepartment?.Name ?? "—")</td>
+                                        <td class="d-none d-md-table-cell" data-label="تاريخ التقديم">@(idea.SubmittedAt?.ToString("yyyy-MM-dd") ?? idea.CreatedAt.ToString("yyyy-MM-dd"))</td>
+                                    </tr>
                                 }
-                                else
-                                {
-                                    <span class="text-muted">—</span>
-                                }
-                            </td>
-                            <td>@(idea.ApplicantDepartment?.Name ?? "—")</td>
-                            <td>@(idea.SubmittedAt?.ToString("yyyy-MM-dd") ?? idea.CreatedAt.ToString("yyyy-MM-dd"))</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 </div>

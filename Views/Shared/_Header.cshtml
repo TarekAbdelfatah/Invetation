@@ -10,57 +10,77 @@
 
     var isAuth = User.Identity?.IsAuthenticated == true;
     var fullName = isAuth ? User.FindFirst(RoleCodes.FullNameClaim)?.Value : null;
-    var roles = isAuth ? User.FindAll(RoleCodes.ClaimType).Select(c => c.Value).ToList() : new List<string>();
+    var roles = isAuth
+        ? User.FindAll(RoleCodes.ClaimType).Select(c => c.Value).ToList()
+        : new List<string>();
+    var homeController = isAuth ? "AdminOverview" : "Home";
+    var homeAction = "Index";
 }
 
-<header class="bog-header navbar navbar-expand-lg bg-white border-bottom shadow-sm">
+<header class="bog-header">
     <div class="container">
-        <a class="navbar-brand d-inline-flex align-items-center" asp-controller="AdminOverview" asp-action="Index">
-            <img src="~/img/BOG_Logo.svg" alt="بوابة ديوان المظالم - ابتكار" class="bog-logo" />
-        </a>
-        <button class="navbar-toggler" type="button" data-nav-toggle="#mainNav"
-                aria-controls="mainNav" aria-expanded="false" aria-label="تبديل التنقل">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="mainNav">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link @IsActive("Home")" asp-controller="Home" asp-action="Index">الرئيسية</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @IsActive("Ideas")" asp-controller="Ideas" asp-action="Index">سجل الأفكار</a>
-                </li>
-            </ul>
-            <ul class="navbar-nav">
-                @if (isAuth)
-                {
-                    <li class="nav-item d-flex align-items-center gap-2 px-3">
-                        <span class="material-icons" aria-hidden="true">account_circle</span>
-                        <span class="d-flex flex-column">
-                            <span class="fw-semibold">@fullName</span>
-                            <small class="text-muted">@string.Join("، ", roles)</small>
+        <div class="bog-header-row">
+            <a class="bog-brand" asp-controller="@homeController" asp-action="@homeAction" aria-label="ابتكار">
+                <img src="~/img/BOG_Logo.svg" alt="بوابة ديوان المظالم - ابتكار" />
+                <span class="bog-brand-text">
+                    <span class="bog-brand-title">ابتكار</span>
+                    <small class="bog-brand-sub">بوابة الأفكار الابتكارية</small>
+                </span>
+            </a>
+
+            @if (isAuth)
+            {
+                <button class="bog-header-toggle" type="button"
+                        aria-controls="mainNav" aria-expanded="false" aria-label="تبديل التنقل"
+                        onclick="var n=document.getElementById('mainNav');var o=n.classList.toggle('is-open');this.setAttribute('aria-expanded',String(o));">
+                    <span class="material-icons">menu</span>
+                </button>
+
+                <div class="bog-header-collapse" id="mainNav">
+                    <nav class="bog-nav" aria-label="التنقل الرئيسي">
+                        <a class="bog-nav-link @IsActive("AdminOverview")" asp-controller="AdminOverview" asp-action="Index">
+                            <span class="material-icons" aria-hidden="true">dashboard</span>
+                            نظرة عامة
+                        </a>
+                        <a class="bog-nav-link @IsActive("Ideas")" asp-controller="Ideas" asp-action="Index">
+                            <span class="material-icons" aria-hidden="true">lightbulb</span>
+                            سجل الأفكار
+                        </a>
+                        <a class="bog-nav-link @IsActive("MyRequests")" asp-controller="MyRequests" asp-action="Index">
+                            <span class="material-icons" aria-hidden="true">folder</span>
+                            طلباتي
+                        </a>
+                        <a class="bog-nav-link @IsActive("Audit")" asp-controller="Audit" asp-action="Inbox">
+                            <span class="material-icons" aria-hidden="true">fact_check</span>
+                            صندوق التدقيق
+                        </a>
+                    </nav>
+
+                    <div class="bog-auth">
+                        <span class="bog-user-chip" title="@string.Join("، ", roles)">
+                            <span class="material-icons" aria-hidden="true">account_circle</span>
+                            <span class="bog-user-meta">
+                                <span class="bog-user-name">@fullName</span>
+                                <small class="bog-user-role">@string.Join("، ", roles)</small>
+                            </span>
                         </span>
-                    </li>
-                    <li class="nav-item">
-                        <form method="post" asp-controller="Account" asp-action="Logout" class="d-inline">
+                        <form method="post" asp-controller="Account" asp-action="Logout" class="bog-logout-form">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                <span class="material-icons" aria-hidden="true">logout</span>
-                                خروج
+                                <span class="material-icons align-middle" style="font-size:18px">logout</span>
+                                <span>خروج</span>
                             </button>
                         </form>
-                    </li>
-                }
-                else
-                {
-                    <li class="nav-item">
-                        <a class="btn btn-primary btn-sm" asp-controller="Account" asp-action="Login">
-                            <span class="material-icons" aria-hidden="true">login</span>
-                            دخول
-                        </a>
-                    </li>
-                }
-            </ul>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <a class="btn btn-primary btn-sm bog-header-login" asp-controller="Account" asp-action="Login">
+                    <span class="material-icons align-middle" style="font-size:18px">login</span>
+                    دخول
+                </a>
+            }
         </div>
     </div>
 </header>

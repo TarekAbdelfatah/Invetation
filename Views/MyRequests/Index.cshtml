@@ -8,16 +8,17 @@
 
 <div class="bog-main">
     <div class="container py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0 d-flex align-items-center gap-2">
+        <div class="bog-page-header">
+            <h1>
                 <span class="bog-page-icon" aria-hidden="true">
                     <span class="material-icons">folder_special</span>
                 </span>
                 طلباتي
-            </h2>
+            </h1>
             <a class="btn btn-primary" asp-controller="Ideas" asp-action="Create">
                 <span class="material-icons align-middle" style="font-size:18px">add</span>
-                تقديم فكرة جديدة
+                <span class="d-none d-sm-inline">تقديم فكرة جديدة</span>
+                <span class="d-inline d-sm-none">فكرة جديدة</span>
             </a>
         </div>
 
@@ -30,8 +31,8 @@
                 @if (Model.Items.Any())
                 {
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
+                        <table class="bog-card-list">
+                            <thead>
                                 <tr>
                                     <th>المرجع</th>
                                     <th>العنوان</th>
@@ -49,7 +50,7 @@
                                     var stageLabel = i.IsDraft ? "مسودة" : IdeaProgress.LabelFor(stage);
                                     var percent = i.IsDraft ? 0 : IdeaProgress.PercentFor(stage);
                                     <tr>
-                                        <td>
+                                        <td data-label="المرجع">
                                             @if (string.IsNullOrEmpty(i.Reference))
                                             {
                                                 <span class="text-muted">مسودة</span>
@@ -59,9 +60,9 @@
                                                 <code>@i.Reference</code>
                                             }
                                         </td>
-                                        <td>@i.Title</td>
-                                        <td class="d-none d-lg-table-cell">—</td>
-                                        <td>
+                                        <td data-label="العنوان">@i.Title</td>
+                                        <td class="d-none d-lg-table-cell" data-label="المجال">—</td>
+                                        <td data-label="الحالة">
                                             @if (i.IsDraft)
                                             {
                                                 <span class="status-badge badge rounded-pill" style="background-color:#6c757d">مسودة</span>
@@ -71,7 +72,7 @@
                                                 @await Html.PartialAsync("_StatusBadge", i.CurrentStatus)
                                             }
                                         </td>
-                                        <td class="d-none d-md-table-cell">
+                                        <td class="d-none d-md-table-cell" data-label="المرحلة">
                                             <div class="idea-progress" data-idea-progress
                                                  data-stage="@stage"
                                                  data-stage-label="@stageLabel"
@@ -88,8 +89,8 @@
                                                 <small class="text-muted d-block mt-1">@stageLabel · @(percent)%</small>
                                             </div>
                                         </td>
-                                        <td class="d-none d-md-table-cell"><small>@(i.SubmittedAt?.ToString("yyyy-MM-dd") ?? i.CreatedAt.ToString("yyyy-MM-dd"))</small></td>
-                                        <td class="text-end">
+                                        <td class="d-none d-md-table-cell" data-label="تاريخ التقديم"><small>@(i.SubmittedAt?.ToString("yyyy-MM-dd") ?? i.CreatedAt.ToString("yyyy-MM-dd"))</small></td>
+                                        <td class="text-end bog-card-list__actions" data-label="">
                                             <a class="btn btn-sm btn-outline-primary align-middle"
                                                asp-controller="MyRequests" asp-action="Details" asp-route-id="@i.Id"
                                                title="عرض تفاصيل الطلب">

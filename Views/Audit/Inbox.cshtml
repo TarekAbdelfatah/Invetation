@@ -6,75 +6,78 @@
 
 <div class="bog-main">
     <div class="container py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0 d-flex align-items-center gap-2">
+        <div class="bog-page-header">
+            <h1>
                 <span class="bog-page-icon" aria-hidden="true">
                     <span class="material-icons">inbox</span>
                 </span>
                 صندوق التدقيق
-            </h2>
-            <span class="badge bg-light text-dark border">
-                <span class="material-icons align-middle" style="font-size:16px">badge</span>
+            </h1>
+            <span class="bog-page-role">
+                <span class="material-icons" aria-hidden="true">badge</span>
                 موظف تدقيق
             </span>
         </div>
 
         <div class="card bog-section">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <strong>الأفكار بانتظار المراجعة</strong>
+            <div class="card-header bg-white d-flex align-items-center gap-2">
+                <span class="material-icons text-primary">inbox</span>
+                <strong class="flex-grow-1">الأفكار بانتظار المراجعة</strong>
                 <span class="badge bg-secondary" id="inboxCount">@Model.Items.Count</span>
             </div>
-            <div class="card-body p-0">
-                <form method="get" asp-action="Inbox" asp-controller="Audit" class="row g-2 px-3 pt-3 pb-0" id="inboxFilterForm">
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted mb-1" for="applicantType">نوع مقدم الفكرة</label>
-                        <select id="applicantType" name="applicantType" class="form-select form-select-sm">
-                            <option value="" selected="@(string.IsNullOrEmpty(Model.ApplicantType))">الكل</option>
-                            <option value="internal" selected="@(Model.ApplicantType == "internal")">داخلي</option>
-                            <option value="external" selected="@(Model.ApplicantType == "external")">خارجي</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted mb-1" for="status">الحالة</label>
-                        <select id="status" name="status" class="form-select form-select-sm">
-                            <option value="" selected="@(string.IsNullOrEmpty(Model.Status))">الكل (جديد + معاد تقديمها)</option>
-                            <option value="new" selected="@(Model.Status == "new")">جديد</option>
-                            <option value="resubmitted" selected="@(Model.Status == "resubmitted")">معاد تقديمها</option>
-                            <option value="rejected" selected="@(Model.Status == "rejected")">مرفوض</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted mb-1" for="inboxSearch">بحث في الصندوق</label>
-                        <input id="inboxSearch" name="inboxSearch" type="search" class="form-control form-control-sm" placeholder="ابحث بالمرجع أو العنوان أو الاسم" autocomplete="off" />
-                    </div>
-                    <div class="col-md-3 d-flex align-items-end gap-2">
-                        <button type="submit" class="btn btn-sm btn-primary">
-                            <span class="material-icons align-middle" style="font-size:16px">filter_alt</span>
-                            تطبيق
-                        </button>
-                        <a asp-action="Inbox" class="btn btn-sm btn-outline-secondary">إعادة ضبط</a>
-                    </div>
-                </form>
 
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>المرجع</th>
-                                <th>العنوان</th>
-                                <th class="d-none d-lg-table-cell">المجال</th>
-                                <th>الإدارة</th>
-                                <th class="d-none d-md-table-cell">تاريخ التقديم</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="inboxRows" data-inbox-rows
-                            data-applicant-type="@Model.ApplicantType"
-                            data-status="@Model.Status">
-                            @await Html.PartialAsync("_InboxRowsPartial", Model.Items)
-                        </tbody>
-                    </table>
+            <form method="get" asp-action="Inbox" asp-controller="Audit" class="bog-filter-bar" id="inboxFilterForm">
+                <div>
+                    <label for="applicantType">نوع مقدم الفكرة</label>
+                    <select id="applicantType" name="applicantType" class="form-select form-select-sm">
+                        <option value="" selected="@(string.IsNullOrEmpty(Model.ApplicantType))">الكل</option>
+                        <option value="internal" selected="@(Model.ApplicantType == "internal")">داخلي</option>
+                        <option value="external" selected="@(Model.ApplicantType == "external")">خارجي</option>
+                    </select>
                 </div>
+                <div>
+                    <label for="status">الحالة</label>
+                    <select id="status" name="status" class="form-select form-select-sm">
+                        <option value="" selected="@(string.IsNullOrEmpty(Model.Status))">الكل</option>
+                        <option value="new" selected="@(Model.Status == "new")">جديد</option>
+                        <option value="resubmitted" selected="@(Model.Status == "resubmitted")">معاد تقديمها</option>
+                        <option value="rejected" selected="@(Model.Status == "rejected")">مرفوض</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="inboxSearch">بحث في الصندوق</label>
+                    <input id="inboxSearch" name="inboxSearch" type="search" class="form-control form-control-sm" placeholder="ابحث بالمرجع أو العنوان أو الاسم" autocomplete="off" />
+                </div>
+                <div class="bog-filter-bar__actions">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <span class="material-icons align-middle" style="font-size:16px">filter_alt</span>
+                        تطبيق الفلتر
+                    </button>
+                    <a asp-action="Inbox" class="btn btn-sm btn-outline-secondary">
+                        <span class="material-icons align-middle" style="font-size:16px">restart_alt</span>
+                        إعادة ضبط
+                    </a>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="bog-card-list">
+                    <thead>
+                        <tr>
+                            <th>المرجع</th>
+                            <th>العنوان</th>
+                            <th class="d-none d-lg-table-cell">المجال</th>
+                            <th>الإدارة</th>
+                            <th class="d-none d-md-table-cell">تاريخ التقديم</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="inboxRows" data-inbox-rows
+                        data-applicant-type="@Model.ApplicantType"
+                        data-status="@Model.Status">
+                        @await Html.PartialAsync("_InboxRowsPartial", Model.Items)
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
