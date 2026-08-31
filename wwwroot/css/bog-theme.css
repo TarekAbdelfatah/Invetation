@@ -176,3 +176,25 @@
   padding: 1rem;
   color: var(--gray-900, #161B26);
 }
+
+.idea-progress {
+  min-width: 160px;
+}
+.idea-progress__track {
+  display: grid;
+  grid-template-columns: repeat(var(--idea-progress-total, 5), 1fr);
+  gap: 4px;
+  height: 8px;
+}
+.idea-progress__step {
+  background: var(--gray-200, #ECECED);
+  border-radius: 999px;
+  transition: background-color 120ms ease;
+}
+.idea-progress__step--done {
+  background: var(--brand-600, #1B8354);
+}
+.idea-progress__step[aria-current="step"] {
+  outline: 2px solid var(--brand-700, #166A45);
+  outline-offset: 2px;
+}

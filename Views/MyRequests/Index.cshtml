@@ -1,7 +1,9 @@
 @using Ibtikar.Controllers
+@using Ibtikar.Services.Ideas
 @model MyRequestsVm
 @{
     ViewData["Title"] = "طلباتي";
+    string[] stageLabels = { "التقديم", "التدقيق", "التقييم", "اللجنة", "التنفيذ" };
 }
 
 <div class="bog-main">
@@ -35,12 +37,16 @@
                                     <th>العنوان</th>
                                     <th>المجال</th>
                                     <th>الحالة</th>
+                                    <th>المرحلة</th>
                                     <th>تاريخ التقديم</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var i in Model.Items)
                                 {
+                                    var stage = i.IsDraft ? 1 : IdeaProgress.StageFor(i.StatusCode);
+                                    var stageLabel = i.IsDraft ? "مسودة" : IdeaProgress.LabelFor(stage);
+                                    var percent = i.IsDraft ? 0 : IdeaProgress.PercentFor(stage);
                                     <tr>
                                         <td>
                                             @if (string.IsNullOrEmpty(i.Reference))
@@ -55,6 +61,23 @@
                                         <td>@i.Title</td>
                                         <td>—</td>
                                         <td><span class="badge rounded-pill" style="background-color:@i.StatusColor">@i.StatusName</span></td>
+                                        <td>
+                                            <div class="idea-progress" data-idea-progress
+                                                 data-stage="@stage"
+                                                 data-stage-label="@stageLabel"
+                                                 data-total-stages="@IdeaProgress.TotalStages"
+                                                 role="group"
+                                                 aria-label="مرحلة الفكرة">
+                                                <div class="idea-progress__track" aria-hidden="true">
+                                                    @for (var s = 1; s <= IdeaProgress.TotalStages; s++)
+                                                    {
+                                                        var cls = s <= stage ? "idea-progress__step idea-progress__step--done" : "idea-progress__step";
+                                                        <div class="@cls" data-step="@s" title="@stageLabels[s - 1]"></div>
+                                                    }
+                                                </div>
+                                                <small class="text-muted d-block mt-1">@stageLabel · @(percent)%</small>
+                                            </div>
+                                        </td>
                                         <td><small>@(i.SubmittedAt?.ToString("yyyy-MM-dd") ?? i.CreatedAt.ToString("yyyy-MM-dd"))</small></td>
                                     </tr>
                                 }
@@ -76,3 +99,7 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/progress-bar.js" asp-append-version="true"></script>
+}

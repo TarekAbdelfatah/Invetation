@@ -42,6 +42,9 @@ namespace Ibtikar.Controllers
                     i.ReferenceNumber,
                     i.Title,
                     i.IsDraft,
+                    StatusCode = i.IsDraft
+                        ? string.Empty
+                        : (i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty),
                     StatusName = i.IsDraft
                         ? "مسودة"
                         : (i.CurrentStatus != null ? i.CurrentStatus.Name : "—"),
@@ -58,6 +61,7 @@ namespace Ibtikar.Controllers
                 i.ReferenceNumber,
                 i.Title,
                 i.IsDraft,
+                i.StatusCode,
                 i.StatusName,
                 i.StatusColor,
                 i.CreatedAt,
@@ -271,6 +275,7 @@ namespace Ibtikar.Controllers
         string Reference,
         string Title,
         bool IsDraft,
+        string StatusCode,
         string StatusName,
         string StatusColor,
         DateTime CreatedAt,
