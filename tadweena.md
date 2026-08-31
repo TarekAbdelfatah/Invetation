@@ -15,9 +15,9 @@ sessions:
     session_id: b7e3f1a2-4c8d-4e9b-a1f6-3d2e8c5b9a74
     started_at: 2026-08-31T22:15:00Z
   current:
-    model: minimax-coding-plan/MiniMax-M3
-    session_id: b7e3f1a2-4c8d-4e9b-a1f6-3d2e8c5b9a74
-    started_at: 2026-08-31T22:30:00Z
+    model: opencode/big-pickle
+    session_id: 3d6e2f1f-1dbf-4160-9792-8f3a79ca0fdc
+    started_at: 2026-08-31T23:01:00Z
 ---
 
 # Graph note (requires)

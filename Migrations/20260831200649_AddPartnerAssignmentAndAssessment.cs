@@ -11,24 +11,6 @@ namespace Ibtikar.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<Guid>(
-                name: "AssignedDepartmentId",
-                table: "InnovationIdeas",
-                type: "uuid",
-                nullable: true);
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "AuditAssignedAt",
-                table: "InnovationIdeas",
-                type: "timestamp with time zone",
-                nullable: true);
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "AuditEmployeeId",
-                table: "InnovationIdeas",
-                type: "uuid",
-                nullable: true);
-
             migrationBuilder.CreateTable(
                 name: "AssessmentHeaders",
                 columns: table => new
@@ -64,41 +46,6 @@ namespace Ibtikar.Migrations
                     table.ForeignKey(
                         name: "FK_AssessmentHeaders_Users_AssessorUserId",
                         column: x => x.AssessorUserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "AuditActionItems",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    IdeaId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Decision = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    DecisionText = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
-                    TargetDepartmentId = table.Column<Guid>(type: "uuid", nullable: true),
-                    AuditorId = table.Column<Guid>(type: "uuid", nullable: false),
-                    AuditDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AuditActionItems", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_AuditActionItems_Departments_TargetDepartmentId",
-                        column: x => x.TargetDepartmentId,
-                        principalTable: "Departments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_AuditActionItems_InnovationIdeas_IdeaId",
-                        column: x => x.IdeaId,
-                        principalTable: "InnovationIdeas",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_AuditActionItems_Users_AuditorId",
-                        column: x => x.AuditorId,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -203,21 +150,6 @@ namespace Ibtikar.Migrations
                 columns: new[] { "InnovationIdeaId", "Source" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_AuditActionItems_AuditorId",
-                table: "AuditActionItems",
-                column: "AuditorId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AuditActionItems_IdeaId",
-                table: "AuditActionItems",
-                column: "IdeaId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AuditActionItems_TargetDepartmentId",
-                table: "AuditActionItems",
-                column: "TargetDepartmentId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PartnerAssignments_InnovationIdeaId",
                 table: "PartnerAssignments",
                 column: "InnovationIdeaId");
@@ -237,50 +169,19 @@ namespace Ibtikar.Migrations
                 name: "IX_PartnerAssignments_RequestedByUserId",
                 table: "PartnerAssignments",
                 column: "RequestedByUserId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_InnovationIdeas_Departments_AssignedDepartmentId",
-                table: "InnovationIdeas",
-                column: "AssignedDepartmentId",
-                principalTable: "Departments",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_InnovationIdeas_Departments_AssignedDepartmentId",
-                table: "InnovationIdeas");
-
             migrationBuilder.DropTable(
                 name: "AssessmentDetails");
-
-            migrationBuilder.DropTable(
-                name: "AuditActionItems");
 
             migrationBuilder.DropTable(
                 name: "PartnerAssignments");
 
             migrationBuilder.DropTable(
                 name: "AssessmentHeaders");
-
-            migrationBuilder.DropIndex(
-                name: "IX_InnovationIdeas_AssignedDepartmentId",
-                table: "InnovationIdeas");
-
-            migrationBuilder.DropColumn(
-                name: "AssignedDepartmentId",
-                table: "InnovationIdeas");
-
-            migrationBuilder.DropColumn(
-                name: "AuditAssignedAt",
-                table: "InnovationIdeas");
-
-            migrationBuilder.DropColumn(
-                name: "AuditEmployeeId",
-                table: "InnovationIdeas");
         }
     }
 }
