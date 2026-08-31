@@ -30,7 +30,66 @@
             <div class="card-body p-0">
                 @if (Model.Items.Any())
                 {
-                    <div class="table-responsive">
+                    <div class="bog-mobile-cards d-md-none">
+                        @foreach (var i in Model.Items)
+                        {
+                            var stage = i.IsDraft ? 1 : IdeaProgress.StageFor(i.StatusCode);
+                            var stageLabel = i.IsDraft ? "مسودة" : IdeaProgress.LabelFor(stage);
+                            var percent = i.IsDraft ? 0 : IdeaProgress.PercentFor(stage);
+                            <a class="bog-idea-card"
+                               asp-controller="MyRequests" asp-action="Details" asp-route-id="@i.Id">
+                                <div class="bog-idea-card__head">
+                                    <span class="bog-idea-card__ref">
+                                        @(string.IsNullOrEmpty(i.Reference) ? "مسودة" : i.Reference)
+                                    </span>
+                                    @if (i.IsDraft)
+                                    {
+                                        <span class="bog-idea-card__status" style="--chip-bg:#6c757d">
+                                            <span class="bog-idea-card__status-dot" style="background-color:#6c757d"></span>
+                                            مسودة
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="bog-idea-card__status"
+                                              style="--chip-bg:@i.CurrentStatus?.Color">
+                                            <span class="bog-idea-card__status-dot" style="background-color:@i.CurrentStatus?.Color"></span>
+                                            @(i.CurrentStatus?.Name ?? "—")
+                                        </span>
+                                    }
+                                </div>
+
+                                <h3 class="bog-idea-card__title">@i.Title</h3>
+
+                                <div class="bog-idea-card__progress" aria-label="@stageLabel · @(percent)%">
+                                    <div class="bog-idea-card__progress-track">
+                                        @for (var s = 1; s <= IdeaProgress.TotalStages; s++)
+                                        {
+                                            var cls = s <= stage ? "bog-idea-card__progress-step --done" : "bog-idea-card__progress-step";
+                                            <span class="@cls" title="@stageLabels[s - 1]"></span>
+                                        }
+                                    </div>
+                                    <small class="bog-idea-card__progress-label">
+                                        <span class="material-icons" style="font-size:13px">flag</span>
+                                        @stageLabel · @(percent)%
+                                    </small>
+                                </div>
+
+                                <div class="bog-idea-card__foot">
+                                    <small class="bog-idea-card__date">
+                                        <span class="material-icons" style="font-size:14px">event</span>
+                                        @(i.SubmittedAt?.ToString("yyyy-MM-dd") ?? i.CreatedAt.ToString("yyyy-MM-dd"))
+                                    </small>
+                                    <span class="bog-idea-card__chevron">
+                                        عرض التفاصيل
+                                        <span class="material-icons" style="font-size:18px">chevron_left</span>
+                                    </span>
+                                </div>
+                            </a>
+                        }
+                    </div>
+
+                    <div class="table-responsive d-none d-md-block">
                         <table class="bog-card-list">
                             <thead>
                                 <tr>
