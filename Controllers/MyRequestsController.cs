@@ -118,6 +118,27 @@ namespace Ibtikar.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAttachment(Guid attachmentId, CancellationToken ct)
+        {
+            var applicantId = ResolveApplicantId();
+            if (applicantId == Guid.Empty) return Challenge();
+
+            var attachment = await _db.IdeaAttachments
+                .AsNoTracking()
+                .Include(a => a.InnovationIdea)
+                .FirstOrDefaultAsync(a => a.Id == attachmentId, ct);
+
+            if (attachment is null) return NotFound();
+            if (attachment.InnovationIdea.ApplicantUserId != applicantId) return Forbid();
+
+            return UnprocessableEntity(new
+            {
+                error = "يرجى رفع الملفات الأساسية لإتمام العملية. المرفقات إلزامية ولا يمكن حذفها، تواصل مع مدير النظام للاستبدال."
+            });
+        }
+
         private static bool IsDeletableNewIdea(InnovationIdea idea) =>
             !idea.IsDraft && string.Equals(idea.CurrentStatus?.Code, "new", StringComparison.OrdinalIgnoreCase);
 
