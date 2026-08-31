@@ -1,6 +1,7 @@
 using Ibtikar.DTOs.PartnerDashboard;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
+using Ibtikar.Services.Notifications;
 
 namespace Ibtikar.Services.PartnerDashboard
 {
@@ -10,13 +11,16 @@ namespace Ibtikar.Services.PartnerDashboard
         private const int MaxScore = 5;
 
         private readonly IPartnerDashboardRepository _repo;
+        private readonly INotificationClient _notifier;
         private readonly ILogger<PartnerDashboardService> _logger;
 
         public PartnerDashboardService(
             IPartnerDashboardRepository repo,
+            INotificationClient notifier,
             ILogger<PartnerDashboardService> logger)
         {
             _repo = repo;
+            _notifier = notifier;
             _logger = logger;
         }
 
@@ -101,6 +105,7 @@ namespace Ibtikar.Services.PartnerDashboard
 
             await _repo.AddOrUpdatePartnerHeaderAsync(header, ct);
 
+            var previousStatus = assignment.Status;
             assignment.Status = submission.ReturnOnly
                 ? PartnerAssignment.StatusReturned
                 : PartnerAssignment.StatusSubmitted;
@@ -108,13 +113,42 @@ namespace Ibtikar.Services.PartnerDashboard
 
             await _repo.SaveChangesAsync(ct);
 
-            _logger.LogInformation("Partner {Dept} {Action} assessment for idea {Idea}",
-                departmentId, submission.ReturnOnly ? "returned" : "submitted", assignment.InnovationIdeaId);
+            _logger.LogInformation("Partner {Dept} {Action} assessment for idea {Idea} (assignment {Assignment})",
+                departmentId, submission.ReturnOnly ? "returned" : "submitted",
+                assignment.InnovationIdeaId, assignment.Id);
+
+            var action = submission.ReturnOnly ? "Partner.Return" : "Partner.Submit";
+            await SafeNotifyAsync(action, assignment.Id.ToString(), new Dictionary<string, string>
+            {
+                ["ideaId"] = assignment.InnovationIdeaId.ToString(),
+                ["departmentId"] = departmentId.Value.ToString(),
+                ["actorUserId"] = actorUserId.ToString(),
+                ["previousStatus"] = previousStatus,
+                ["newStatus"] = assignment.Status,
+                ["returnOnly"] = submission.ReturnOnly ? "true" : "false",
+                ["totalScore"] = total.ToString("0.##")
+            }, ct);
 
             var message = submission.ReturnOnly
                 ? "تم إرجاع الطلب للإدارة المختصة."
                 : "تم إرسال التقييم الاستشاري.";
             return new(true, message, total);
+        }
+
+        private async Task SafeNotifyAsync(string action, string entityId, IDictionary<string, string>? payload, CancellationToken ct)
+        {
+            try
+            {
+                await _notifier.SendAsync(action, entityId, payload, ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // request cancelled; submit has already been committed and must not roll back.
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Notify {Action} failed for {Entity}", action, entityId);
+            }
         }
     }
 }
