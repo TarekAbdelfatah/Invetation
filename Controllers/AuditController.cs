@@ -63,13 +63,13 @@ namespace Ibtikar.Controllers
 
         private async Task<List<AuditInboxVm.Row>> FetchInboxRowsAsync(string applicantTypeNorm, string statusNorm, CancellationToken ct)
         {
-            var statusCodes = statusNorm switch
+            var statusCodes = (statusNorm switch
             {
                 "new" => new[] { IdeaStatusCodes.New },
                 "resubmitted" => new[] { IdeaStatusCodes.Resubmitted },
                 "rejected" => new[] { IdeaStatusCodes.Rejected },
                 _ => new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted }
-            };
+            }).ToList();
 
             var ideasQuery = _db.InnovationIdeas
                 .AsNoTracking()
