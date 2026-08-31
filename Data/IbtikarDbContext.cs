@@ -37,6 +37,7 @@ namespace Ibtikar.Data
         public DbSet<InnovationCommittee> InnovationCommittees => Set<InnovationCommittee>();
         public DbSet<CommitteeMember> CommitteeMembers => Set<CommitteeMember>();
         public DbSet<CommitteeVote> CommitteeVotes => Set<CommitteeVote>();
+        public DbSet<CommitteeDelegation> CommitteeDelegations => Set<CommitteeDelegation>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
