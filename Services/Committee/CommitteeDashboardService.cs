@@ -394,6 +394,109 @@ namespace Ibtikar.Services.Committee
             return new(true, $"تم قبول الفكرة. النسبة المجمعة: {combined}%.");
         }
 
+        public async Task<CommitteeVoteOutcomeDto> RejectAsync(Guid userId, Guid ideaId, string reason, CancellationToken ct)
+        {
+            var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
+            if (committeeId is null)
+                return new(false, "لست عضواً نشطاً في أي لجنة.");
+
+            if (string.IsNullOrWhiteSpace(reason) || reason.Length < 10)
+                return new(false, "يرجى إدخال سبب الرفض (10 أحرف على الأقل).");
+
+            var idea = await _db.InnovationIdeas
+                .Include(i => i.CurrentStatus)
+                .FirstOrDefaultAsync(i => i.Id == ideaId, ct);
+            if (idea is null)
+                return new(false, "الفكرة غير موجودة.");
+
+            if (idea.CurrentStatus?.Code != IdeaStatusCodes.ReferredCommittee)
+                return new(false, "الفكرة ليست في حالة (محوّلة للجنة) للرفض.");
+
+            var rejectedId = await GetStatusIdByCodeAsync(IdeaStatusCodes.Rejected, ct);
+            if (rejectedId is null)
+                return new(false, "لم يتم إعداد حالة (مرفوض) بعد.");
+
+            var fromId = idea.CurrentStatusId;
+            var trimmedReason = reason.Trim();
+            idea.CurrentStatusId = rejectedId.Value;
+
+            _db.IdeaStatusHistories.Add(new IdeaStatusHistory
+            {
+                InnovationIdeaId = idea.Id,
+                FromStatusId = fromId,
+                ToStatusId = rejectedId.Value,
+                ChangedByUserId = userId,
+                Note = trimmedReason
+            });
+
+            await _db.SaveChangesAsync(ct);
+
+            await SafeNotifyAsync("Committee.Reject", idea.Id.ToString(), new Dictionary<string, string>
+            {
+                ["ideaId"] = idea.Id.ToString(),
+                ["reference"] = idea.ReferenceNumber,
+                ["title"] = idea.Title,
+                ["reason"] = trimmedReason,
+                ["actorUserId"] = userId.ToString()
+            }, ct);
+
+            _logger.LogInformation("Committee rejected idea {Idea} by user {User}", idea.ReferenceNumber, userId);
+
+            return new(true, "تم رفض الفكرة.");
+        }
+
+        public async Task<CommitteeVoteOutcomeDto> ReturnForDevelopmentAsync(Guid userId, Guid ideaId, CancellationToken ct)
+        {
+            var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
+            if (committeeId is null)
+                return new(false, "لست عضواً نشطاً في أي لجنة.");
+
+            var idea = await _db.InnovationIdeas
+                .Include(i => i.CurrentStatus)
+                .FirstOrDefaultAsync(i => i.Id == ideaId, ct);
+            if (idea is null)
+                return new(false, "الفكرة غير موجودة.");
+
+            if (idea.CurrentStatus?.Code != IdeaStatusCodes.ReferredCommittee)
+                return new(false, "الفكرة ليست في حالة (محوّلة للجنة) للإعادة للتطوير.");
+
+            var combined = await GetCombinedPercentAsync(ideaId, ct);
+            if (combined < 61 || combined > 79)
+                return new(false, "الإعادة للتطوير مسموحة فقط عندما تكون النسبة المجمعة بين 61% و 79%.");
+
+            var returnedId = await GetStatusIdByCodeAsync(IdeaStatusCodes.ReturnedForDevelopment, ct);
+            if (returnedId is null)
+                return new(false, "لم يتم إعداد حالة (معاد للتطوير) بعد.");
+
+            var fromId = idea.CurrentStatusId;
+            idea.CurrentStatusId = returnedId.Value;
+
+            _db.IdeaStatusHistories.Add(new IdeaStatusHistory
+            {
+                InnovationIdeaId = idea.Id,
+                FromStatusId = fromId,
+                ToStatusId = returnedId.Value,
+                ChangedByUserId = userId,
+                Note = $"إعادة للتطوير من اللجنة (نسبة مجمعة {combined}%)."
+            });
+
+            await _db.SaveChangesAsync(ct);
+
+            await SafeNotifyAsync("Committee.ReturnForDevelopment", idea.Id.ToString(), new Dictionary<string, string>
+            {
+                ["ideaId"] = idea.Id.ToString(),
+                ["reference"] = idea.ReferenceNumber,
+                ["title"] = idea.Title,
+                ["combinedPercent"] = combined.ToString(),
+                ["actorUserId"] = userId.ToString()
+            }, ct);
+
+            _logger.LogInformation("Committee returned idea {Idea} for development (combined {Combined}%)",
+                idea.ReferenceNumber, combined);
+
+            return new(true, $"تمت إعادة الفكرة للتطوير (النسبة المجمعة {combined}%).");
+        }
+
         private async Task<int> GetCombinedPercentAsync(Guid ideaId, CancellationToken ct)
         {
             var departmentPercent = await GetSpecializedPercentAsync(ideaId, ct);

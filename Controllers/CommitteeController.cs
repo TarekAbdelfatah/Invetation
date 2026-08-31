@@ -168,6 +168,36 @@ namespace Ibtikar.Controllers
             return RedirectToAction("Index", "Committee");
         }
 
+        [HttpPost("Committee/Reject")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Reject(Guid ideaId, string? reason, CancellationToken ct)
+        {
+            var result = await _dashboardService.RejectAsync(ResolveUserId(), ideaId, reason ?? string.Empty, ct);
+
+            TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
+            TempData["AlertType"] = result.Success ? "success" : "danger";
+
+            if (!result.Success)
+                return RedirectToAction(nameof(Decision), new { id = ideaId });
+
+            return RedirectToAction("Index", "Committee");
+        }
+
+        [HttpPost("Committee/ReturnForDevelopment")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReturnForDevelopment(Guid ideaId, CancellationToken ct)
+        {
+            var result = await _dashboardService.ReturnForDevelopmentAsync(ResolveUserId(), ideaId, ct);
+
+            TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
+            TempData["AlertType"] = result.Success ? "success" : "danger";
+
+            if (!result.Success)
+                return RedirectToAction(nameof(Decision), new { id = ideaId });
+
+            return RedirectToAction("Index", "Committee");
+        }
+
         [HttpGet("Committee/Delegations")]
         public async Task<IActionResult> Delegations(CancellationToken ct)
         {

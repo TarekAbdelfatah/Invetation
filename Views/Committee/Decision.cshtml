@@ -89,13 +89,39 @@
                 }
                 else
                 {
-                    <div class="card-footer bg-white d-flex gap-2">
+                    <div class="card-footer bg-white d-flex flex-wrap gap-2">
                         <button type="submit" class="btn btn-success">
                             قبول الفكرة
                         </button>
+                        @if (Model.CombinedAverage.HasValue && Model.CombinedAverage.Value >= 61 && Model.CombinedAverage.Value <= 79)
+                        {
+                            <button type="submit" formaction="@Url.Action("ReturnForDevelopment")" formmethod="post" class="btn btn-warning"
+                                    onclick="return confirm('هل تريد إعادة الفكرة للتطوير (النسبة المجمعة بين 61% و 79%)؟');">
+                                إعادة للتطوير
+                            </button>
+                        }
+                        <button type="button" class="btn btn-danger" id="showRejectBox">رفض الفكرة</button>
                         <a asp-action="Referrals" class="btn btn-outline-secondary">إلغاء</a>
                     </div>
                 }
+            </form>
+
+            <form asp-action="Reject" method="post" id="rejectBox" class="card bog-section mt-3 d-none">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ideaId" value="@Model.IdeaId" />
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-danger">cancel</span>
+                    <strong>رفض الفكرة</strong>
+                    <span class="ms-auto text-muted small">سبب الرفض مطلوب (10 أحرف على الأقل)</span>
+                </div>
+                <div class="card-body">
+                    <textarea name="reason" class="form-control" rows="3" required minlength="10"
+                              placeholder="سبب الرفض الفني…"></textarea>
+                </div>
+                <div class="card-footer bg-white d-flex gap-2">
+                    <button type="submit" class="btn btn-danger">تأكيد الرفض</button>
+                    <button type="button" class="btn btn-outline-secondary" id="hideRejectBox">إلغاء</button>
+                </div>
             </form>
         }
         else
@@ -112,10 +138,20 @@
     (function () {
         const cb = document.getElementById('extraConfirmed');
         const btn = document.getElementById('acceptBtn');
-        if (!cb || !btn) return;
-        cb.addEventListener('change', function () {
-            btn.disabled = !cb.checked;
-        });
+        if (cb && btn) {
+            cb.addEventListener('change', function () {
+                btn.disabled = !cb.checked;
+            });
+        }
+        const showBtn = document.getElementById('showRejectBox');
+        const hideBtn = document.getElementById('hideRejectBox');
+        const box = document.getElementById('rejectBox');
+        if (showBtn && box) {
+            showBtn.addEventListener('click', function () { box.classList.remove('d-none'); });
+        }
+        if (hideBtn && box) {
+            hideBtn.addEventListener('click', function () { box.classList.add('d-none'); });
+        }
     })();
 </script>
 }

@@ -54,4 +54,8 @@ namespace Ibtikar.DTOs.Committee
         int? CombinedAverage,
         bool CanAccept,
         string? ExtraConfirmWarning);
+
+    public sealed record CommitteeRejectDto(
+        Guid IdeaId,
+        string Reason);
 }
