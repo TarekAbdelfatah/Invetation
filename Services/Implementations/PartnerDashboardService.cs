@@ -54,6 +54,9 @@ namespace Ibtikar.Services.PartnerDashboard
             if (assignment.Status == PartnerAssignment.StatusReturned)
                 return new(false, "تم إرجاع هذا الطلب ولا يمكن تعديل التقييم.", null);
 
+            if (submission.ReturnOnly && string.IsNullOrWhiteSpace(submission.Comment))
+                return new(false, "يرجى كتابة مرئيات وملاحظات الإدارة الشريكة قبل إعادته للإدارة المختصة.", null);
+
             if (!submission.ReturnOnly && submission.Scores.Count == 0)
                 return new(false, "أدخل درجة واحدة على الأقل.", null);
 
