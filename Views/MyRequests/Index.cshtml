@@ -60,7 +60,16 @@
                                         </td>
                                         <td>@i.Title</td>
                                         <td>—</td>
-                                        <td><span class="badge rounded-pill" style="background-color:@i.StatusColor">@i.StatusName</span></td>
+                                        <td>
+                                            @if (i.IsDraft)
+                                            {
+                                                <span class="status-badge badge rounded-pill" style="background-color:#6c757d">مسودة</span>
+                                            }
+                                            else
+                                            {
+                                                @await Html.PartialAsync("_StatusBadge", i.CurrentStatus)
+                                            }
+                                        </td>
                                         <td>
                                             <div class="idea-progress" data-idea-progress
                                                  data-stage="@stage"

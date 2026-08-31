@@ -42,6 +42,7 @@ namespace Ibtikar.Controllers
                     i.ReferenceNumber,
                     i.Title,
                     i.IsDraft,
+                    CurrentStatus = i.CurrentStatus,
                     StatusCode = i.IsDraft
                         ? string.Empty
                         : (i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty),
@@ -61,6 +62,7 @@ namespace Ibtikar.Controllers
                 i.ReferenceNumber,
                 i.Title,
                 i.IsDraft,
+                i.CurrentStatus,
                 i.StatusCode,
                 i.StatusName,
                 i.StatusColor,
@@ -275,6 +277,7 @@ namespace Ibtikar.Controllers
         string Reference,
         string Title,
         bool IsDraft,
+        IdeaStatus? CurrentStatus,
         string StatusCode,
         string StatusName,
         string StatusColor,
