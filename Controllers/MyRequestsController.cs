@@ -302,20 +302,32 @@ namespace Ibtikar.Controllers
         string? TargetAudienceName,
         DateTime CreatedAt,
         DateTime? SubmittedAt,
+        string? CompletionNotes,
         string? DevelopmentNotes,
         List<MyRequestAttachmentVm> Attachments)
     {
         public static MyRequestDetailsVm FromEntity(InnovationIdea i)
         {
-            string? developmentNotes = null;
-            if (string.Equals(i.CurrentStatus?.Code, IdeaStatusCodes.ReturnedForDevelopment, StringComparison.OrdinalIgnoreCase))
+            string? LatestNoteFor(string statusCode)
             {
-                developmentNotes = (i.StatusHistory ?? new List<IdeaStatusHistory>())
+                return (i.StatusHistory ?? new List<IdeaStatusHistory>())
                     .Where(h => h.ToStatus != null
-                        && string.Equals(h.ToStatus.Code, IdeaStatusCodes.ReturnedForDevelopment, StringComparison.OrdinalIgnoreCase))
+                        && string.Equals(h.ToStatus.Code, statusCode, StringComparison.OrdinalIgnoreCase))
                     .OrderByDescending(h => h.ChangedAt)
                     .Select(h => h.Note)
                     .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n));
+            }
+
+            string? completionNotes = null;
+            if (string.Equals(i.CurrentStatus?.Code, IdeaStatusCodes.WaitingForCompletion, StringComparison.OrdinalIgnoreCase))
+            {
+                completionNotes = LatestNoteFor(IdeaStatusCodes.WaitingForCompletion);
+            }
+
+            string? developmentNotes = null;
+            if (string.Equals(i.CurrentStatus?.Code, IdeaStatusCodes.ReturnedForDevelopment, StringComparison.OrdinalIgnoreCase))
+            {
+                developmentNotes = LatestNoteFor(IdeaStatusCodes.ReturnedForDevelopment);
             }
 
             return new MyRequestDetailsVm(
@@ -338,6 +350,7 @@ namespace Ibtikar.Controllers
                 i.TargetAudience?.Name,
                 i.CreatedAt,
                 i.SubmittedAt,
+                completionNotes,
                 developmentNotes,
                 (i.Attachments ?? new List<IdeaAttachment>())
                     .OrderBy(a => a.UploadedAt)

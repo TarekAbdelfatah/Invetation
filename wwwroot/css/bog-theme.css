@@ -142,3 +142,16 @@
   --display-xl: 60px/72px var(--font-base);
   --display-2xl: 72px/90px var(--font-base);
 }
+
+/* ---------- مكونات مشتركة ---------- */
+.audit-notes-box {
+  background: #fff3e0;
+  border: 1px solid var(--warning-100, #FEF0C7);
+  border-inline-start: 4px solid var(--warning, #DC6803);
+  border-radius: 6px;
+  padding: 1rem;
+  color: var(--gray-900, #161B26);
+}
+.audit-notes-box p {
+  white-space: pre-line;
+}

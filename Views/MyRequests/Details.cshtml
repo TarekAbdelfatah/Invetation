@@ -160,6 +160,13 @@
             <div class="card bog-section mb-3 border-warning">
                 <div class="card-header bg-white"><strong>إعادة التقديم بعد الاستكمال</strong></div>
                 <div class="card-body">
+                    @if (!string.IsNullOrWhiteSpace(Model.CompletionNotes))
+                    {
+                        <div class="audit-notes-box mb-3">
+                            <strong>ملاحظات التدقيق:</strong>
+                            <p class="mb-0 mt-2">@Model.CompletionNotes</p>
+                        </div>
+                    }
                     <form method="post" asp-action="ResubmitCompletion" asp-route-id="@Model.Id" id="resubmitCompletionForm">
                         @Html.AntiForgeryToken()
                         <div class="mb-3">
