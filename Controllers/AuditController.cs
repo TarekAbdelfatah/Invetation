@@ -3,6 +3,7 @@ using Ibtikar.Data;
 using Ibtikar.Models;
 using Ibtikar.Services;
 using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Notifications;
 using Ibtikar.Services.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,15 +16,29 @@ namespace Ibtikar.Controllers
     {
         private readonly IbtikarDbContext _db;
         private readonly AuditLogService _auditLog;
+        private readonly INotificationClient _notifier;
 
-        public AuditController(IbtikarDbContext db, AuditLogService auditLog)
+        public AuditController(IbtikarDbContext db, AuditLogService auditLog, INotificationClient notifier)
         {
             _db = db;
             _auditLog = auditLog;
+            _notifier = notifier;
         }
 
         private Guid? CurrentUserId =>
             Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : null;
+
+        private async Task SafeNotifyAsync(string action, string entityId, IDictionary<string, string>? payload, CancellationToken ct)
+        {
+            try
+            {
+                await _notifier.SendAsync(action, entityId, payload, ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // request cancelled; audit action is already committed and must not roll back.
+            }
+        }
 
         private async Task<Guid?> StatusIdAsync(string code, CancellationToken ct) =>
             await _db.IdeaStatuses.Where(s => s.Code == code).Select(s => (Guid?)s.Id).FirstOrDefaultAsync(ct);
@@ -207,6 +222,11 @@ namespace Ibtikar.Controllers
             await _db.SaveChangesAsync(ct);
             await _auditLog.WriteAsync("Audit.Route", "InnovationIdea", idea.Id.ToString(),
                 $"AssignedDepartmentId={departmentId}", $"Status={idea.CurrentStatus?.Code}", ct);
+            await SafeNotifyAsync("Audit.Route", idea.Id.ToString(), new Dictionary<string, string>
+            {
+                ["departmentId"] = departmentId.ToString(),
+                ["departmentName"] = department.Name
+            }, ct);
 
             TempData["AlertMessage"] = $"تم تحويل الملف إلى إدارة: {department.Name}.";
             TempData["AlertType"] = "success";
@@ -265,6 +285,10 @@ namespace Ibtikar.Controllers
             await _db.SaveChangesAsync(ct);
             await _auditLog.WriteAsync("Audit.Reject", "InnovationIdea", idea.Id.ToString(),
                 $"Status={IdeaStatusCodes.Rejected}", $"Status={fromId}", ct);
+            await SafeNotifyAsync("Audit.Reject", idea.Id.ToString(), new Dictionary<string, string>
+            {
+                ["reasonLength"] = reason.Trim().Length.ToString()
+            }, ct);
 
             TempData["AlertMessage"] = "تم رفض الملف.";
             TempData["AlertType"] = "success";
@@ -323,6 +347,7 @@ namespace Ibtikar.Controllers
             await _db.SaveChangesAsync(ct);
             await _auditLog.WriteAsync("Audit.RequestCompletion", "InnovationIdea", idea.Id.ToString(),
                 $"Status={IdeaStatusCodes.WaitingForCompletion}", $"Status={fromId}", ct);
+            await SafeNotifyAsync("Audit.RequestCompletion", idea.Id.ToString(), null, ct);
 
             TempData["AlertMessage"] = "تم طلب استكمال الملف من مقدمه.";
             TempData["AlertType"] = "success";
