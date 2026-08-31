@@ -1,5 +1,6 @@
 using Ibtikar.Data;
 using Ibtikar.Models;
+using Ibtikar.Services.Attachments;
 using Ibtikar.Services.Ideas;
 using Ibtikar.Services.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -14,11 +15,13 @@ namespace Ibtikar.Controllers
     {
         private readonly IbtikarDbContext _db;
         private readonly IdeaOwnerQuery _ownerQuery;
+        private readonly FileStorageService _storage;
 
-        public MyRequestsController(IbtikarDbContext db, IdeaOwnerQuery ownerQuery)
+        public MyRequestsController(IbtikarDbContext db, IdeaOwnerQuery ownerQuery, FileStorageService storage)
         {
             _db = db;
             _ownerQuery = ownerQuery;
+            _storage = storage;
         }
 
         public async Task<IActionResult> Index(CancellationToken ct)
@@ -83,6 +86,40 @@ namespace Ibtikar.Controllers
 
             return View(MyRequestDetailsVm.FromEntity(idea));
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+        {
+            var applicantId = ResolveApplicantId();
+            if (applicantId == Guid.Empty) return Challenge();
+
+            var idea = await _ownerQuery
+                .ForCurrentApplicant(_db.InnovationIdeas, applicantId)
+                .Include(i => i.CurrentStatus)
+                .Include(i => i.Attachments)
+                .FirstOrDefaultAsync(i => i.Id == id, ct);
+
+            if (idea is null) return NotFound();
+
+            if (!IsDeletableNewIdea(idea))
+                return BadRequest("لا يمكن حذف الطلب بعد أن يبدأ الفريق المختص دراسته.");
+
+            foreach (var attachment in idea.Attachments)
+            {
+                _storage.Delete(attachment.StoragePath);
+            }
+
+            _db.IdeaAttachments.RemoveRange(idea.Attachments);
+            _db.InnovationIdeas.Remove(idea);
+            await _db.SaveChangesAsync(ct);
+
+            TempData["IdeaDeleted"] = "تم حذف الطلب.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        private static bool IsDeletableNewIdea(InnovationIdea idea) =>
+            !idea.IsDraft && string.Equals(idea.CurrentStatus?.Code, "new", StringComparison.OrdinalIgnoreCase);
 
         private Guid ResolveApplicantId()
         {

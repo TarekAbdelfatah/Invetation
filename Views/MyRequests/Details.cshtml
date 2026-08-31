@@ -31,7 +31,19 @@
                         <code class="fs-6">@Model.Reference</code>
                     }
                 </strong>
-                <span class="badge rounded-pill" style="background-color:@Model.StatusColor">@Model.StatusName</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge rounded-pill" style="background-color:@Model.StatusColor">@Model.StatusName</span>
+                    @if (Model.StatusCode == "new" && !string.IsNullOrEmpty(Model.Reference))
+                    {
+                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا الطلب نهائياً؟');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <span class="material-icons align-middle" style="font-size:16px">delete</span>
+                                حذف الطلب
+                            </button>
+                        </form>
+                    }
+                </div>
             </div>
             <div class="card-body">
                 <h3 class="mb-3">@Model.Title</h3>
