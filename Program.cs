@@ -8,6 +8,7 @@ using Ibtikar.Services.Attachments;
 using Ibtikar.Services.Background;
 using Ibtikar.Services.Ideas;
 using Ibtikar.Services.Integrations;
+using Ibtikar.Services.Notifications;
 using Ibtikar.Services.Security;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
@@ -39,6 +40,7 @@ namespace Ibtikar
             builder.Services.AddHostedService<IdeaDeadlineHostedService>();
             builder.Services.Configure<IntegrationOptions>(builder.Configuration.GetSection("Integrations"));
             builder.Services.AddHttpClient<ProcedureGatewayService>();
+            builder.Services.AddHttpClient<INotificationClient, NotificationService>();
             builder.Services.AddOptions<FileStorageOptions>()
                 .Configure<IConfiguration>((opts, cfg) =>
                 {
