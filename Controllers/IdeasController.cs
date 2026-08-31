@@ -1,6 +1,5 @@
 using Ibtikar.Data;
 using Ibtikar.Models;
-using Ibtikar.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
