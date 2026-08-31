@@ -47,6 +47,9 @@ namespace Ibtikar.ViewModels
         public List<PartnerScoreLineVm> ExistingScores { get; set; } = new();
         public decimal? TotalScore { get; set; }
         public string? Comment { get; set; }
+        public bool IsNotCompetentReturn { get; set; }
+        public string? NotCompetentReason { get; set; }
+        public bool CanReturnNotCompetent { get; set; }
     }
 
     public sealed record PartnerCriterionVm(Guid Id, string Code, string Name, int DisplayOrder);

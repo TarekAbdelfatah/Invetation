@@ -34,7 +34,11 @@
                 <code class="fs-6">@Model.IdeaReference</code>
                 <h1 class="h5 mb-0 ms-2">@Model.IdeaTitle</h1>
                 <span class="ms-auto">
-                    @if (Model.Status == "Submitted")
+                    @if (Model.IsNotCompetentReturn)
+                    {
+                        <span class="badge bg-danger">معاد للإدارة المختصة — خطأ في التوجيه</span>
+                    }
+                    else if (Model.Status == "Submitted")
                     {
                         <span class="badge bg-success">تم الرد</span>
                     }
@@ -49,6 +53,20 @@
                 </span>
             </div>
         </div>
+
+        @if (Model.IsNotCompetentReturn)
+        {
+            <div class="alert alert-danger d-flex flex-wrap align-items-start gap-2" role="alert">
+                <span class="material-icons">report_problem</span>
+                <div class="flex-grow-1">
+                    <strong>معاد للإدارة المختصة — خطأ في التوجيه</strong>
+                    @if (!string.IsNullOrWhiteSpace(Model.NotCompetentReason))
+                    {
+                        <div class="mt-1" style="white-space:pre-wrap">@Model.NotCompetentReason</div>
+                    }
+                </div>
+            </div>
+        }
 
         <div class="row g-3">
             <div class="col-lg-7">
@@ -167,6 +185,13 @@
                 </div>
 
                 <div class="d-flex flex-wrap gap-2 justify-content-end">
+                    @if (Model.CanReturnNotCompetent)
+                    {
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#notCompetentModal">
+                            <span class="material-icons align-middle" style="font-size:18px">report_problem</span>
+                            إرجاع لعدم الاختصاص
+                        </button>
+                    }
                     <button type="submit" name="returnOnly" value="true" class="btn btn-outline-secondary">
                         <span class="material-icons align-middle" style="font-size:18px">undo</span>
                         إرجاع دون تقييم
@@ -177,6 +202,35 @@
                     </button>
                 </div>
             </form>
+        }
+
+        @if (Model.CanReturnNotCompetent)
+        {
+            <div class="modal fade" id="notCompetentModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form method="post" asp-action="ReturnNotCompetent" autocomplete="off">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="assignmentId" value="@Model.AssignmentId" />
+                            <div class="modal-header">
+                                <h5 class="modal-title">إرجاع الطلب لعدم الاختصاص</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-muted small mb-2">
+                                    مسموح فقط خلال ثلاثة أيام عمل من تاريخ الإسناد. سيظهر للإدارة المختصة شارة حمراء مع سبب الإعادة.
+                                </p>
+                                <label for="notCompetentReason" class="form-label">سبب الإعادة (إلزامي)</label>
+                                <textarea id="notCompetentReason" name="reason" class="form-control" rows="3" maxlength="2000" required></textarea>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                <button type="submit" class="btn btn-danger">تأكيد الإعادة</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         }
         else if (Model.AlreadyScored)
         {

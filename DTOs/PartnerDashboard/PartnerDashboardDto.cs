@@ -45,7 +45,10 @@ namespace Ibtikar.DTOs.PartnerDashboard
         IReadOnlyList<PartnerCriterionDto> Criteria,
         IReadOnlyList<PartnerScoreLineDto> ExistingScores,
         decimal? TotalScore,
-        string? Comment);
+        string? Comment,
+        bool IsNotCompetentReturn,
+        string? NotCompetentReason,
+        bool CanReturnNotCompetent);
 
     public sealed record PartnerCriterionDto(
         Guid Id,
