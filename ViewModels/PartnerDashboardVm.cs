@@ -24,7 +24,7 @@ namespace Ibtikar.ViewModels
         bool IsReturned,
         double DaysOpen);
 
-    public class PartnerDetailsVm
+public class PartnerDetailsVm
     {
         public Guid AssignmentId { get; set; }
         public Guid IdeaId { get; set; }
@@ -47,7 +47,32 @@ namespace Ibtikar.ViewModels
         public List<PartnerScoreLineVm> ExistingScores { get; set; } = new();
         public decimal? TotalScore { get; set; }
         public string? Comment { get; set; }
+        public bool IsNotCompetentReturn { get; set; }
+        public string? NotCompetentReason { get; set; }
+        public bool CanReturnNotCompetent { get; set; }
+        public PartnerSpecializedAssessmentVm SpecializedAssessment { get; set; } = new(
+            HasAssessment: false,
+            AssessorDepartmentName: string.Empty,
+            TotalScore: null,
+            Comment: null,
+            SubmittedAt: null,
+            Scores: new List<PartnerSpecializedScoreVm>());
     }
+
+    public sealed record PartnerSpecializedScoreVm(
+        Guid CriterionId,
+        string CriterionCode,
+        string CriterionName,
+        int Score,
+        string? Comment);
+
+    public sealed record PartnerSpecializedAssessmentVm(
+        bool HasAssessment,
+        string AssessorDepartmentName,
+        decimal? TotalScore,
+        string? Comment,
+        DateTime? SubmittedAt,
+        List<PartnerSpecializedScoreVm> Scores);
 
     public sealed record PartnerCriterionVm(Guid Id, string Code, string Name, int DisplayOrder);
     public sealed record PartnerScoreLineVm(Guid CriterionId, string CriterionCode, string CriterionName, int? Score, string? Comment);

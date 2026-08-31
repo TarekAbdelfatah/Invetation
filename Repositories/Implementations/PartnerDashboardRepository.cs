@@ -11,6 +11,7 @@ namespace Ibtikar.Repositories
         Task<PartnerInboxDto> GetInboxAsync(Guid departmentId, CancellationToken ct);
         Task<PartnerDetailsDto?> GetDetailsAsync(Guid assignmentId, Guid departmentId, CancellationToken ct);
         Task<AssessmentHeader?> GetExistingPartnerHeaderAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
+        Task<AssessmentHeader?> GetSpecializedAssessmentAsync(Guid ideaId, CancellationToken ct);
         Task<PartnerAssignment?> GetAssignmentForPartnerAsync(Guid assignmentId, Guid departmentId, CancellationToken ct);
         Task AddOrUpdatePartnerHeaderAsync(AssessmentHeader header, CancellationToken ct);
         Task SaveChangesAsync(CancellationToken ct);
@@ -109,6 +110,36 @@ namespace Ibtikar.Repositories
                 .ToList();
 
             var canScore = assignment.Status != PartnerAssignment.StatusReturned;
+            var isNotCompetentReturn = assignment.Status == PartnerAssignment.StatusReturned
+                && assignment.Note?.StartsWith("NotCompetent:", StringComparison.Ordinal) == true;
+            var notCompetentReason = isNotCompetentReturn && assignment.Note is { Length: > 14 }
+                ? assignment.Note[14..].Trim()
+                : null;
+
+            var specialized = await GetSpecializedAssessmentAsync(idea.Id, ct);
+            var specializedDto = specialized is null
+                ? new PartnerSpecializedAssessmentDto(
+                    HasAssessment: false,
+                    AssessorDepartmentName: idea.AssignedDepartment?.Name ?? "—",
+                    TotalScore: null,
+                    Comment: null,
+                    SubmittedAt: null,
+                    Scores: Array.Empty<PartnerSpecializedScoreDto>())
+                : new PartnerSpecializedAssessmentDto(
+                    HasAssessment: true,
+                    AssessorDepartmentName: specialized.AssessorDepartment?.Name ?? "—",
+                    TotalScore: specialized.TotalScore,
+                    Comment: specialized.Comment,
+                    SubmittedAt: specialized.SubmittedAt,
+                    Scores: specialized.Details
+                        .OrderBy(d => d.Criterion!.DisplayOrder)
+                        .Select(d => new PartnerSpecializedScoreDto(
+                            d.CriterionId,
+                            d.Criterion?.Code ?? string.Empty,
+                            d.Criterion?.Name ?? string.Empty,
+                            d.Score,
+                            d.Comment))
+                        .ToList());
 
             return new PartnerDetailsDto(
                 assignment.Id, idea.Id, idea.ReferenceNumber, idea.Title,
@@ -119,7 +150,10 @@ namespace Ibtikar.Repositories
                 idea.AssignedDepartment?.Name ?? "—",
                 assignment.Status, assignment.SentAt, assignment.RespondedAt,
                 canScore, existing is not null && !existing.IsDraft,
-                criteria, lines, existing?.TotalScore, existing?.Comment);
+                criteria, lines, existing?.TotalScore, existing?.Comment,
+                isNotCompetentReturn, notCompetentReason,
+                false,
+                specializedDto);
         }
 
         public async Task<AssessmentHeader?> GetExistingPartnerHeaderAsync(Guid ideaId, Guid departmentId, CancellationToken ct)
@@ -130,6 +164,19 @@ namespace Ibtikar.Repositories
                     && h.AssessorDepartmentId == departmentId
                     && h.Source == AssessmentHeader.SourcePartner)
                 .OrderByDescending(h => h.CreatedAt)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        public async Task<AssessmentHeader?> GetSpecializedAssessmentAsync(Guid ideaId, CancellationToken ct)
+        {
+            return await _db.AssessmentHeaders
+                .AsNoTracking()
+                .Include(h => h.Details)
+                .Include(h => h.AssessorDepartment)
+                .Where(h => h.InnovationIdeaId == ideaId
+                    && h.Source == AssessmentHeader.SourceSpecialized
+                    && !h.IsDraft)
+                .OrderByDescending(h => h.SubmittedAt ?? h.CreatedAt)
                 .FirstOrDefaultAsync(ct);
         }
 
