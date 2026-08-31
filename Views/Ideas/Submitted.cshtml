@@ -1,0 +1,51 @@
+@model Ibtikar.Controllers.IdeaSuccessVm
+@{
+    ViewData["Title"] = "تم تقديم الفكرة بنجاح";
+    Layout = "_Layout";
+}
+
+<section class="py-5">
+    <div class="container">
+        <div class="card border-0 shadow-sm bg-success-subtle">
+            <div class="card-body text-center p-5">
+                <i class="bi bi-check-circle-fill text-success" style="font-size:4rem"></i>
+                <h1 class="display-6 mt-3 mb-2">شكراً لك!</h1>
+                <p class="lead">تم استلام فكرتك وستتم دراستها من الفريق المختص.</p>
+
+                <div class="d-inline-block bg-white border rounded-3 p-3 my-4">
+                    <div class="text-muted small">الرقم المرجعي</div>
+                    <div class="display-6 fw-bold text-primary" dir="ltr">@Model.ReferenceNumber</div>
+                </div>
+
+                <dl class="row text-start mt-4 mb-4">
+                    <dt class="col-sm-3">عنوان الفكرة</dt>
+                    <dd class="col-sm-9">@Model.Title</dd>
+
+                    <dt class="col-sm-3">المجال</dt>
+                    <dd class="col-sm-9">@Model.DomainName</dd>
+
+                    <dt class="col-sm-3">الحالة</dt>
+                    <dd class="col-sm-9">
+                        <span class="badge" style="background-color:@Model.StatusColor">@Model.StatusName</span>
+                    </dd>
+
+                    <dt class="col-sm-3">تاريخ التقديم</dt>
+                    <dd class="col-sm-9" dir="ltr">@Model.SubmittedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+                </dl>
+
+                <div class="d-flex gap-2 justify-content-center">
+                    <a asp-controller="MyRequests" asp-action="Index" class="btn btn-primary">
+                        <i class="bi bi-list-ul"></i> طلباتي
+                    </a>
+                    <a asp-action="Create" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-lg"></i> فكرة جديدة
+                    </a>
+                </div>
+
+                <p class="text-muted small mt-4 mb-0">
+                    احتفظ بالرقم المرجعي <span class="fw-bold" dir="ltr">@Model.ReferenceNumber</span> لمتابعة حالة طلبك.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>

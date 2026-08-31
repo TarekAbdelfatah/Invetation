@@ -25,18 +25,35 @@ namespace Ibtikar.Controllers
                 .Include(i => i.InnovationDomain)
                 .OrderByDescending(i => i.CreatedAt)
                 .Take(50)
-                .Select(i => new MyRequestVm(
+                .Select(i => new
+                {
                     i.Id,
                     i.ReferenceNumber,
                     i.Title,
                     i.IsDraft,
-                    i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
-                    i.CurrentStatus != null ? i.CurrentStatus.Color : "#888",
+                    StatusName = i.IsDraft
+                        ? "مسودة"
+                        : (i.CurrentStatus != null ? i.CurrentStatus.Name : "—"),
+                    StatusColor = i.IsDraft
+                        ? "#6c757d"
+                        : (i.CurrentStatus != null ? i.CurrentStatus.Color : "#888"),
                     i.CreatedAt,
-                    i.SubmittedAt))
+                    i.SubmittedAt
+                })
                 .ToListAsync(ct);
 
-            return View(new MyRequestsVm(myIdeas));
+            var items = myIdeas.Select(i => new MyRequestVm(
+                i.Id,
+                i.ReferenceNumber,
+                i.Title,
+                i.IsDraft,
+                i.StatusName,
+                i.StatusColor,
+                i.CreatedAt,
+                i.SubmittedAt))
+                .ToList();
+
+            return View(new MyRequestsVm(items));
         }
     }
 
