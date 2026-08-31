@@ -68,7 +68,33 @@
                     <div class="card-body p-0">
                         @if (Model.Recent.Any())
                         {
-                            <div class="table-responsive">
+                            <div class="bog-mobile-cards d-md-none">
+                                @foreach (var r in Model.Recent)
+                                {
+                                    <div class="bog-idea-card">
+                                        <div class="bog-idea-card__head">
+                                            <span class="bog-idea-card__ref"><code>@r.Reference</code></span>
+                                            <span class="bog-idea-card__status" style="--chip-bg:@r.StatusColor">
+                                                <span class="bog-idea-card__status-dot" style="background-color:@r.StatusColor"></span>
+                                                @r.StatusName
+                                            </span>
+                                        </div>
+                                        <h3 class="bog-idea-card__title">@r.Title</h3>
+                                        <div class="bog-idea-card__foot">
+                                            <small class="bog-idea-card__date">
+                                                <span class="material-icons" style="font-size:14px">apartment</span>
+                                                @r.Domain
+                                            </small>
+                                            <small class="bog-idea-card__date">
+                                                <span class="material-icons" style="font-size:14px">event</span>
+                                                @r.CreatedAt.ToString("yyyy-MM-dd")
+                                            </small>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="table-responsive d-none d-md-block">
                                 <table class="bog-card-list">
                                     <thead>
                                         <tr>

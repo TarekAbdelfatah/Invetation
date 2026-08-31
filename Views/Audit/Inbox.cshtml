@@ -60,7 +60,45 @@
                 </div>
             </form>
 
-            <div class="table-responsive">
+            <div class="bog-mobile-cards d-md-none" id="inboxCards" data-inbox-cards
+                 data-applicant-type="@Model.ApplicantType"
+                 data-status="@Model.Status">
+                @foreach (var i in Model.Items)
+                {
+                    <a class="bog-idea-card" asp-action="Details" asp-route-id="@i.Id">
+                        <div class="bog-idea-card__head">
+                            <span class="bog-idea-card__ref"><code>@i.Reference</code></span>
+                            @if (i.IsOverdue)
+                            {
+                                <span class="bog-idea-card__status" style="--chip-bg:#D92D20">
+                                    <span class="bog-idea-card__status-dot" style="background-color:#D92D20"></span>
+                                    متأخر
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="bog-idea-card__status" style="--chip-bg:#079455">
+                                    <span class="bog-idea-card__status-dot" style="background-color:#079455"></span>
+                                    بانتظار المراجعة
+                                </span>
+                            }
+                        </div>
+                        <h3 class="bog-idea-card__title">@i.Title</h3>
+                        <div class="bog-idea-card__foot">
+                            <small class="bog-idea-card__date">
+                                <span class="material-icons" style="font-size:14px">event</span>
+                                @i.SubmittedAt.ToString("yyyy-MM-dd HH:mm")
+                            </small>
+                            <span class="bog-idea-card__chevron">
+                                مراجعة
+                                <span class="material-icons" style="font-size:18px">chevron_left</span>
+                            </span>
+                        </div>
+                    </a>
+                }
+            </div>
+
+            <div class="table-responsive d-none d-md-block">
                 <table class="bog-card-list">
                     <thead>
                         <tr>
