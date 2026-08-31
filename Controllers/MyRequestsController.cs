@@ -1,4 +1,6 @@
 using Ibtikar.Data;
+using Ibtikar.Models;
+using Ibtikar.Services.Ideas;
 using Ibtikar.Services.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,16 +13,22 @@ namespace Ibtikar.Controllers
     public class MyRequestsController : Controller
     {
         private readonly IbtikarDbContext _db;
-        public MyRequestsController(IbtikarDbContext db) => _db = db;
+        private readonly IdeaOwnerQuery _ownerQuery;
+
+        public MyRequestsController(IbtikarDbContext db, IdeaOwnerQuery ownerQuery)
+        {
+            _db = db;
+            _ownerQuery = ownerQuery;
+        }
 
         public async Task<IActionResult> Index(CancellationToken ct)
         {
-            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(userIdRaw, out var userId)) return Challenge();
+            var applicantId = ResolveApplicantId();
+            if (applicantId == Guid.Empty) return Challenge();
 
-            var myIdeas = await _db.InnovationIdeas
+            var myIdeas = await _ownerQuery
+                .ForCurrentApplicant(_db.InnovationIdeas, applicantId)
                 .AsNoTracking()
-                .Where(i => i.ApplicantUserId == userId)
                 .Include(i => i.CurrentStatus)
                 .Include(i => i.InnovationDomain)
                 .OrderByDescending(i => i.CreatedAt)
@@ -55,6 +63,32 @@ namespace Ibtikar.Controllers
 
             return View(new MyRequestsVm(items));
         }
+
+        public async Task<IActionResult> Details(Guid id, CancellationToken ct)
+        {
+            var applicantId = ResolveApplicantId();
+            if (applicantId == Guid.Empty) return Challenge();
+
+            var idea = await _ownerQuery
+                .ForCurrentApplicant(_db.InnovationIdeas, applicantId)
+                .AsNoTracking()
+                .Include(i => i.CurrentStatus)
+                .Include(i => i.InnovationDomain)
+                .Include(i => i.ExpectedImpact)
+                .Include(i => i.TargetAudience)
+                .Include(i => i.Attachments)
+                .FirstOrDefaultAsync(i => i.Id == id, ct);
+
+            if (idea is null) return NotFound();
+
+            return View(MyRequestDetailsVm.FromEntity(idea));
+        }
+
+        private Guid ResolveApplicantId()
+        {
+            var raw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
+        }
     }
 
     public record MyRequestVm(
@@ -72,4 +106,54 @@ namespace Ibtikar.Controllers
         public List<MyRequestVm> Items { get; }
         public MyRequestsVm(List<MyRequestVm> items) => Items = items;
     }
+
+    public record MyRequestDetailsVm(
+        Guid Id,
+        string Reference,
+        string Title,
+        string Description,
+        string? ProblemStatement,
+        string? ProposedSolution,
+        string? ExpectedBenefits,
+        string? ExpectedImpactOther,
+        string? TargetAudienceOther,
+        bool UsesEmergingTech,
+        string? TechnologyOther,
+        string StatusCode,
+        string StatusName,
+        string StatusColor,
+        string? DomainName,
+        string? ExpectedImpactName,
+        string? TargetAudienceName,
+        DateTime CreatedAt,
+        DateTime? SubmittedAt,
+        List<MyRequestAttachmentVm> Attachments)
+    {
+        public static MyRequestDetailsVm FromEntity(InnovationIdea i) => new(
+            i.Id,
+            i.ReferenceNumber,
+            i.Title,
+            i.Description,
+            i.ProblemStatement,
+            i.ProposedSolution,
+            i.ExpectedBenefits,
+            i.ExpectedImpactOther,
+            i.TargetAudienceOther,
+            i.UsesEmergingTech,
+            i.TechnologyOther,
+            i.CurrentStatus?.Code ?? string.Empty,
+            i.CurrentStatus?.Name ?? "—",
+            i.CurrentStatus?.Color ?? "#6c757d",
+            i.InnovationDomain?.Name,
+            i.ExpectedImpact?.Name,
+            i.TargetAudience?.Name,
+            i.CreatedAt,
+            i.SubmittedAt,
+            (i.Attachments ?? new List<IdeaAttachment>())
+                .OrderBy(a => a.UploadedAt)
+                .Select(a => new MyRequestAttachmentVm(a.Id, a.FileName, a.SizeBytes, a.UploadedAt))
+                .ToList());
+    }
+
+    public record MyRequestAttachmentVm(Guid Id, string FileName, long SizeBytes, DateTime UploadedAt);
 }

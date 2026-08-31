@@ -1,0 +1,143 @@
+@using Ibtikar.Controllers
+@model MyRequestDetailsVm
+@{
+    ViewData["Title"] = string.IsNullOrEmpty(Model.Reference) ? "تفاصيل المسودة" : $"تفاصيل الطلب {Model.Reference}";
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0 d-flex align-items-center gap-2">
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">description</span>
+                </span>
+                تفاصيل الطلب
+            </h2>
+            <a class="btn btn-outline-secondary" asp-action="Index">
+                <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
+                العودة إلى طلباتي
+            </a>
+        </div>
+
+        <div class="card bog-section mb-3">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>
+                    @if (string.IsNullOrEmpty(Model.Reference))
+                    {
+                        <span class="text-muted">مسودة</span>
+                    }
+                    else
+                    {
+                        <code class="fs-6">@Model.Reference</code>
+                    }
+                </strong>
+                <span class="badge rounded-pill" style="background-color:@Model.StatusColor">@Model.StatusName</span>
+            </div>
+            <div class="card-body">
+                <h3 class="mb-3">@Model.Title</h3>
+
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">المجال</dt>
+                    <dd class="col-sm-9">@(Model.DomainName ?? "—")</dd>
+
+                    <dt class="col-sm-3">التأثير المتوقع</dt>
+                    <dd class="col-sm-9">
+                        @(Model.ExpectedImpactName ?? "—")
+                        @if (!string.IsNullOrWhiteSpace(Model.ExpectedImpactOther))
+                        {
+                            <span class="text-muted">(تفصيل: @Model.ExpectedImpactOther)</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-3">الفئة المستهدفة</dt>
+                    <dd class="col-sm-9">
+                        @(Model.TargetAudienceName ?? "—")
+                        @if (!string.IsNullOrWhiteSpace(Model.TargetAudienceOther))
+                        {
+                            <span class="text-muted">(تفصيل: @Model.TargetAudienceOther)</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-3">تقنية حديثة</dt>
+                    <dd class="col-sm-9">
+                        @(Model.UsesEmergingTech
+                            ? (string.IsNullOrWhiteSpace(Model.TechnologyOther) ? "نعم" : "نعم — " + Model.TechnologyOther)
+                            : "لا")
+                    </dd>
+
+                    <dt class="col-sm-3">تاريخ التقديم</dt>
+                    <dd class="col-sm-9" dir="ltr">
+                        @((Model.SubmittedAt ?? Model.CreatedAt).ToLocalTime().ToString("yyyy-MM-dd HH:mm"))
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card bog-section mb-3">
+            <div class="card-header bg-white"><strong>وصف الفكرة</strong></div>
+            <div class="card-body">
+                <p class="mb-0" style="white-space:pre-line">@Model.Description</p>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ProblemStatement))
+        {
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white"><strong>المشكلة</strong></div>
+                <div class="card-body">
+                    <p class="mb-0" style="white-space:pre-line">@Model.ProblemStatement</p>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.ProposedSolution))
+        {
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white"><strong>الحل المقترح</strong></div>
+                <div class="card-body">
+                    <p class="mb-0" style="white-space:pre-line">@Model.ProposedSolution</p>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.ExpectedBenefits))
+        {
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white"><strong>الفوائد المتوقعة</strong></div>
+                <div class="card-body">
+                    <p class="mb-0" style="white-space:pre-line">@Model.ExpectedBenefits</p>
+                </div>
+            </div>
+        }
+
+        <div class="card bog-section mb-3">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>المرفقات</strong>
+                <span class="badge bg-secondary">@Model.Attachments.Count</span>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Attachments.Any())
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var a in Model.Attachments)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <span class="material-icons align-middle text-danger" style="font-size:18px">picture_as_pdf</span>
+                                    @a.FileName
+                                </span>
+                                <small class="text-muted" dir="ltr">
+                                    @(a.SizeBytes / 1024) KB · @a.UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                                </small>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="text-muted text-center p-4">لا توجد مرفقات.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

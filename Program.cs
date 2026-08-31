@@ -5,6 +5,7 @@ using Ibtikar.Data.Seed;
 using Ibtikar.Middleware;
 using Ibtikar.Services;
 using Ibtikar.Services.Attachments;
+using Ibtikar.Services.Ideas;
 using Ibtikar.Services.Integrations;
 using Ibtikar.Services.Security;
 using Microsoft.AspNetCore.Localization;
@@ -33,6 +34,7 @@ namespace Ibtikar
             builder.Services.AddSingleton<PdfValidator>();
             builder.Services.AddScoped<FileStorageService>();
             builder.Services.AddScoped<AttachmentService>();
+            builder.Services.AddScoped<IdeaOwnerQuery>();
             builder.Services.Configure<IntegrationOptions>(builder.Configuration.GetSection("Integrations"));
             builder.Services.AddHttpClient<ProcedureGatewayService>();
             builder.Services.AddOptions<FileStorageOptions>()
