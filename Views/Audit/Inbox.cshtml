@@ -1,0 +1,73 @@
+@using Ibtikar.Controllers
+@model AuditInboxVm
+@{
+    ViewData["Title"] = "صندوق التدقيق";
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0 d-flex align-items-center gap-2">
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">inbox</span>
+                </span>
+                صندوق التدقيق
+            </h2>
+            <span class="badge bg-light text-dark border">
+                <span class="material-icons align-middle" style="font-size:16px">badge</span>
+                موظف تدقيق
+            </span>
+        </div>
+
+        <div class="card bog-section">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>الأفكار بانتظار المراجعة</strong>
+                <span class="badge bg-secondary">@Model.Items.Count</span>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Items.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>المرجع</th>
+                                    <th>العنوان</th>
+                                    <th>المجال</th>
+                                    <th>الإدارة</th>
+                                    <th>تاريخ التقديم</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var i in Model.Items)
+                                {
+                                    <tr>
+                                        <td><code>@i.Reference</code></td>
+                                        <td>@i.Title</td>
+                                        <td><small>@i.Domain</small></td>
+                                        <td><small>@i.Department</small></td>
+                                        <td><small>@i.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" disabled title="ستتوفر قريباً">
+                                                <span class="material-icons align-middle" style="font-size:16px">visibility</span>
+                                                مراجعة
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted p-5">
+                        <span class="material-icons" style="font-size:48px;color:var(--text-muted)">inbox</span>
+                        <p class="mb-0 mt-2">لا توجد أفكار بانتظار المراجعة.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,78 @@
+@using Ibtikar.Controllers
+@model MyRequestsVm
+@{
+    ViewData["Title"] = "طلباتي";
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0 d-flex align-items-center gap-2">
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">folder_special</span>
+                </span>
+                طلباتي
+            </h2>
+            <a class="btn btn-primary" asp-controller="Ideas" asp-action="Create">
+                <span class="material-icons align-middle" style="font-size:18px">add</span>
+                تقديم فكرة جديدة
+            </a>
+        </div>
+
+        <div class="card bog-section">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>سجل الأفكار</strong>
+                <span class="badge bg-secondary">@Model.Items.Count</span>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Items.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>المرجع</th>
+                                    <th>العنوان</th>
+                                    <th>المجال</th>
+                                    <th>الحالة</th>
+                                    <th>تاريخ التقديم</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var i in Model.Items)
+                                {
+                                    <tr>
+                                        <td>
+                                            @if (string.IsNullOrEmpty(i.Reference))
+                                            {
+                                                <span class="text-muted">مسودة</span>
+                                            }
+                                            else
+                                            {
+                                                <code>@i.Reference</code>
+                                            }
+                                        </td>
+                                        <td>@i.Title</td>
+                                        <td>—</td>
+                                        <td><span class="badge rounded-pill" style="background-color:@i.StatusColor">@i.StatusName</span></td>
+                                        <td><small>@(i.SubmittedAt?.ToString("yyyy-MM-dd") ?? i.CreatedAt.ToString("yyyy-MM-dd"))</small></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted p-5">
+                        <span class="material-icons" style="font-size:48px;color:var(--text-muted)">lightbulb</span>
+                        <p class="mb-1 mt-2">لم تقدّم أي فكرة بعد.</p>
+                        <a class="btn btn-primary" asp-controller="Ideas" asp-action="Create">
+                            ابدأ بتقديم فكرتك الأولى
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

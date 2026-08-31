@@ -9,6 +9,10 @@ namespace Ibtikar.Models
         public string? ProblemStatement { get; set; }
         public string? ProposedSolution { get; set; }
         public string? ExpectedBenefits { get; set; }
+        public string? ExpectedImpactOther { get; set; }
+        public string? TargetAudienceOther { get; set; }
+        public bool UsesEmergingTech { get; set; }
+        public string? TechnologyOther { get; set; }
 
         public Guid InnovationDomainId { get; set; }
         public Guid? ExpectedImpactId { get; set; }
