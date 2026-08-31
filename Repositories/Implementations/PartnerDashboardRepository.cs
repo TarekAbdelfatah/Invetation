@@ -1,6 +1,7 @@
 using Ibtikar.Data;
 using Ibtikar.DTOs.PartnerDashboard;
 using Ibtikar.Models;
+using Ibtikar.Services.Ideas;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Repositories
@@ -11,6 +12,7 @@ namespace Ibtikar.Repositories
         Task<PartnerInboxDto> GetInboxAsync(Guid departmentId, CancellationToken ct);
         Task<PartnerDetailsDto?> GetDetailsAsync(Guid assignmentId, Guid departmentId, CancellationToken ct);
         Task<AssessmentHeader?> GetExistingPartnerHeaderAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
+        Task<AssessmentHeader?> GetSpecializedAssessmentAsync(Guid ideaId, CancellationToken ct);
         Task<PartnerAssignment?> GetAssignmentForPartnerAsync(Guid assignmentId, Guid departmentId, CancellationToken ct);
         Task AddOrUpdatePartnerHeaderAsync(AssessmentHeader header, CancellationToken ct);
         Task SaveChangesAsync(CancellationToken ct);
@@ -22,13 +24,17 @@ namespace Ibtikar.Repositories
         private static readonly TimeSpan LateThreshold = TimeSpan.FromDays(LateThresholdDays);
 
         private readonly IbtikarDbContext _db;
+        private readonly PartnerAssignmentQuery _query;
 
-        public PartnerDashboardRepository(IbtikarDbContext db) => _db = db;
+        public PartnerDashboardRepository(IbtikarDbContext db, PartnerAssignmentQuery query)
+        {
+            _db = db;
+            _query = query;
+        }
 
         public async Task<PartnerDashboardDto> GetSnapshotAsync(Guid departmentId, CancellationToken ct)
         {
-            var assignments = _db.PartnerAssignments.AsNoTracking()
-                .Where(p => p.PartnerDepartmentId == departmentId);
+            var assignments = _query.ForDepartment(_db.PartnerAssignments.AsNoTracking(), departmentId);
 
             var pending = await assignments.CountAsync(p => p.Status == PartnerAssignment.StatusPending, ct);
 
@@ -48,9 +54,7 @@ namespace Ibtikar.Repositories
         public async Task<PartnerInboxDto> GetInboxAsync(Guid departmentId, CancellationToken ct)
         {
             var now = DateTime.UtcNow;
-            var rows = await _db.PartnerAssignments
-                .AsNoTracking()
-                .Where(p => p.PartnerDepartmentId == departmentId)
+            var rows = await _query.ForDepartment(_db.PartnerAssignments.AsNoTracking(), departmentId)
                 .OrderByDescending(p => p.SentAt)
                 .Select(p => new PartnerAssignmentRowDto(
                     p.Id,
@@ -73,13 +77,12 @@ namespace Ibtikar.Repositories
 
         public async Task<PartnerDetailsDto?> GetDetailsAsync(Guid assignmentId, Guid departmentId, CancellationToken ct)
         {
-            var assignment = await _db.PartnerAssignments
-                .AsNoTracking()
+            var assignment = await _query.ForDepartment(_db.PartnerAssignments.AsNoTracking(), departmentId)
                 .Include(p => p.InnovationIdea).ThenInclude(i => i.InnovationDomain)
                 .Include(p => p.InnovationIdea).ThenInclude(i => i.ApplicantUser)
                 .Include(p => p.InnovationIdea).ThenInclude(i => i.ApplicantDepartment)
                 .Include(p => p.InnovationIdea).ThenInclude(i => i.AssignedDepartment)
-                .FirstOrDefaultAsync(p => p.Id == assignmentId && p.PartnerDepartmentId == departmentId, ct);
+                .FirstOrDefaultAsync(p => p.Id == assignmentId, ct);
 
             if (assignment?.InnovationIdea is null) return null;
             var idea = assignment.InnovationIdea;
@@ -115,6 +118,31 @@ namespace Ibtikar.Repositories
                 ? assignment.Note[14..].Trim()
                 : null;
 
+            var specialized = await GetSpecializedAssessmentAsync(idea.Id, ct);
+            var specializedDto = specialized is null
+                ? new PartnerSpecializedAssessmentDto(
+                    HasAssessment: false,
+                    AssessorDepartmentName: idea.AssignedDepartment?.Name ?? "—",
+                    TotalScore: null,
+                    Comment: null,
+                    SubmittedAt: null,
+                    Scores: Array.Empty<PartnerSpecializedScoreDto>())
+                : new PartnerSpecializedAssessmentDto(
+                    HasAssessment: true,
+                    AssessorDepartmentName: specialized.AssessorDepartment?.Name ?? "—",
+                    TotalScore: specialized.TotalScore,
+                    Comment: specialized.Comment,
+                    SubmittedAt: specialized.SubmittedAt,
+                    Scores: specialized.Details
+                        .OrderBy(d => d.Criterion!.DisplayOrder)
+                        .Select(d => new PartnerSpecializedScoreDto(
+                            d.CriterionId,
+                            d.Criterion?.Code ?? string.Empty,
+                            d.Criterion?.Name ?? string.Empty,
+                            d.Score,
+                            d.Comment))
+                        .ToList());
+
             return new PartnerDetailsDto(
                 assignment.Id, idea.Id, idea.ReferenceNumber, idea.Title,
                 idea.Description, idea.ProblemStatement, idea.ProposedSolution, idea.ExpectedBenefits,
@@ -126,7 +154,8 @@ namespace Ibtikar.Repositories
                 canScore, existing is not null && !existing.IsDraft,
                 criteria, lines, existing?.TotalScore, existing?.Comment,
                 isNotCompetentReturn, notCompetentReason,
-                false);
+                false,
+                specializedDto);
         }
 
         public async Task<AssessmentHeader?> GetExistingPartnerHeaderAsync(Guid ideaId, Guid departmentId, CancellationToken ct)
@@ -140,9 +169,23 @@ namespace Ibtikar.Repositories
                 .FirstOrDefaultAsync(ct);
         }
 
+        public async Task<AssessmentHeader?> GetSpecializedAssessmentAsync(Guid ideaId, CancellationToken ct)
+        {
+            return await _db.AssessmentHeaders
+                .AsNoTracking()
+                .Include(h => h.Details)
+                .Include(h => h.AssessorDepartment)
+                .Where(h => h.InnovationIdeaId == ideaId
+                    && h.Source == AssessmentHeader.SourceSpecialized
+                    && !h.IsDraft)
+                .OrderByDescending(h => h.SubmittedAt ?? h.CreatedAt)
+                .FirstOrDefaultAsync(ct);
+        }
+
         public async Task<PartnerAssignment?> GetAssignmentForPartnerAsync(Guid assignmentId, Guid departmentId, CancellationToken ct)
         {
-            return await _db.PartnerAssignments.FirstOrDefaultAsync(p => p.Id == assignmentId && p.PartnerDepartmentId == departmentId, ct);
+            return await _query.ForDepartment(_db.PartnerAssignments, departmentId)
+                .FirstOrDefaultAsync(p => p.Id == assignmentId, ct);
         }
 
         public async Task AddOrUpdatePartnerHeaderAsync(AssessmentHeader header, CancellationToken ct)
