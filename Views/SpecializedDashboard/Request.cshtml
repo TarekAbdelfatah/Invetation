@@ -1,0 +1,111 @@
+@model Ibtikar.ViewModels.SpecializedRequestVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = $"طلب رأي الشركاء · {Model.Reference}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <h2 class="mb-0 d-flex align-items-center gap-2">
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">groups</span>
+                </span>
+                طلب رأي الإدارات الشريكة
+            </h2>
+            <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.IdeaId">
+                <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
+                العودة للتفاصيل
+            </a>
+        </div>
+
+        @if (TempData["AlertMessage"] is string ok)
+        {
+            <div class="alert alert-success">@ok</div>
+        }
+        @if (TempData["AlertError"] is string err)
+        {
+            <div class="alert alert-danger">@err</div>
+        }
+
+        <div class="card bog-section mb-3">
+            <div class="card-body">
+                <code class="fs-6">@Model.Reference</code>
+                <h1 class="h5 mt-2">@Model.Title</h1>
+            </div>
+        </div>
+
+        @if (Model.AlreadyAssigned.Any())
+        {
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-info">history</span>
+                    <strong>الإدارات الشريكة التي تم إسنادها سابقاً</strong>
+                </div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var p in Model.AlreadyAssigned)
+                    {
+                        <li class="list-group-item d-flex align-items-center gap-2">
+                            <span class="material-icons text-muted">apartment</span>
+                            <span>@p.Name</span>
+                            <span class="badge bg-secondary ms-auto">مسندة سابقاً</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <form method="post" asp-action="ConfirmRequest" id="request-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ideaId" value="@Model.IdeaId" />
+
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-primary">add_business</span>
+                    <strong>اختر الإدارات الشريكة</strong>
+                </div>
+                <div class="card-body">
+                    @if (!Model.AvailablePartners.Any())
+                    {
+                        <p class="text-muted mb-0">لا توجد إدارات شريكة متاحة. كل الإدارات النشطة تم إسنادها أو مستبعدة.</p>
+                    }
+                    else
+                    {
+                        <div class="row g-2">
+                            @foreach (var p in Model.AvailablePartners)
+                            {
+                                <div class="col-md-4 col-sm-6">
+                                    <label class="form-check card bog-partner-tile p-3 h-100">
+                                        <input type="checkbox" name="partnerIds" value="@p.Id" class="form-check-input me-2" />
+                                        <span class="form-check-label d-flex align-items-center gap-2">
+                                            <span class="material-icons text-primary">apartment</span>
+                                            <span>@p.Name</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-info">chat_bubble_outline</span>
+                    <strong>ملاحظة للإدارات الشريكة</strong>
+                </div>
+                <div class="card-body">
+                    <textarea name="note" class="form-control" rows="3" maxlength="2000" placeholder="اذكر للمشاركين النقاط التي تريد رأيهم فيها"></textarea>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 justify-content-end">
+                <button type="submit" class="btn btn-primary" @(Model.AvailablePartners.Any() ? null : "disabled")>
+                    <span class="material-icons align-middle" style="font-size:18px">send</span>
+                    إرسال الطلب
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

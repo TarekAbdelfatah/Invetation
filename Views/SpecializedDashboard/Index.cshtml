@@ -19,6 +19,10 @@
                 <span class="material-icons" aria-hidden="true">apartment</span>
                 @deptLabel
             </span>
+            <a class="btn btn-primary ms-auto" asp-action="Referrals">
+                <span class="material-icons align-middle" style="font-size:18px">list_alt</span>
+                كل الأفكار المحوّلة
+            </a>
         </div>
 
         <div class="row g-3 mb-4">
@@ -43,22 +47,24 @@
                 </a>
             </div>
             <div class="col-lg-3 col-md-6">
-                <div class="card h-100 bog-kpi-card">
+                <a class="card h-100 bog-kpi-card bog-kpi-card--link text-decoration-none"
+                   asp-action="Referrals" asp-route-status="in_execution">
                     <div class="card-body">
                         <div class="bog-kpi-label">أُرسلت للتنفيذ</div>
                         <div class="bog-kpi-value text-success">@Model.SentToExecution</div>
                         <div class="bog-kpi-meta">قُبلت من اللجنة</div>
                     </div>
-                </div>
+                </a>
             </div>
             <div class="col-lg-3 col-md-6">
-                <div class="card h-100 bog-kpi-card">
+                <a class="card h-100 bog-kpi-card bog-kpi-card--link text-decoration-none"
+                   asp-action="Referrals" asp-route-status="rejected">
                     <div class="card-body">
                         <div class="bog-kpi-label">مرفوضة بعد التحويل</div>
                         <div class="bog-kpi-value text-danger">@Model.RejectedAfterRouting</div>
                         <div class="bog-kpi-meta">باستثناء رفض التدقيق</div>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
 

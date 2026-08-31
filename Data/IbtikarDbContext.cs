@@ -31,6 +31,9 @@ namespace Ibtikar.Data
         public DbSet<IdeaAttachment> IdeaAttachments => Set<IdeaAttachment>();
         public DbSet<IdeaStatusHistory> IdeaStatusHistories => Set<IdeaStatusHistory>();
         public DbSet<AuditActionItem> AuditActionItems => Set<AuditActionItem>();
+        public DbSet<PartnerAssignment> PartnerAssignments => Set<PartnerAssignment>();
+        public DbSet<AssessmentHeader> AssessmentHeaders => Set<AssessmentHeader>();
+        public DbSet<AssessmentDetail> AssessmentDetails => Set<AssessmentDetail>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

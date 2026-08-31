@@ -1,0 +1,140 @@
+@model Ibtikar.ViewModels.SpecializedAssessVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = $"تقييم {Model.Reference}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var filledCount = Model.Lines.Count(l => l.Score.HasValue);
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <h2 class="mb-0 d-flex align-items-center gap-2">
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">edit_note</span>
+                </span>
+                تقييم متخصص
+            </h2>
+            <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.IdeaId">
+                <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
+                العودة للتفاصيل
+            </a>
+        </div>
+
+        @if (TempData["AlertMessage"] is string ok)
+        {
+            <div class="alert alert-success">@ok</div>
+        }
+        @if (TempData["AlertError"] is string err)
+        {
+            <div class="alert alert-danger">@err</div>
+        }
+
+        <div class="card bog-section mb-3">
+            <div class="card-body d-flex flex-wrap align-items-center gap-2">
+                <code class="fs-6">@Model.Reference</code>
+                <span class="status-badge badge rounded-pill" style="background-color:@Model.StatusColor">@Model.StatusName</span>
+                <h1 class="h5 mb-0 ms-2">@Model.Title</h1>
+                <span class="ms-auto badge @(Model.IsLocked ? "bg-secondary" : "bg-info")">
+                    @(Model.IsLocked ? "مقفول" : Model.IsDraftSaved ? "مسودة محفوظة" : "تقييم جديد")
+                </span>
+            </div>
+        </div>
+
+        <form method="post" asp-action="SaveAssess" id="assess-form" autocomplete="off">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ideaId" value="@Model.IdeaId" />
+            <input type="hidden" name="headerId" value="@Model.DraftHeaderId" />
+
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-primary">score</span>
+                    <strong>المعايير الخمسة</strong>
+                    <span class="ms-auto text-muted small">تم تقييم <span id="filledCount">@filledCount</span> من @Model.Criteria.Count</span>
+                </div>
+                <div class="card-body p-0">
+                    <table class="bog-card-list mb-0">
+                        <thead>
+                            <tr>
+                                <th>المعيار</th>
+                                <th style="width:240px">الدرجة (1 - 5)</th>
+                                <th>تعليق</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.Criteria)
+                            {
+                                var line = Model.Lines.First(l => l.CriterionId == c.Id);
+                                <tr>
+                                    <td data-label="المعيار">
+                                        <strong>@c.Name</strong>
+                                        @if (!string.IsNullOrWhiteSpace(c.Description))
+                                        {
+                                            <div class="text-muted small">@c.Description</div>
+                                        }
+                                    </td>
+                                    <td data-label="الدرجة">
+                                        <select name="score_@c.Id" class="form-select form-select-sm assess-score" @(Model.IsLocked ? "disabled" : null)>
+                                            <option value="">—</option>
+                                            @for (var s = 1; s <= 5; s++)
+                                            {
+                                                <option value="@s" selected="@(line.Score == s)">@s</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td data-label="تعليق">
+                                        <input type="text" name="comment_@c.Id" class="form-control form-control-sm" value="@line.Comment" maxlength="1000" placeholder="اختياري" @(Model.IsLocked ? "disabled" : null) />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-info">chat_bubble_outline</span>
+                    <strong>تعليق عام</strong>
+                </div>
+                <div class="card-body">
+                    <textarea name="comment" class="form-control" rows="3" maxlength="2000" placeholder="ملاحظاتك على الفكرة ككل…" @(Model.IsLocked ? "disabled" : null)>@Model.Comment</textarea>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 justify-content-end">
+                @if (!Model.IsLocked)
+                {
+                    <button type="submit" name="saveDraft" value="true" class="btn btn-outline-secondary">
+                        <span class="material-icons align-middle" style="font-size:18px">save</span>
+                        حفظ كمسودة
+                    </button>
+                    <button type="submit" name="saveDraft" value="false" class="btn btn-primary">
+                        <span class="material-icons align-middle" style="font-size:18px">send</span>
+                        إرسال إلى اللجنة
+                    </button>
+                }
+                else
+                {
+                    <span class="badge bg-secondary align-self-center">تم إرسال التقييم.</span>
+                }
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    (function () {
+        const form = document.getElementById('assess-form');
+        if (!form) return;
+        const filled = document.getElementById('filledCount');
+        form.addEventListener('change', function () {
+            const scores = form.querySelectorAll('select.assess-score');
+            let count = 0;
+            scores.forEach(s => { if (s.value && s.value !== '') count++; });
+            if (filled) filled.textContent = count;
+        });
+    })();
+</script>
+}

@@ -1,0 +1,188 @@
+@model Ibtikar.ViewModels.SpecializedDetailsVm
+@using Ibtikar.ViewModels
+@using Ibtikar.Services.Ideas
+@{
+    ViewData["Title"] = $"تفاصيل {Model.Reference}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var canAssess = Model.StatusCode == IdeaStatusCodes.UnderStudy;
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <h2 class="mb-0 d-flex align-items-center gap-2">
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">description</span>
+                </span>
+                تفاصيل الفكرة
+            </h2>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" asp-action="Referrals">
+                    <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
+                    العودة للقائمة
+                </a>
+                @if (canAssess)
+                {
+                    <a class="btn btn-primary" asp-action="Assess" asp-route-id="@Model.Id">
+                        <span class="material-icons align-middle" style="font-size:18px">edit_note</span>
+                        تقييم الفكرة
+                    </a>
+                }
+            </div>
+        </div>
+
+        <div class="card bog-section mb-3">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <code class="fs-6">@Model.Reference</code>
+                    <span class="status-badge badge rounded-pill" style="background-color:@Model.StatusColor">@Model.StatusName</span>
+                    <span class="text-muted small">| مُقدِّمة: @Model.ApplicantName (@Model.ApplicantDepartmentName)</span>
+                </div>
+                <h1 class="h3 mb-0">@Model.Title</h1>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <div class="card bog-section mb-3">
+                    <div class="card-header bg-white">
+                        <span class="material-icons text-primary align-middle">subject</span>
+                        <strong class="ms-2">وصف الفكرة</strong>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0" style="white-space:pre-wrap">@Model.Description</p>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.ProblemStatement))
+                {
+                    <div class="card bog-section mb-3">
+                        <div class="card-header bg-white">
+                            <span class="material-icons text-warning align-middle">error_outline</span>
+                            <strong class="ms-2">التحديات الحالية</strong>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0" style="white-space:pre-wrap">@Model.ProblemStatement</p>
+                        </div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.ProposedSolution) || !string.IsNullOrWhiteSpace(Model.ExpectedBenefits))
+                {
+                    <div class="card bog-section mb-3">
+                        <div class="card-header bg-white">
+                            <span class="material-icons text-success align-middle">lightbulb</span>
+                            <strong class="ms-2">الحل المقترح والفوائد</strong>
+                        </div>
+                        <div class="card-body">
+                            @if (!string.IsNullOrWhiteSpace(Model.ProposedSolution))
+                            {
+                                <h6 class="text-muted">الحل المقترح</h6>
+                                <p style="white-space:pre-wrap">@Model.ProposedSolution</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.ExpectedBenefits))
+                            {
+                                <h6 class="text-muted">الفوائد المتوقعة</h6>
+                                <p style="white-space:pre-wrap">@Model.ExpectedBenefits</p>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="card bog-section mb-3">
+                    <div class="card-header bg-white">
+                        <span class="material-icons text-secondary align-middle">info</span>
+                        <strong class="ms-2">التصنيف</strong>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">المجال</dt>
+                            <dd class="col-sm-9">@(Model.DomainName ?? "—")</dd>
+                            <dt class="col-sm-3">الأثر المتوقع</dt>
+                            <dd class="col-sm-9">@(Model.ExpectedImpactName ?? "—")</dd>
+                            <dt class="col-sm-3">الفئة المستهدفة</dt>
+                            <dd class="col-sm-9">@(Model.TargetAudienceName ?? "—")</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                @if (Model.Attachments.Any())
+                {
+                    <div class="card bog-section mb-3">
+                        <div class="card-header bg-white">
+                            <span class="material-icons text-primary align-middle">attach_file</span>
+                            <strong class="ms-2">المرفقات</strong>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            @foreach (var a in Model.Attachments)
+                            {
+                                <li class="list-group-item d-flex align-items-center gap-2">
+                                    <span class="material-icons text-muted">picture_as_pdf</span>
+                                    <span>@a.FileName</span>
+                                    <small class="text-muted ms-auto">@((a.SizeBytes / 1024.0).ToString("0.0")) KB · @a.UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+
+            <div class="col-lg-4">
+                @if (canAssess)
+                {
+                    <div class="card bog-section mb-3">
+                        <div class="card-body">
+                            <h6 class="text-muted">خطوات العمل</h6>
+                            <div class="d-flex flex-column gap-2">
+                                <a class="btn btn-outline-primary" asp-action="Assess" asp-route-id="@Model.Id">
+                                    <span class="material-icons align-middle" style="font-size:16px">edit_note</span>
+                                    تقييم الفكرة
+                                </a>
+                                <a class="btn btn-outline-secondary" asp-action="Request" asp-route-id="@Model.Id">
+                                    <span class="material-icons align-middle" style="font-size:16px">groups</span>
+                                    طلب رأي الشركاء
+                                </a>
+                                <a class="btn btn-outline-secondary" asp-action="PartnerOpinion" asp-route-id="@Model.Id">
+                                    <span class="material-icons align-middle" style="font-size:16px">forum</span>
+                                    متابعة ردود الشركاء
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="card bog-section">
+                    <div class="card-header bg-white">
+                        <span class="material-icons text-info align-middle">history</span>
+                        <strong class="ms-2">السجل الزمني</strong>
+                    </div>
+                    <div class="card-body">
+                        @if (!Model.History.Any())
+                        {
+                            <p class="text-muted small mb-0">لا توجد تغييرات حالة بعد.</p>
+                        }
+                        else
+                        {
+                            <ul class="list-unstyled mb-0 bog-timeline">
+                                @foreach (var h in Model.History)
+                                {
+                                    <li class="mb-3">
+                                        <div class="d-flex justify-content-between">
+                                            <span>@h.FromStatus → @h.ToStatus</span>
+                                            <small class="text-muted" dir="ltr">@h.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                                        </div>
+                                        <small class="text-muted">@h.By</small>
+                                        @if (!string.IsNullOrWhiteSpace(h.Note))
+                                        {
+                                            <div class="small mt-1">@h.Note</div>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,108 @@
+@model Ibtikar.ViewModels.SpecializedReferralsVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = "الأفكار المحوّلة";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var currentStatus = Model.StatusFilter;
+    var deptLabel = string.IsNullOrWhiteSpace(Model.DepartmentName) ? "الإدارة المختصة" : Model.DepartmentName;
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="bog-page-header">
+            <h1>
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">engineering</span>
+                </span>
+                الأفكار المحوّلة إلى @deptLabel
+            </h1>
+            <span class="bog-page-role">
+                <span class="material-icons" aria-hidden="true">apartment</span>
+                @deptLabel
+            </span>
+        </div>
+
+        <form method="get" asp-action="Referrals" class="bog-filter-bar mb-3">
+            <div>
+                <label for="status" class="form-label small mb-1">تصفية بالحالة</label>
+                <select id="status" name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="" selected="@(string.IsNullOrEmpty(currentStatus))">الكل</option>
+                    <option value="under_study" selected="@(currentStatus == "under_study")">قيد الدراسة</option>
+                    <option value="sent_to_partner" selected="@(currentStatus == "sent_to_partner")">أُرسل لشريك</option>
+                    <option value="in_execution" selected="@(currentStatus == "in_execution")">قيد التنفيذ</option>
+                    <option value="rejected" selected="@(currentStatus == "rejected")">مرفوضة</option>
+                </select>
+            </div>
+            <div class="ms-auto align-self-end">
+                <a class="btn btn-outline-secondary btn-sm" asp-action="Index">
+                    <span class="material-icons align-middle" style="font-size:16px">arrow_forward</span>
+                    لوحة الإدارة
+                </a>
+            </div>
+        </form>
+
+        @if (!Model.Items.Any())
+        {
+            <div class="card bog-section">
+                <div class="card-body text-center text-muted p-5">
+                    <span class="material-icons" style="font-size:48px;color:var(--text-muted)">inbox</span>
+                    <p class="mb-1 mt-2">لا توجد أفكار بهذه التصفية.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card bog-section">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-primary">inventory_2</span>
+                    <strong>الأفكار المحوّلة</strong>
+                    <span class="badge bg-secondary ms-auto">@Model.Items.Count</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="bog-card-list mb-0">
+                        <thead>
+                            <tr>
+                                <th>المرجع</th>
+                                <th>العنوان</th>
+                                <th>الحالة</th>
+                                <th>المُقدِّم</th>
+                                <th>منذ التحويل</th>
+                                <th class="text-end">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var i in Model.Items)
+                            {
+                                <tr class="@(i.IsOverdue ? "table-danger" : null)">
+                                    <td data-label="المرجع"><code>@i.Reference</code></td>
+                                    <td data-label="العنوان">@i.Title</td>
+                                    <td data-label="الحالة">
+                                        <span class="status-badge badge rounded-pill" style="background-color:@i.StatusColor">@i.StatusName</span>
+                                    </td>
+                                    <td data-label="المُقدِّم">@(i.ApplicantName ?? "—")</td>
+                                    <td data-label="منذ التحويل">
+                                        <small dir="ltr">@i.StayDays.ToString("0.0") يوم</small>
+                                        @if (i.IsOverdue)
+                                        {
+                                            <span class="badge bg-danger ms-1">متأخر</span>
+                                        }
+                                    </td>
+                                    <td class="bog-card-list__actions" data-label="">
+                                        <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@i.Id">
+                                            <span class="material-icons align-middle" style="font-size:16px">visibility</span>
+                                            تفاصيل
+                                        </a>
+                                        <a class="btn btn-sm btn-primary" asp-action="Assess" asp-route-id="@i.Id">
+                                            <span class="material-icons align-middle" style="font-size:16px">edit_note</span>
+                                            تقييم
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>

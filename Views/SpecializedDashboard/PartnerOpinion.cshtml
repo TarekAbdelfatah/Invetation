@@ -1,0 +1,98 @@
+@model Ibtikar.ViewModels.SpecializedPartnerOpinionVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = $"ردود الشركاء · {Model.Reference}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <h2 class="mb-0 d-flex align-items-center gap-2">
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">forum</span>
+                </span>
+                متابعة ردود الإدارات الشريكة
+            </h2>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.IdeaId">
+                    <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
+                    تفاصيل
+                </a>
+                <a class="btn btn-primary" asp-action="Request" asp-route-id="@Model.IdeaId">
+                    <span class="material-icons align-middle" style="font-size:18px">add</span>
+                    إضافة شركاء
+                </a>
+            </div>
+        </div>
+
+        <div class="card bog-section mb-3">
+            <div class="card-body">
+                <code class="fs-6">@Model.Reference</code>
+                <h1 class="h5 mt-2">@Model.Title</h1>
+            </div>
+        </div>
+
+        @if (!Model.Rows.Any())
+        {
+            <div class="card bog-section">
+                <div class="card-body text-center text-muted p-5">
+                    <span class="material-icons" style="font-size:48px;color:var(--text-muted)">forum</span>
+                    <p class="mb-1 mt-2">لم يتم إرسال أي طلب لشركاء بعد.</p>
+                    <a class="btn btn-primary mt-3" asp-action="Request" asp-route-id="@Model.IdeaId">
+                        <span class="material-icons align-middle" style="font-size:18px">groups</span>
+                        طلب رأي الشركاء
+                    </a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card bog-section">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-primary">inventory_2</span>
+                    <strong>الإدارات الشريكة وردودها</strong>
+                    <span class="badge bg-secondary ms-auto">@Model.Rows.Count</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="bog-card-list mb-0">
+                        <thead>
+                            <tr>
+                                <th>الإدارة الشريكة</th>
+                                <th>الحالة</th>
+                                <th>منذ الطلب</th>
+                                <th>الرد</th>
+                                <th>ملاحظة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.Rows)
+                            {
+                                <tr class="@(r.IsLate ? "table-warning" : null)">
+                                    <td data-label="الإدارة الشريكة">
+                                        <span class="material-icons text-muted align-middle">apartment</span>
+                                        @r.PartnerDepartmentName
+                                    </td>
+                                    <td data-label="الحالة">
+                                        <span class="badge @r.StatusBadgeClass">@r.Status</span>
+                                    </td>
+                                    <td data-label="منذ الطلب">
+                                        <small dir="ltr">@r.DaysOpen.ToString("0.0") يوم</small>
+                                        @if (r.IsLate)
+                                        {
+                                            <span class="badge bg-danger ms-1">متأخر (أكثر من 4 أيام)</span>
+                                        }
+                                    </td>
+                                    <td data-label="الرد" dir="ltr">
+                                        @(r.RespondedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "—")
+                                    </td>
+                                    <td data-label="ملاحظة" class="small">@(r.Note ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>
