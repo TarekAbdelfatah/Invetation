@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "تقديم فكرة جديدة";
+}
+<div class="bog-main">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card bog-section">
+                    <div class="card-body text-center p-5">
+                        <div class="mb-4">
+                            <span class="material-icons" style="font-size:80px;color:var(--gold-500)">lightbulb</span>
+                        </div>
+                        <h1 class="mb-3">نموذج تقديم الأفكار</h1>
+                        <p class="text-muted mb-4">
+                            نعمل على إطلاق نموذج تقديم الأفكار قريباً. سيتضمن الحقول الأساسية،
+                            عدّاد الأحرف، الحقول المشروطة، وحفظ المسودة.
+                        </p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <a class="btn btn-primary" asp-controller="MyRequests" asp-action="Index">
+                                <span class="material-icons align-middle" style="font-size:18px">folder_special</span>
+                                طلباتي الحالية
+                            </a>
+                            <a class="btn btn-outline-secondary" asp-controller="Home" asp-action="Index">
+                                العودة للرئيسية
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-light border mt-3 d-flex align-items-start gap-2">
+                    <span class="material-icons text-muted">info</span>
+                    <div class="text-muted small">
+                        <strong>المخطط للنموذج:</strong>
+                        العنوان، الملخص، التحديات، الحل المقترح، مجال الابتكار،
+                        أثر متوقع (مع خيار "أخرى")، فئة مستهدفة (مع خيار "أخرى")،
+                        تقنيات ناشئة (مع خيار "أخرى")، رفع حتى ملفين PDF.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

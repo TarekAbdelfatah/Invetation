@@ -1,5 +1,6 @@
 using Ibtikar.Data;
 using Ibtikar.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +17,7 @@ namespace Ibtikar.Controllers
             _logger = logger;
         }
 
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             try
@@ -37,6 +39,12 @@ namespace Ibtikar.Controllers
                 ViewBag.DatabaseError = ex.Message;
                 return View(Array.Empty<InnovationIdea>());
             }
+        }
+
+        [Authorize]
+        public IActionResult Create()
+        {
+            return View();
         }
     }
 }
