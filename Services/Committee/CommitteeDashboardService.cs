@@ -482,7 +482,7 @@ namespace Ibtikar.Services.Committee
                 FromStatusId = fromId,
                 ToStatusId = returnedId.Value,
                 ChangedByUserId = userId,
-                Note = $"إعادة للتطوير من اللجنة (نسبة مجمعة {combined}%)."
+                Note = "إعادة للتطوير من اللجنة بناءً على تقييم الأعضاء."
             });
 
             await _db.SaveChangesAsync(ct);
