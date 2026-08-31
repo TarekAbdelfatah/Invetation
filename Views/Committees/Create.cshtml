@@ -1,0 +1,118 @@
+@model Ibtikar.ViewModels.CommitteesCreateVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = "إنشاء لجنة ابتكار";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="bog-page-header">
+            <h1>
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">group_add</span>
+                </span>
+                إنشاء لجنة ابتكار
+            </h1>
+            <span class="bog-page-role">
+                <span class="material-icons" aria-hidden="true">admin_panel_settings</span>
+                إدارة النظام
+            </span>
+        </div>
+
+        @if (TempData["AlertMessage"] is string ok)
+        {
+            <div class="alert alert-success">@ok</div>
+        }
+        @if (TempData["AlertError"] is string err)
+        {
+            <div class="alert alert-danger">@err</div>
+        }
+
+        <form asp-action="Create" method="post" id="committeeForm">
+            @Html.AntiForgeryToken()
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="Name">اسم اللجنة <span class="text-danger">*</span></label>
+                        <input type="text" id="Name" name="Name" class="form-control" value="@Model.Name" required />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="Description">الوصف</label>
+                        <textarea id="Description" name="Description" class="form-control" rows="3">@Model.Description</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="HeadUserId">رئيس اللجنة <span class="text-danger">*</span></label>
+                        <select id="HeadUserId" name="HeadUserId" class="form-select" required>
+                            <option value="">— اختر رئيس اللجنة —</option>
+                            @foreach (var h in Model.HeadCandidates)
+                            {
+                                <option value="@h.UserId" selected="@(Model.HeadUserId == h.UserId)">
+                                    @h.FullName (@h.Username)
+                                </option>
+                            }
+                        </select>
+                        <div class="form-text">يجب اختيار رئيس واحد فقط، وسيتم احتسابه ضمن الأعضاء.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">الأعضاء <span class="text-danger">*</span></label>
+                        <div class="form-check-list" id="memberList">
+                            @foreach (var m in Model.MemberCandidates)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input member-check"
+                                           type="checkbox"
+                                           id="member_@m.UserId"
+                                           name="MemberUserIds"
+                                           value="@m.UserId"
+                                           checked="@(Model.MemberUserIds.Contains(m.UserId))" />
+                                    <label class="form-check-label" for="member_@m.UserId">
+                                        @m.FullName (@m.Username)
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                        <div class="form-text">يجب إضافة عضو واحد على الأقل. الرئيس محسوب ضمن الأعضاء.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">إنشاء اللجنة</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">إلغاء</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('committeeForm');
+        var head = document.getElementById('HeadUserId');
+
+        form.addEventListener('submit', function (e) {
+            var checked = document.querySelectorAll('.member-check:checked');
+            var headValue = head.value;
+            if (!headValue) {
+                e.preventDefault();
+                alert('يرجى اختيار رئيس اللجنة.');
+                return;
+            }
+            var containsHead = Array.prototype.some.call(checked, function (c) { return c.value === headValue; });
+            if (checked.length < 1) {
+                e.preventDefault();
+                alert('يرجى إضافة عضو واحد على الأقل.');
+                return;
+            }
+            if (!containsHead) {
+                e.preventDefault();
+                alert('يجب أن يكون الرئيس ضمن قائمة الأعضاء المحددة.');
+            }
+        });
+    });
+</script>

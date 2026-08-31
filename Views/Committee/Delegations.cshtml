@@ -1,0 +1,149 @@
+@model Ibtikar.ViewModels.CommitteeDelegationsVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = "التفويض";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="bog-page-header">
+            <h1>
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">swap_horiz</span>
+                </span>
+                تفويض رئيس اللجنة
+            </h1>
+            <span class="bog-page-role">
+                <span class="material-icons" aria-hidden="true">how_to_vote</span>
+                لجنة الابتكار
+            </span>
+        </div>
+
+        @if (TempData["AlertMessage"] is string ok)
+        {
+            <div class="alert alert-success">@ok</div>
+        }
+        @if (TempData["AlertError"] is string err)
+        {
+            <div class="alert alert-danger">@err</div>
+        }
+
+        @if (Model.IsHead)
+        {
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-primary">add_circle_outline</span>
+                    <strong>تفويض جديد</strong>
+                </div>
+                <div class="card-body">
+                    <form asp-action="AddDelegation" method="post" class="row g-3">
+                        @Html.AntiForgeryToken()
+                        <div class="col-md-4">
+                            <label class="form-label" for="delegateMemberUserId">العضو المفوَّض له</label>
+                            <select id="delegateMemberUserId" name="delegateMemberUserId" class="form-select" required>
+                                <option value="">— اختر العضو —</option>
+                                @foreach (var c in Model.Candidates)
+                                {
+                                    <option value="@c.UserId">@c.FullName (@c.Username)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="startAt">من تاريخ</label>
+                            <input type="datetime-local" id="startAt" name="startAt" class="form-control" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="endAt">إلى تاريخ</label>
+                            <input type="datetime-local" id="endAt" name="endAt" class="form-control" required />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">إنشاء</button>
+                        </div>
+                    </form>
+                    <div class="form-text mt-2">
+                        لا يمكن وجود أكثر من تفويض واحد نشط للجنة في نفس الفترة، ولا يمكن التفويض لرئيس اللجنة.
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-light border d-flex align-items-start gap-2">
+                <span class="material-icons text-muted">info</span>
+                <div class="text-muted">
+                    أنت لست رئيس اللجنة. يمكنك الاطلاع على حالات التفويض فقط.
+                    @if (Model.DelegateName != null)
+                    {
+                        <div class="mt-2">
+                            يوجد تفويض نشط لصالح: <strong>@Model.DelegateName</strong>
+                            (@(Model.ActiveFrom?.ToString("yyyy-MM-dd HH:mm") ?? "—") إلى @(Model.ActiveTo?.ToString("yyyy-MM-dd HH:mm") ?? "—"))
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (Model.Rows.Count == 0)
+        {
+            <div class="alert alert-light border text-center py-4">
+                <span class="material-icons text-muted d-block mb-2" style="font-size:3rem">swap_horiz</span>
+                <div class="text-muted">لا توجد تفويضات حتى الآن.</div>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>العضو المفوَّض له</th>
+                            <th>من تاريخ</th>
+                            <th>إلى تاريخ</th>
+                            <th>الحالة</th>
+                            @if (Model.IsHead)
+                            {
+                                <th></th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model.Rows)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@d.DelegateName</td>
+                                <td>@d.StartAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@d.EndAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>
+                                    @if (d.IsActive)
+                                    {
+                                        <span class="badge bg-success">نشط</span>
+                                    }
+                                    else if (d.EndAt < DateTime.UtcNow)
+                                    {
+                                        <span class="badge bg-secondary">منتهي</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-info text-dark">قادم</span>
+                                    }
+                                </td>
+                                @if (Model.IsHead)
+                                {
+                                    <td class="text-end">
+                                        <form asp-action="CancelDelegation" method="post" class="d-inline"
+                                              onsubmit="return confirm('هل تريد إلغاء هذا التفويض؟');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="delegationId" value="@d.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">إلغاء</button>
+                                        </form>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
