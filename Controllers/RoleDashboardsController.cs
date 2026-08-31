@@ -4,12 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = RoleCodes.SpecializedDepartment)]
-    public class SpecializedDashboardController : Controller
-    {
-        public IActionResult Index() => View();
-    }
-
     [Authorize(Roles = RoleCodes.PartnerDepartment)]
     public class PartnerDashboardController : Controller
     {
