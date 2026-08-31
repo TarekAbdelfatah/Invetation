@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Ibtikar.Data;
 using Ibtikar.Data.Seed;
 using Ibtikar.Middleware;
+using Ibtikar.Repositories;
 using Ibtikar.Services;
 using Ibtikar.Services.Attachments;
 using Ibtikar.Services.Background;
@@ -37,6 +38,8 @@ namespace Ibtikar
             builder.Services.AddScoped<FileStorageService>();
             builder.Services.AddScoped<AttachmentService>();
             builder.Services.AddScoped<IdeaOwnerQuery>();
+            builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
+            builder.Services.AddScoped<IIdeaService, IdeaService>();
             builder.Services.AddHostedService<IdeaDeadlineHostedService>();
             builder.Services.Configure<IntegrationOptions>(builder.Configuration.GetSection("Integrations"));
             builder.Services.AddHttpClient<ProcedureGatewayService>();
