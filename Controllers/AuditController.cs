@@ -33,7 +33,21 @@ namespace Ibtikar.Controllers
         {
             var applicantTypeNorm = (applicantType ?? string.Empty).Trim().ToLowerInvariant();
             var statusNorm = (status ?? string.Empty).Trim().ToLowerInvariant();
+            var items = await FetchInboxRowsAsync(applicantTypeNorm, statusNorm, ct);
+            return View(new AuditInboxVm(items, applicantTypeNorm, statusNorm));
+        }
 
+        [HttpGet]
+        public async Task<IActionResult> InboxRows(string? applicantType, string? status, CancellationToken ct)
+        {
+            var applicantTypeNorm = (applicantType ?? string.Empty).Trim().ToLowerInvariant();
+            var statusNorm = (status ?? string.Empty).Trim().ToLowerInvariant();
+            var items = await FetchInboxRowsAsync(applicantTypeNorm, statusNorm, ct);
+            return PartialView("_InboxRowsPartial", items);
+        }
+
+        private async Task<List<AuditInboxVm.Row>> FetchInboxRowsAsync(string applicantTypeNorm, string statusNorm, CancellationToken ct)
+        {
             var statusCodes = statusNorm switch
             {
                 "new" => new[] { IdeaStatusCodes.New },
@@ -59,7 +73,7 @@ namespace Ibtikar.Controllers
             var now = DateTime.UtcNow;
             var overdueThreshold = TimeSpan.FromHours(48);
 
-            var items = await ideasQuery
+            return await ideasQuery
                 .Include(i => i.CurrentStatus)
                 .Include(i => i.InnovationDomain)
                 .Include(i => i.ApplicantDepartment)
@@ -76,8 +90,6 @@ namespace Ibtikar.Controllers
                     i.CreatedAt,
                     now - i.CreatedAt > overdueThreshold))
                 .ToListAsync(ct);
-
-            return View(new AuditInboxVm(items, applicantTypeNorm, statusNorm));
         }
 
         [HttpGet]
