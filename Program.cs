@@ -49,6 +49,8 @@ namespace Ibtikar
             builder.Services.AddScoped<IMyRequestsService, MyRequestsService>();
             builder.Services.AddScoped<IAuditRepository, AuditRepository>();
             builder.Services.AddScoped<IAuditService, AuditService>();
+            builder.Services.AddScoped<ISpecializedDashboardRepository, SpecializedDashboardRepository>();
+            builder.Services.AddScoped<Ibtikar.Services.SpecializedDashboard.ISpecializedDashboardService, Ibtikar.Services.SpecializedDashboard.SpecializedDashboardService>();
             builder.Services.AddHostedService<IdeaDeadlineHostedService>();
             builder.Services.Configure<IntegrationOptions>(builder.Configuration.GetSection("Integrations"));
             builder.Services.AddHttpClient<ProcedureGatewayService>();

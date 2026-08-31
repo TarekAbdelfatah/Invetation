@@ -1,20 +1,72 @@
+@model Ibtikar.ViewModels.SpecializedDashboardVm
+@using Ibtikar.ViewModels
 @{
     ViewData["Title"] = "لوحة الإدارة المختصة";
-    Layout = "_Layout";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var deptLabel = string.IsNullOrWhiteSpace(Model.DepartmentName) ? "الإدارة المختصة" : Model.DepartmentName;
 }
+
 <div class="bog-main">
     <div class="container py-4">
-        <h2 class="mb-0 d-flex align-items-center gap-2 mb-4">
-            <span class="bog-page-icon" aria-hidden="true">
-                <span class="material-icons">engineering</span>
+        <div class="bog-page-header">
+            <h1>
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">engineering</span>
+                </span>
+                لوحة @deptLabel
+            </h1>
+            <span class="bog-page-role">
+                <span class="material-icons" aria-hidden="true">apartment</span>
+                @deptLabel
             </span>
-            لوحة الإدارة المختصة
-        </h2>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <a class="card h-100 bog-kpi-card bog-kpi-card--link text-decoration-none"
+                   asp-action="Referrals" asp-route-status="under_study">
+                    <div class="card-body">
+                        <div class="bog-kpi-label">قيد الدراسة</div>
+                        <div class="bog-kpi-value text-primary">@Model.UnderStudy</div>
+                        <div class="bog-kpi-meta">بانتظار تقييم إدارتك</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <a class="card h-100 bog-kpi-card bog-kpi-card--link text-decoration-none"
+                   asp-action="Referrals" asp-route-status="sent_to_partner">
+                    <div class="card-body">
+                        <div class="bog-kpi-label">أُرسل للجهات الشريكة</div>
+                        <div class="bog-kpi-value text-info">@Model.SentToPartner</div>
+                        <div class="bog-kpi-meta">بانتظار ردود الشركاء</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100 bog-kpi-card">
+                    <div class="card-body">
+                        <div class="bog-kpi-label">أُرسلت للتنفيذ</div>
+                        <div class="bog-kpi-value text-success">@Model.SentToExecution</div>
+                        <div class="bog-kpi-meta">قُبلت من اللجنة</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100 bog-kpi-card">
+                    <div class="card-body">
+                        <div class="bog-kpi-label">مرفوضة بعد التحويل</div>
+                        <div class="bog-kpi-value text-danger">@Model.RejectedAfterRouting</div>
+                        <div class="bog-kpi-meta">باستثناء رفض التدقيق</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="alert alert-light border d-flex align-items-start gap-2">
-            <span class="material-icons text-muted">construction</span>
+            <span class="material-icons text-muted">info</span>
             <div class="text-muted small">
-                لوحة المراجعة الفنية للأفكار ستتوفر في المرحلة التالية.
-                سترى هنا الأفكار المُحوّلة إلى إدارتك مع نموذج التقييم الخماسي.
+                لوحة المراجعة الفنية للأفكار. الأرقام خاصة بإدارتك فقط بناءً على
+                <code>AssignedDepartmentId</code> من جلسة الدخول.
             </div>
         </div>
     </div>
