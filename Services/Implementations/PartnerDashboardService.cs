@@ -1,6 +1,7 @@
 using Ibtikar.DTOs.PartnerDashboard;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
+using Ibtikar.Services.Common;
 using Ibtikar.Services.Notifications;
 
 namespace Ibtikar.Services.PartnerDashboard
@@ -9,6 +10,7 @@ namespace Ibtikar.Services.PartnerDashboard
     {
         private const int MinScore = 1;
         private const int MaxScore = 5;
+        private const int NotCompetentWindowDays = 3;
 
         private readonly IPartnerDashboardRepository _repo;
         private readonly INotificationClient _notifier;
@@ -39,8 +41,20 @@ namespace Ibtikar.Services.PartnerDashboard
         public async Task<PartnerDetailsDto?> GetDetailsAsync(Guid? departmentId, Guid assignmentId, CancellationToken ct)
         {
             if (departmentId is null || departmentId == Guid.Empty) return null;
-            return await _repo.GetDetailsAsync(assignmentId, departmentId.Value, ct);
+            var dto = await _repo.GetDetailsAsync(assignmentId, departmentId.Value, ct);
+            if (dto is null) return null;
+
+            if (!dto.IsNotCompetentReturn && dto.Status == PartnerAssignment.StatusPending)
+            {
+                var now = DateTime.UtcNow;
+                return dto with { CanReturnNotCompetent = IsReturnNotCompetentAllowed(dto.SentAt, now) };
+            }
+
+            return dto;
         }
+
+        public bool IsReturnNotCompetentAllowed(DateTime sentAtUtc, DateTime nowUtc)
+            => WorkingDays.IsWithinWindow(sentAtUtc, NotCompetentWindowDays, nowUtc);
 
         public async Task<PartnerSubmitOutcomeDto> SubmitAsync(
             Guid? departmentId,
@@ -136,6 +150,48 @@ namespace Ibtikar.Services.PartnerDashboard
                 ? "تم إرجاع الطلب للإدارة المختصة."
                 : "تم إرسال التقييم الاستشاري.";
             return new(true, message, total);
+        }
+
+        public async Task<PartnerSubmitOutcomeDto> ReturnNotCompetentAsync(
+            Guid? departmentId,
+            Guid actorUserId,
+            Guid assignmentId,
+            string reason,
+            CancellationToken ct)
+        {
+            if (departmentId is null || departmentId == Guid.Empty)
+                return new(false, "إدارة المستخدم غير معروفة.", null);
+
+            if (string.IsNullOrWhiteSpace(reason))
+                return new(false, "يرجى كتابة سبب الإعادة (خطأ في التوجيه).", null);
+
+            var assignment = await _repo.GetAssignmentForPartnerAsync(assignmentId, departmentId.Value, ct);
+            if (assignment is null)
+                return new(false, "الإسناد غير موجود أو ليس لإدارتك.", null);
+
+            if (assignment.Status == PartnerAssignment.StatusReturned)
+                return new(false, "تم إرجاع هذا الطلب من قبل.", null);
+
+            var now = DateTime.UtcNow;
+            if (!IsReturnNotCompetentAllowed(assignment.SentAt, now))
+            {
+                var elapsed = WorkingDays.CountFrom(assignment.SentAt, now);
+                return new(false,
+                    $"انتهت مهلة الإعادة لعدم الاختصاص ({elapsed} أيام عمل من {NotCompetentWindowDays}).",
+                    null);
+            }
+
+            assignment.Status = PartnerAssignment.StatusReturned;
+            assignment.RespondedAt = now;
+            assignment.Note = $"NotCompetent: {reason.Trim()}";
+
+            await _repo.SaveChangesAsync(ct);
+
+            _logger.LogInformation(
+                "Partner {Dept} marked assignment {Assignment} as not-competent within {Window}-day window",
+                departmentId, assignment.Id, NotCompetentWindowDays);
+
+            return new(true, "تم إرجاع الطلب للإدارة المختصة بسبب خطأ في التوجيه.", null);
         }
 
         private async Task SafeNotifyAsync(string action, string entityId, IDictionary<string, string>? payload, CancellationToken ct)

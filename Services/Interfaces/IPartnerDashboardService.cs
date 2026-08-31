@@ -12,5 +12,12 @@ namespace Ibtikar.Services.PartnerDashboard
             Guid actorUserId,
             PartnerSubmitDto submission,
             CancellationToken ct);
+        Task<PartnerSubmitOutcomeDto> ReturnNotCompetentAsync(
+            Guid? departmentId,
+            Guid actorUserId,
+            Guid assignmentId,
+            string reason,
+            CancellationToken ct);
+        bool IsReturnNotCompetentAllowed(DateTime sentAtUtc, DateTime nowUtc);
     }
 }

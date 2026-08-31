@@ -109,6 +109,11 @@ namespace Ibtikar.Repositories
                 .ToList();
 
             var canScore = assignment.Status != PartnerAssignment.StatusReturned;
+            var isNotCompetentReturn = assignment.Status == PartnerAssignment.StatusReturned
+                && assignment.Note?.StartsWith("NotCompetent:", StringComparison.Ordinal) == true;
+            var notCompetentReason = isNotCompetentReturn && assignment.Note is { Length: > 14 }
+                ? assignment.Note[14..].Trim()
+                : null;
 
             return new PartnerDetailsDto(
                 assignment.Id, idea.Id, idea.ReferenceNumber, idea.Title,
@@ -119,7 +124,9 @@ namespace Ibtikar.Repositories
                 idea.AssignedDepartment?.Name ?? "—",
                 assignment.Status, assignment.SentAt, assignment.RespondedAt,
                 canScore, existing is not null && !existing.IsDraft,
-                criteria, lines, existing?.TotalScore, existing?.Comment);
+                criteria, lines, existing?.TotalScore, existing?.Comment,
+                isNotCompetentReturn, notCompetentReason,
+                false);
         }
 
         public async Task<AssessmentHeader?> GetExistingPartnerHeaderAsync(Guid ideaId, Guid departmentId, CancellationToken ct)

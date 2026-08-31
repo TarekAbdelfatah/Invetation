@@ -81,6 +81,22 @@ namespace Ibtikar.Controllers
             return RedirectToAction(nameof(Details), new { assignmentId });
         }
 
+        [HttpPost("PartnerDashboard/ReturnNotCompetent")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReturnNotCompetent(Guid assignmentId, string? reason, CancellationToken ct)
+        {
+            var result = await _service.ReturnNotCompetentAsync(
+                ResolveDepartmentId(),
+                ResolveUserId(),
+                assignmentId,
+                reason ?? string.Empty,
+                ct);
+
+            TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
+            TempData["AlertType"] = result.Success ? "success" : "danger";
+            return RedirectToAction(nameof(Details), new { assignmentId });
+        }
+
         private static List<PartnerScoreInputDto> ParseScores(IFormCollection form)
         {
             var scores = new List<PartnerScoreInputDto>();
@@ -125,8 +141,21 @@ namespace Ibtikar.Controllers
                 TotalScore = dto.TotalScore,
                 Comment = dto.Comment,
                 Criteria = dto.Criteria.Select(c => new PartnerCriterionVm(c.Id, c.Code, c.Name, c.DisplayOrder)).ToList(),
-                ExistingScores = dto.ExistingScores.Select(s => new PartnerScoreLineVm(s.CriterionId, s.CriterionCode, s.CriterionName, s.Score, s.Comment)).ToList()
+                ExistingScores = dto.ExistingScores.Select(s => new PartnerScoreLineVm(s.CriterionId, s.CriterionCode, s.CriterionName, s.Score, s.Comment)).ToList(),
+                IsNotCompetentReturn = dto.IsNotCompetentReturn,
+                NotCompetentReason = dto.NotCompetentReason,
+                CanReturnNotCompetent = dto.CanReturnNotCompetent,
+                SpecializedAssessment = ToSpecializedVm(dto.SpecializedAssessment)
             };
+
+        private static PartnerSpecializedAssessmentVm ToSpecializedVm(PartnerSpecializedAssessmentDto dto)
+            => new(
+                dto.HasAssessment,
+                dto.AssessorDepartmentName,
+                dto.TotalScore,
+                dto.Comment,
+                dto.SubmittedAt,
+                dto.Scores.Select(s => new PartnerSpecializedScoreVm(s.CriterionId, s.CriterionCode, s.CriterionName, s.Score, s.Comment)).ToList());
 
         private Guid? ResolveDepartmentId()
         {
