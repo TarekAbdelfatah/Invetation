@@ -1,6 +1,5 @@
-using System.Security.Claims;
-using Ibtikar.Services.Security;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Controllers
 {
@@ -17,15 +16,8 @@ namespace Ibtikar.Controllers
 
         public IActionResult Index()
         {
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                var codes = User.FindAll(RoleCodes.ClaimType).Select(c => c.Value).ToList();
-                foreach (var code in codes)
-                {
-                    if (RoleCodes.HomeRedirects.TryGetValue(code, out var path))
-                        return Redirect(path);
-                }
-            }
+            var home = Ibtikar.Services.Security.RoleRedirect.ResolveHomeFor(User);
+            if (!string.IsNullOrEmpty(home)) return Redirect(home);
             return View();
         }
 

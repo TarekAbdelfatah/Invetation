@@ -1,9 +1,12 @@
 using System.Globalization;
 using System.Threading.RateLimiting;
 using Ibtikar.Data;
+using Ibtikar.Data.Seed;
+using Ibtikar.Middleware;
 using Ibtikar.Services;
 using Ibtikar.Services.Security;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,14 +20,14 @@ namespace Ibtikar
 
             builder.Services.AddControllersWithViews(options =>
             {
-                options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
+                options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
             });
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddDbContext<IbtikarDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
             builder.Services.AddScoped<Pbkdf2PasswordHasher>();
             builder.Services.AddScoped<AuthService>();
-            builder.Services.AddScoped<Ibtikar.Services.AuditLogService>();
+            builder.Services.AddScoped<AuditLogService>();
 
             builder.Services.AddIbtikarCookieAuth(builder.Configuration);
 
@@ -48,7 +51,8 @@ namespace Ibtikar
 
             ApplyPendingMigrations(app);
 
-            app.UseMiddleware<Ibtikar.Middleware.ExceptionMiddleware>();
+            app.UseMiddleware<SecurityHeadersMiddleware>();
+            app.UseMiddleware<ExceptionMiddleware>();
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
@@ -81,18 +85,9 @@ namespace Ibtikar
             try
             {
                 db.Database.Migrate();
-                Ibtikar.Data.Seed.IdeaStatusSeed.SeedIdeaStatuses(db);
-                Ibtikar.Data.Seed.InnovationDomainSeed.SeedInnovationDomains(db);
-                Ibtikar.Data.Seed.UserTypeSeed.SeedUserTypes(db);
-                Ibtikar.Data.Seed.DepartmentSeed.SeedDepartments(db);
-                Ibtikar.Data.Seed.RoleSeed.SeedRoles(db);
-                Ibtikar.Data.Seed.AssessmentCriterionSeed.SeedCriteria(db);
-                Ibtikar.Data.Seed.CriterionScoringSeed.SeedScoring(db);
-                Ibtikar.Data.Seed.FormLookupSeed.SeedFormLookups(db);
-                db.SaveChanges();
-                Ibtikar.Data.Seed.InnovationIdeaSeed.SeedSampleIdeas(db);
-                db.SaveChanges();
-                Ibtikar.Data.Seed.UserSeed.SeedTestUsers(db, new Pbkdf2PasswordHasher());
+                DatabaseSeeder.SeedLookups(db);
+                DatabaseSeeder.SeedSampleIdeas(db);
+                DatabaseSeeder.SeedTestUsers(db, new Pbkdf2PasswordHasher());
             }
             catch (Exception ex)
             {
@@ -112,6 +107,33 @@ namespace Ibtikar
                 FallBackToParentCultures = true,
                 ApplyCurrentCultureToResponseHeaders = true
             };
+        }
+    }
+
+    internal static class DatabaseSeeder
+    {
+        public static void SeedLookups(IbtikarDbContext db)
+        {
+            IdeaStatusSeed.SeedIdeaStatuses(db);
+            InnovationDomainSeed.SeedInnovationDomains(db);
+            UserTypeSeed.SeedUserTypes(db);
+            DepartmentSeed.SeedDepartments(db);
+            RoleSeed.SeedRoles(db);
+            AssessmentCriterionSeed.SeedCriteria(db);
+            CriterionScoringSeed.SeedScoring(db);
+            FormLookupSeed.SeedFormLookups(db);
+            db.SaveChanges();
+        }
+
+        public static void SeedSampleIdeas(IbtikarDbContext db)
+        {
+            InnovationIdeaSeed.SeedSampleIdeas(db);
+            db.SaveChanges();
+        }
+
+        public static void SeedTestUsers(IbtikarDbContext db, Pbkdf2PasswordHasher hasher)
+        {
+            UserSeed.SeedTestUsers(db, hasher);
         }
     }
 }

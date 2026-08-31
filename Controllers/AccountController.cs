@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Ibtikar.Services.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -20,7 +21,7 @@ namespace Ibtikar.Controllers
         {
             if (User.Identity?.IsAuthenticated == true)
             {
-                var home = ResolveHomeForUser(User);
+                var home = RoleRedirect.ResolveHomeFor(User);
                 if (!string.IsNullOrEmpty(home)) return Redirect(home);
             }
             ViewData["ReturnUrl"] = returnUrl;
@@ -53,7 +54,7 @@ namespace Ibtikar.Controllers
 
                 var home = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
                     ? returnUrl
-                    : (ResolveHomeForRoles(result.User.UserRoles.Select(ur => ur.Role!.Code).ToList()) ?? "/Ideas");
+                    : (RoleRedirect.ResolveHomeFor(result.User.UserRoles.Select(ur => ur.Role!.Code).ToList()) ?? "/Ideas");
 
                 return Redirect(home);
             }
@@ -78,21 +79,6 @@ namespace Ibtikar.Controllers
         {
             return View();
         }
-
-        private string? ResolveHomeForUser(System.Security.Claims.ClaimsPrincipal user)
-        {
-            var codes = user.FindAll(RoleCodes.ClaimType).Select(c => c.Value).ToList();
-            return ResolveHomeForRoles(codes);
-        }
-
-        private static string? ResolveHomeForRoles(IList<string> codes)
-        {
-            foreach (var code in codes)
-            {
-                if (RoleCodes.HomeRedirects.TryGetValue(code, out var path))
-                    return path;
-            }
-            return null;
-        }
     }
 }
+

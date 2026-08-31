@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Ibtikar.Data;
 using Ibtikar.Models;
+using Ibtikar.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,34 +11,37 @@ namespace Ibtikar.Services.Security
     {
         private readonly IbtikarDbContext _db;
         private readonly Pbkdf2PasswordHasher _hasher;
+        private readonly AuditLogService _audit;
 
-        public AuthService(IbtikarDbContext db, Pbkdf2PasswordHasher hasher)
+        public AuthService(IbtikarDbContext db, Pbkdf2PasswordHasher hasher, AuditLogService audit)
         {
             _db = db;
             _hasher = hasher;
+            _audit = audit;
         }
 
         public async Task<LoginResult> LoginAsync(string username, string password, CancellationToken ct = default)
         {
-            Validation().Username(username).Password(password);
+            if (string.IsNullOrWhiteSpace(username))
+                return LoginResult.Failed("اسم المستخدم أو كلمة المرور غير صحيحة.");
+            if (string.IsNullOrEmpty(password))
+                return LoginResult.Failed("اسم المستخدم أو كلمة المرور غير صحيحة.");
 
             var user = await _db.Users
-                .AsNoTracking()
                 .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(u => u.Username == username && u.IsActive, ct);
 
-            if (user is null)
+            var ok = user is not null && _hasher.Verify(password, user.PasswordSalt, user.PasswordHash);
+            if (!ok)
                 return LoginResult.Failed("اسم المستخدم أو كلمة المرور غير صحيحة.");
 
-            if (!_hasher.Verify(password, user.PasswordSalt, user.PasswordHash))
-                return LoginResult.Failed("اسم المستخدم أو كلمة المرور غير صحيحة.");
-
-            return LoginResult.Success(user);
+            return LoginResult.Success(user!);
         }
 
         public async Task SignInAsync(HttpContext httpContext, User user, CancellationToken ct = default)
         {
-            Validation().Context(httpContext).User(user);
+            if (httpContext is null) throw new ArgumentNullException(nameof(httpContext));
+            if (user is null) throw new ArgumentNullException(nameof(user));
 
             var claims = new List<Claim>
             {
@@ -47,10 +51,12 @@ namespace Ibtikar.Services.Security
                 new(RoleCodes.FullNameClaim, user.FullName)
             };
 
-            foreach (var ur in user.UserRoles.Where(r => r.Role?.IsActive == true))
+            foreach (var ur in user.UserRoles)
             {
-                claims.Add(new Claim(RoleCodes.ClaimType, ur.Role!.Code));
-                claims.Add(new Claim(ClaimTypes.Role, ur.Role!.Code));
+                var roleCode = ur.Role?.Code;
+                if (string.IsNullOrEmpty(roleCode) || ur.Role is not { IsActive: true }) continue;
+                claims.Add(new Claim(RoleCodes.ClaimType, roleCode));
+                claims.Add(new Claim(ClaimTypes.Role, roleCode));
             }
 
             var identity = new ClaimsIdentity(claims, CookieAuthExtensions.Scheme);
@@ -66,13 +72,27 @@ namespace Ibtikar.Services.Security
                 });
 
             user.LastLoginAt = DateTime.UtcNow;
-            _db.Users.Update(user);
             await _db.SaveChangesAsync(ct);
+            await _audit.WriteAsync(
+                action: "login",
+                entityName: nameof(User),
+                entityId: user.Id.ToString(),
+                newValues: null,
+                oldValues: null,
+                ct: ct);
         }
 
         public async Task SignOutAsync(HttpContext httpContext)
         {
+            if (httpContext is null) throw new ArgumentNullException(nameof(httpContext));
             await httpContext.SignOutAsync(CookieAuthExtensions.Scheme);
+            await _audit.WriteAsync(
+                action: "logout",
+                entityName: nameof(User),
+                entityId: null,
+                newValues: null,
+                oldValues: null,
+                ct: httpContext.RequestAborted);
         }
 
         public readonly record struct LoginResult(bool IsSuccess, string? ErrorMessage, User? User)
@@ -80,33 +100,6 @@ namespace Ibtikar.Services.Security
             public static LoginResult Failed(string message) => new(false, message, null);
             public static LoginResult Success(User user) => new(true, null, user);
         }
-
-        private static AuthValidator Validation() => new();
-
-        private sealed class AuthValidator
-        {
-            public AuthValidator Username(string username)
-            {
-                if (string.IsNullOrWhiteSpace(username))
-                    throw new ArgumentException("Username is required.", nameof(username));
-                return this;
-            }
-            public AuthValidator Password(string password)
-            {
-                if (string.IsNullOrEmpty(password))
-                    throw new ArgumentException("Password is required.", nameof(password));
-                return this;
-            }
-            public AuthValidator Context(HttpContext ctx)
-            {
-                if (ctx is null) throw new ArgumentNullException(nameof(ctx));
-                return this;
-            }
-            public AuthValidator User(User user)
-            {
-                if (user is null) throw new ArgumentNullException(nameof(user));
-                return this;
-            }
-        }
     }
 }
+

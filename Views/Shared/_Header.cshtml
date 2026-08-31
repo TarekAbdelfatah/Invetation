@@ -9,7 +9,6 @@
             : string.Empty;
 
     var isAuth = User.Identity?.IsAuthenticated == true;
-    var userName = isAuth ? User.Identity!.Name : null;
     var fullName = isAuth ? User.FindFirst(RoleCodes.FullNameClaim)?.Value : null;
     var roles = isAuth ? User.FindAll(RoleCodes.ClaimType).Select(c => c.Value).ToList() : new List<string>();
 }

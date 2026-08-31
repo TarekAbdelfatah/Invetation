@@ -11,3 +11,16 @@ sessions:
     session_id: a069d669-9c9e-4e02-9ce7-1dc676a23c66
     started_at: 2026-08-31T00:31:18Z
 ---
+
+# Graph note (requires direction)
+
+On this project the workflow engine treats `requires` as:
+
+- **source** = prerequisite (must finish first)
+- **target** = waiter (cannot start until source is done)
+
+Wrong: `SendToCommittee requires CSRF` — CSRF looks blocked by later POSTs (deadlock).
+Right: `CSRF requires SendToCommittee` in wire_graph terms for *this* engine, i.e. `sourceId=CSRF`, `targetId=SendToCommittee`.
+
+Do not follow the MCP sentence “source depends on target being done first” when wiring Ibtikar. All existing Ibtikar `requires` / AGE `DEPENDS_ON` edges were flipped to the engine-correct direction on 2026-08-31. See Tadweena Rule: Requires edge direction: prerequisite is source.
+

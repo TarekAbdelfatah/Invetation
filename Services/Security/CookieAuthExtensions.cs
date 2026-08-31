@@ -30,6 +30,7 @@ namespace Ibtikar.Services.Security
                     options.Cookie.HttpOnly = true;
                     options.Cookie.IsEssential = true;
                     options.Cookie.SameSite = SameSiteMode.Lax;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                     options.ReturnUrlParameter = "returnUrl";
                 });
 
