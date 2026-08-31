@@ -167,3 +167,12 @@
 .rejection-reason-box p {
   white-space: pre-line;
 }
+
+.timeout-lock-box {
+  background: var(--warning-50, #FFFAEB);
+  border: 1px solid var(--warning-100, #FEF0C7);
+  border-inline-start: 4px solid var(--warning, #DC6803);
+  border-radius: 6px;
+  padding: 1rem;
+  color: var(--gray-900, #161B26);
+}
