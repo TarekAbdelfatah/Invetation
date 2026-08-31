@@ -4,6 +4,8 @@ using Ibtikar.Data;
 using Ibtikar.Data.Seed;
 using Ibtikar.Middleware;
 using Ibtikar.Services;
+using Ibtikar.Services.Attachments;
+using Ibtikar.Services.Integrations;
 using Ibtikar.Services.Security;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +30,17 @@ namespace Ibtikar
             builder.Services.AddScoped<Pbkdf2PasswordHasher>();
             builder.Services.AddScoped<AuthService>();
             builder.Services.AddScoped<AuditLogService>();
+            builder.Services.AddSingleton<PdfValidator>();
+            builder.Services.AddScoped<FileStorageService>();
+            builder.Services.AddScoped<AttachmentService>();
+            builder.Services.Configure<IntegrationOptions>(builder.Configuration.GetSection("Integrations"));
+            builder.Services.AddHttpClient<ProcedureGatewayService>();
+            builder.Services.AddOptions<FileStorageOptions>()
+                .Configure<IConfiguration>((opts, cfg) =>
+                {
+                    var v = cfg.GetSection("Integrations").GetValue<string>("AttachmentRoot");
+                    if (!string.IsNullOrWhiteSpace(v)) opts.Root = v;
+                });
 
             builder.Services.AddIbtikarCookieAuth(builder.Configuration);
 

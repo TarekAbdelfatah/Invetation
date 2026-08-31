@@ -19,6 +19,26 @@
 
                         <input type="hidden" asp-for="CurrentDraftId" />
 
+                        @if (Model.IsInternalApplicant)
+                        {
+                            <div class="alert alert-light border mb-4">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">@Html.DisplayNameFor(m => m.ApplicantFullName)</label>
+                                        <input class="form-control" value="@Model.ApplicantFullName" readonly disabled />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">@Html.DisplayNameFor(m => m.ApplicantDepartmentName)</label>
+                                        <input class="form-control" value="@(Model.ApplicantDepartmentName ?? "—")" readonly disabled />
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="bi bi-info-circle"></i>
+                                    تم تعبئة الاسم والإدارة تلقائياً من حسابك ولا يمكن تعديلهما.
+                                </small>
+                            </div>
+                        }
+
                         <div class="mb-4">
                             <label asp-for="Title" class="form-label fw-semibold"></label>
                             <span class="text-danger">*</span>
@@ -155,4 +175,5 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/idea-form.js" asp-append-version="true"></script>
+    <script src="~/js/idea-attachments.js" asp-append-version="true"></script>
 }

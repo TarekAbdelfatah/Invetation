@@ -31,5 +31,7 @@ namespace Ibtikar.Models
         public IdeaStatus? CurrentStatus { get; set; }
         public User? ApplicantUser { get; set; }
         public Department? ApplicantDepartment { get; set; }
+        public List<IdeaAttachment> Attachments { get; set; } = new();
+        public List<IdeaStatusHistory> StatusHistory { get; set; } = new();
     }
 }

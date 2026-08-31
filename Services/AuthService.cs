@@ -51,6 +51,11 @@ namespace Ibtikar.Services.Security
                 new(RoleCodes.FullNameClaim, user.FullName)
             };
 
+            if (user.DepartmentId.HasValue)
+            {
+                claims.Add(new Claim(RoleCodes.DepartmentIdClaim, user.DepartmentId.Value.ToString()));
+            }
+
             foreach (var ur in user.UserRoles)
             {
                 var roleCode = ur.Role?.Code;

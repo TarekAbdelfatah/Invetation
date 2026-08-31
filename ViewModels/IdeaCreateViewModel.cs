@@ -68,5 +68,13 @@ namespace Ibtikar.ViewModels
         public string? TechnologyOther { get; set; }
 
         public Guid? CurrentDraftId { get; set; }
+
+        [Display(Name = "الاسم")]
+        public string? ApplicantFullName { get; set; }
+
+        [Display(Name = "الإدارة")]
+        public string? ApplicantDepartmentName { get; set; }
+
+        public bool IsInternalApplicant { get; set; }
     }
 }

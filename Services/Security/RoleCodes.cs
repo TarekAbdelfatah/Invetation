@@ -25,5 +25,6 @@ namespace Ibtikar.Services.Security
         public const string ClaimType = "ibtikar_role";
         public const string UserIdClaim = "ibtikar_user_id";
         public const string FullNameClaim = "ibtikar_full_name";
+        public const string DepartmentIdClaim = "ibtikar_department_id";
     }
 }

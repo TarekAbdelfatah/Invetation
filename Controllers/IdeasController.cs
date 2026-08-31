@@ -1,5 +1,7 @@
 using Ibtikar.Data;
 using Ibtikar.Models;
+using Ibtikar.Services.Attachments;
+using Ibtikar.Services.Integrations;
 using Ibtikar.Services.Security;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -14,11 +16,19 @@ namespace Ibtikar.Controllers
     {
         private readonly IbtikarDbContext _db;
         private readonly ILogger<IdeasController> _logger;
+        private readonly ProcedureGatewayService _procedureGateway;
+        private readonly AttachmentService _attachments;
 
-        public IdeasController(IbtikarDbContext db, ILogger<IdeasController> logger)
+        public IdeasController(
+            IbtikarDbContext db,
+            ILogger<IdeasController> logger,
+            ProcedureGatewayService procedureGateway,
+            AttachmentService attachments)
         {
             _db = db;
             _logger = logger;
+            _procedureGateway = procedureGateway;
+            _attachments = attachments;
         }
 
         [AllowAnonymous]
@@ -50,6 +60,22 @@ namespace Ibtikar.Controllers
         public async Task<IActionResult> Create()
         {
             var model = new IdeaCreateViewModel();
+
+            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (Guid.TryParse(userIdRaw, out var userId))
+            {
+                var currentUser = await _db.Users
+                    .AsNoTracking()
+                    .Include(u => u.Department)
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+                if (currentUser is not null && !User.IsInRole(RoleCodes.ExternalBeneficiary))
+                {
+                    model.IsInternalApplicant = true;
+                    model.ApplicantFullName = currentUser.FullName;
+                    model.ApplicantDepartmentName = currentUser.Department?.Name;
+                }
+            }
+
             await PopulateLookupsAsync(model);
             return View(model);
         }
@@ -57,7 +83,8 @@ namespace Ibtikar.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(IdeaCreateViewModel model, string action, CancellationToken ct)
+        [RequestSizeLimit(20 * 1024 * 1024)]
+        public async Task<IActionResult> Create(IdeaCreateViewModel model, string action, List<IFormFile>? attachments, CancellationToken ct)
         {
             if (!ModelState.IsValid)
             {
@@ -141,6 +168,25 @@ namespace Ibtikar.Controllers
 
             if (isSubmit && !string.IsNullOrEmpty(idea.ReferenceNumber))
             {
+                var attachError = await TrySaveAttachmentsAsync(idea.Id, userId, attachments, ct);
+                if (attachError is not null)
+                {
+                    ModelState.AddModelError(string.Empty, attachError);
+                    await PopulateLookupsAsync(model);
+                    return View(model);
+                }
+
+                try
+                {
+                    await _procedureGateway.NotifyAsync(idea.ReferenceNumber, ct);
+                }
+                catch (Exception notifyEx)
+                {
+                    _logger.LogWarning(notifyEx,
+                        "Procedure notify failed for {Reference} but idea is persisted.",
+                        idea.ReferenceNumber);
+                }
+
                 return RedirectToAction(nameof(Submitted), new { referenceNumber = idea.ReferenceNumber });
             }
 
@@ -151,8 +197,7 @@ namespace Ibtikar.Controllers
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> Submitted(string referenceNumber, CancellationToken ct)
-        {
-            if (string.IsNullOrWhiteSpace(referenceNumber))
+        {            if (string.IsNullOrWhiteSpace(referenceNumber))
             {
                 return RedirectToAction(nameof(Create));
             }
@@ -183,6 +228,21 @@ namespace Ibtikar.Controllers
             }
 
             return View(idea);
+        }
+
+        private async Task<string?> TrySaveAttachmentsAsync(Guid ideaId, Guid userId, List<IFormFile>? attachments, CancellationToken ct)
+        {
+            if (attachments is null || attachments.Count == 0) return null;
+            foreach (var file in attachments)
+            {
+                if (file is null || file.Length == 0) continue;
+                var result = await _attachments.SaveAsync(ideaId, userId, file, ct);
+                if (!result.Success)
+                {
+                    return result.Error;
+                }
+            }
+            return null;
         }
 
         private async Task<string> NextReferenceNumberAsync(CancellationToken ct)

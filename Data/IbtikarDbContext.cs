@@ -28,6 +28,8 @@ namespace Ibtikar.Data
         public DbSet<ExecutionStage> ExecutionStages => Set<ExecutionStage>();
         public DbSet<InnovationIdea> InnovationIdeas => Set<InnovationIdea>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+        public DbSet<IdeaAttachment> IdeaAttachments => Set<IdeaAttachment>();
+        public DbSet<IdeaStatusHistory> IdeaStatusHistories => Set<IdeaStatusHistory>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

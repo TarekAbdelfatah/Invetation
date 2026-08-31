@@ -33,7 +33,7 @@
                     <dd class="col-sm-9" dir="ltr">@Model.SubmittedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
                 </dl>
 
-                <div class="d-flex gap-2 justify-content-center">
+                <div class="d-flex gap-2 justify-content-center mb-4">
                     <a asp-controller="MyRequests" asp-action="Index" class="btn btn-primary">
                         <i class="bi bi-list-ul"></i> طلباتي
                     </a>
@@ -42,10 +42,15 @@
                     </a>
                 </div>
 
-                <p class="text-muted small mt-4 mb-0">
+                <p class="text-muted small mb-4">
                     احتفظ بالرقم المرجعي <span class="fw-bold" dir="ltr">@Model.ReferenceNumber</span> لمتابعة حالة طلبك.
                 </p>
             </div>
         </div>
     </div>
 </section>
+
+@if (!string.IsNullOrEmpty(Model.ReferenceNumber))
+{
+    @await Component.InvokeAsync("IdeaAttachmentUploader", new { referenceNumber = Model.ReferenceNumber })
+}
