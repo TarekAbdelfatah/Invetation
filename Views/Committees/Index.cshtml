@@ -78,6 +78,18 @@
                                     }
                                 </td>
                                 <td>@c.CreatedAt.ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    @if (!c.IsActive)
+                                    {
+                                        <form asp-action="Activate" asp-route-id="@c.Id" method="post" class="d-inline"
+                                              onsubmit="return confirm('هل تريد تفعيل هذه اللجنة وإشعار جميع أعضائها؟');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                                تفعيل
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
                             </tr>
                         }
                     </tbody>

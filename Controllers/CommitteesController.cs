@@ -92,6 +92,18 @@ namespace Ibtikar.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost("Committees/Activate/{id:guid}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
+        {
+            var result = await _service.ActivateAsync(ResolveUserId(), id, ct);
+
+            TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message;
+            TempData["AlertType"] = result.Success ? "success" : "danger";
+
+            return RedirectToAction(nameof(Index));
+        }
+
         private async Task ReloadCandidatesAsync(CommitteesCreateVm vm, CancellationToken ct)
         {
             var candidates = await _service.GetMemberCandidatesAsync(null, ct);
