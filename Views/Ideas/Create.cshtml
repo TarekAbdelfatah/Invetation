@@ -1,41 +1,158 @@
+@model Ibtikar.ViewModels.IdeaCreateViewModel
 @{
     ViewData["Title"] = "تقديم فكرة جديدة";
 }
-<div class="bog-main">
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card bog-section">
-                    <div class="card-body text-center p-5">
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card bog-section">
+                <div class="card-body p-4 p-md-5">
+                    <div class="mb-4 text-center">
+                        <span class="material-icons" style="font-size:60px;color:var(--gold-500)">lightbulb</span>
+                        <h1 class="mt-2 mb-1">نموذج تقديم الأفكار</h1>
+                        <p class="text-muted mb-0">املأ البيانات التالية وقدّم فكرتك</p>
+                    </div>
+
+                    <form asp-action="Create" method="post" enctype="multipart/form-data" id="idea-form">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <input type="hidden" asp-for="CurrentDraftId" />
+
                         <div class="mb-4">
-                            <span class="material-icons" style="font-size:80px;color:var(--gold-500)">lightbulb</span>
+                            <label asp-for="Title" class="form-label fw-semibold"></label>
+                            <span class="text-danger">*</span>
+                            <input asp-for="Title" class="form-control" maxlength="200" />
+                            <span asp-validation-for="Title" class="text-danger small"></span>
                         </div>
-                        <h1 class="mb-3">نموذج تقديم الأفكار</h1>
-                        <p class="text-muted mb-4">
-                            نعمل على إطلاق نموذج تقديم الأفكار قريباً. سيتضمن الحقول الأساسية،
-                            عدّاد الأحرف، الحقول المشروطة، وحفظ المسودة.
-                        </p>
-                        <div class="d-flex gap-2 justify-content-center">
-                            <a class="btn btn-primary" asp-controller="MyRequests" asp-action="Index">
-                                <span class="material-icons align-middle" style="font-size:18px">folder_special</span>
-                                طلباتي الحالية
-                            </a>
-                            <a class="btn btn-outline-secondary" asp-controller="Home" asp-action="Index">
-                                العودة للرئيسية
-                            </a>
+
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label fw-semibold"></label>
+                            <span class="text-danger">*</span>
+                            <textarea asp-for="Description" class="form-control" rows="4"
+                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.DescriptionMax"></textarea>
+                            <small class="form-text text-muted d-block" data-char-counter="Description"></small>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
                         </div>
-                    </div>
-                </div>
-                <div class="alert alert-light border mt-3 d-flex align-items-start gap-2">
-                    <span class="material-icons text-muted">info</span>
-                    <div class="text-muted small">
-                        <strong>المخطط للنموذج:</strong>
-                        العنوان، الملخص، التحديات، الحل المقترح، مجال الابتكار،
-                        أثر متوقع (مع خيار "أخرى")، فئة مستهدفة (مع خيار "أخرى")،
-                        تقنيات ناشئة (مع خيار "أخرى")، رفع حتى ملفين PDF.
-                    </div>
+
+                        <div class="mb-4">
+                            <label asp-for="ProblemStatement" class="form-label fw-semibold"></label>
+                            <textarea asp-for="ProblemStatement" class="form-control" rows="4"
+                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.ProblemMax"></textarea>
+                            <small class="form-text text-muted d-block" data-char-counter="ProblemStatement"></small>
+                            <span asp-validation-for="ProblemStatement" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="ProposedSolution" class="form-label fw-semibold"></label>
+                            <textarea asp-for="ProposedSolution" class="form-control" rows="3"
+                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.SolutionMax"></textarea>
+                            <small class="form-text text-muted d-block" data-char-counter="ProposedSolution"></small>
+                            <span asp-validation-for="ProposedSolution" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="ExpectedBenefits" class="form-label fw-semibold"></label>
+                            <textarea asp-for="ExpectedBenefits" class="form-control" rows="3"
+                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.BenefitsMax"></textarea>
+                            <small class="form-text text-muted d-block" data-char-counter="ExpectedBenefits"></small>
+                            <span asp-validation-for="ExpectedBenefits" class="text-danger small"></span>
+                        </div>
+
+                        <hr />
+
+                        <div class="mb-4">
+                            <label asp-for="InnovationDomainId" class="form-label fw-semibold"></label>
+                            <span class="text-danger">*</span>
+                            <select asp-for="InnovationDomainId" asp-items="@(ViewBag.InnovationDomains as IEnumerable<SelectListItem>)"
+                                    class="form-select">
+                                <option value="">-- اختر مجال الابتكار --</option>
+                            </select>
+                            <span asp-validation-for="InnovationDomainId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="ExpectedImpactId" class="form-label fw-semibold"></label>
+                            <select asp-for="ExpectedImpactId" asp-items="@(ViewBag.ExpectedImpacts as IEnumerable<SelectListItem>)"
+                                    class="form-select" data-other="ExpectedImpactOther">
+                                <option value="">-- اختر الأثر المتوقع --</option>
+                            </select>
+                            <span asp-validation-for="ExpectedImpactId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4 d-none" data-other-field="ExpectedImpactOther">
+                            <label asp-for="ExpectedImpactOther" class="form-label fw-semibold"></label>
+                            <input asp-for="ExpectedImpactOther" class="form-control" maxlength="200" />
+                            <span asp-validation-for="ExpectedImpactOther" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="TargetAudienceId" class="form-label fw-semibold"></label>
+                            <select asp-for="TargetAudienceId" asp-items="@(ViewBag.TargetAudiences as IEnumerable<SelectListItem>)"
+                                    class="form-select" data-other="TargetAudienceOther">
+                                <option value="">-- اختر الفئة المستهدفة --</option>
+                            </select>
+                            <span asp-validation-for="TargetAudienceId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4 d-none" data-other-field="TargetAudienceOther">
+                            <label asp-for="TargetAudienceOther" class="form-label fw-semibold"></label>
+                            <input asp-for="TargetAudienceOther" class="form-control" maxlength="200" />
+                            <span asp-validation-for="TargetAudienceOther" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input asp-for="UsesEmergingTech" class="form-check-input" type="checkbox" id="uses-emerging-tech" />
+                                <label asp-for="UsesEmergingTech" class="form-check-label"></label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 d-none" data-emerging-tech="true">
+                            <label class="form-label fw-semibold">التقنيات الناشئة</label>
+                            <div class="row g-3" data-tech-list="true">
+                                @foreach (var tech in (ViewBag.Technologies as IEnumerable<SelectListItem>) ?? Enumerable.Empty<SelectListItem>())
+                                {
+                                    var techId = tech.Value;
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                   name="TechnologyIds" value="@techId"
+                                                   id="tech-@techId"
+                                                   @(Model.TechnologyIds.Contains(Guid.Parse(techId)) ? "checked" : "") />
+                                            <label class="form-check-label" for="tech-@techId">@tech.Text</label>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="mb-4 mt-3 d-none" data-other-field="TechnologyOther">
+                                <label asp-for="TechnologyOther" class="form-label fw-semibold"></label>
+                                <input asp-for="TechnologyOther" class="form-control" maxlength="200" />
+                                <span asp-validation-for="TechnologyOther" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="d-flex gap-2 justify-content-end">
+                            <button type="submit" name="action" value="SaveDraft" class="btn btn-outline-secondary">
+                                <span class="material-icons align-middle" style="font-size:18px">save</span>
+                                حفظ المسودة
+                            </button>
+                            <button type="submit" name="action" value="Submit" class="btn btn-primary">
+                                <span class="material-icons align-middle" style="font-size:18px">send</span>
+                                إرسال الفكرة
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/idea-form.js" asp-append-version="true"></script>
+}

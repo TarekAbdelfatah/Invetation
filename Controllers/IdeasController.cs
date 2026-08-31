@@ -1,7 +1,9 @@
 using Ibtikar.Data;
 using Ibtikar.Models;
+using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Controllers
@@ -42,9 +44,38 @@ namespace Ibtikar.Controllers
         }
 
         [Authorize]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View();
+            var model = new IdeaCreateViewModel();
+            await PopulateLookupsAsync(model);
+            return View(model);
+        }
+
+        private async Task PopulateLookupsAsync(IdeaCreateViewModel model)
+        {
+            ViewBag.InnovationDomains = await _db.InnovationDomains
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.DisplayOrder)
+                .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name })
+                .ToListAsync();
+
+            ViewBag.ExpectedImpacts = await _db.ExpectedImpacts
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.DisplayOrder)
+                .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name })
+                .ToListAsync();
+
+            ViewBag.TargetAudiences = await _db.TargetAudiences
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.DisplayOrder)
+                .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name })
+                .ToListAsync();
+
+            ViewBag.Technologies = await _db.Technologies
+                .Where(t => t.IsActive)
+                .OrderBy(t => t.DisplayOrder)
+                .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.Name })
+                .ToListAsync();
         }
     }
 }
