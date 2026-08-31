@@ -1,5 +1,6 @@
 @using Ibtikar.Controllers
 @using Ibtikar.Services.Ideas
+@using Ibtikar.ViewModels
 @model MyRequestsVm
 @{
     ViewData["Title"] = "طلباتي";
@@ -52,9 +53,9 @@
                                     else
                                     {
                                         <span class="bog-idea-card__status"
-                                              style="--chip-bg:@i.CurrentStatus?.Color">
-                                            <span class="bog-idea-card__status-dot" style="background-color:@i.CurrentStatus?.Color"></span>
-                                            @(i.CurrentStatus?.Name ?? "—")
+                                              style="--chip-bg:@i.StatusColor">
+                                            <span class="bog-idea-card__status-dot" style="background-color:@i.StatusColor"></span>
+                                            @(i.StatusName ?? "—")
                                         </span>
                                     }
                                 </div>
@@ -128,7 +129,9 @@
                                             }
                                             else
                                             {
-                                                @await Html.PartialAsync("_StatusBadge", i.CurrentStatus)
+                                                <span class="status-badge badge rounded-pill" data-status-code="@i.StatusCode" style="background-color:@i.StatusColor">
+                                                    @i.StatusName
+                                                </span>
                                             }
                                         </td>
                                         <td class="d-none d-md-table-cell" data-label="المرحلة">

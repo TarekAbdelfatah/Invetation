@@ -6,6 +6,7 @@ using Ibtikar.Middleware;
 using Ibtikar.Repositories;
 using Ibtikar.Services;
 using Ibtikar.Services.Admin;
+using Ibtikar.Services.MyRequests;
 using Ibtikar.Services.Attachments;
 using Ibtikar.Services.Background;
 using Ibtikar.Services.Ideas;
@@ -43,6 +44,8 @@ namespace Ibtikar
             builder.Services.AddScoped<IIdeaService, IdeaService>();
             builder.Services.AddScoped<IAdminOverviewRepository, AdminOverviewRepository>();
             builder.Services.AddScoped<IAdminOverviewService, AdminOverviewService>();
+            builder.Services.AddScoped<IMyRequestsRepository, MyRequestsRepository>();
+            builder.Services.AddScoped<IMyRequestsService, MyRequestsService>();
             builder.Services.AddHostedService<IdeaDeadlineHostedService>();
             builder.Services.Configure<IntegrationOptions>(builder.Configuration.GetSection("Integrations"));
             builder.Services.AddHttpClient<ProcedureGatewayService>();
