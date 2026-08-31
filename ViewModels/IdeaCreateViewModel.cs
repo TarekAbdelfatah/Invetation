@@ -41,7 +41,7 @@ namespace Ibtikar.ViewModels
 
         [Required(ErrorMessage = "مجال الابتكار مطلوب")]
         [Display(Name = "مجال الابتكار")]
-        public Guid InnovationDomainId { get; set; }
+        public Guid? InnovationDomainId { get; set; }
 
         [Display(Name = "الأثر المتوقع")]
         public Guid? ExpectedImpactId { get; set; }

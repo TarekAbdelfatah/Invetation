@@ -1,3 +1,34 @@
+@{
+    var alertMessage = string.Empty;
+    var alertType = "info";
+
+    if (TempData["AlertMessage"] is string am)
+    {
+        alertMessage = am;
+        alertType = TempData["AlertType"] as string ?? "info";
+    }
+    else if (TempData["IdeaDeleted"] is string d)
+    {
+        alertMessage = d;
+        alertType = "success";
+    }
+    else if (TempData["IdeaResubmitted"] is string r)
+    {
+        alertMessage = r;
+        alertType = "success";
+    }
+    else if (TempData["IdeaDraftSaved"] is string s)
+    {
+        alertMessage = s;
+        alertType = "success";
+    }
+
+    if (!string.IsNullOrEmpty(alertMessage))
+    {
+        ViewData["Type"] = alertType;
+        ViewData["Dismissible"] = true;
+    }
+}
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -21,6 +52,12 @@
     <partial name="_Header" />
 
     <main id="main-content" role="main" class="bog-main">
+        @if (!string.IsNullOrEmpty(alertMessage))
+        {
+            <div class="container pt-3 position-relative" style="z-index:1050">
+                @await Html.PartialAsync("_Alert", alertMessage)
+            </div>
+        }
         @RenderBody()
     </main>
 

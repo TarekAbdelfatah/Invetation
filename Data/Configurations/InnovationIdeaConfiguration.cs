@@ -10,7 +10,7 @@ namespace Ibtikar.Data.Configurations
         {
             builder.HasKey(i => i.Id);
             builder.Property(i => i.ReferenceNumber).IsRequired().HasMaxLength(30);
-            builder.HasIndex(i => i.ReferenceNumber).IsUnique();
+            builder.HasIndex(i => i.ReferenceNumber).IsUnique().HasFilter("\"IsDraft\" = false");
             builder.Property(i => i.Title).IsRequired().HasMaxLength(300);
             builder.Property(i => i.Description).IsRequired().HasMaxLength(4000);
             builder.Property(i => i.ProblemStatement).HasMaxLength(4000);

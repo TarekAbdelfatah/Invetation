@@ -33,9 +33,9 @@
                                 <tr>
                                     <th>المرجع</th>
                                     <th>العنوان</th>
-                                    <th>المجال</th>
+                                    <th class="d-none d-lg-table-cell">المجال</th>
                                     <th>الإدارة</th>
-                                    <th>تاريخ التقديم</th>
+                                    <th class="d-none d-md-table-cell">تاريخ التقديم</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -47,7 +47,7 @@
                                         <td>@i.Title</td>
                                         <td><small>@i.Domain</small></td>
                                         <td><small>@i.Department</small></td>
-                                        <td><small>@i.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
+                                        <td class="d-none d-md-table-cell"><small>@i.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-outline-primary" disabled title="ستتوفر قريباً">
                                                 <span class="material-icons align-middle" style="font-size:16px">visibility</span>

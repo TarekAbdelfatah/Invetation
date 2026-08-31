@@ -121,7 +121,7 @@ namespace Ibtikar.Controllers
                 TargetAudienceOther = NullIfBlank(model.TargetAudienceOther),
                 UsesEmergingTech = model.UsesEmergingTech,
                 TechnologyOther = NullIfBlank(model.TechnologyOther),
-                InnovationDomainId = model.InnovationDomainId,
+                InnovationDomainId = model.InnovationDomainId ?? Guid.Empty,
                 ExpectedImpactId = model.ExpectedImpactId,
                 TargetAudienceId = model.TargetAudienceId,
                 ApplicantUserId = userId,

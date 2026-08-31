@@ -35,10 +35,11 @@
                                 <tr>
                                     <th>المرجع</th>
                                     <th>العنوان</th>
-                                    <th>المجال</th>
+                                    <th class="d-none d-lg-table-cell">المجال</th>
                                     <th>الحالة</th>
-                                    <th>المرحلة</th>
-                                    <th>تاريخ التقديم</th>
+                                    <th class="d-none d-md-table-cell">المرحلة</th>
+                                    <th class="d-none d-md-table-cell">تاريخ التقديم</th>
+                                    <th class="text-end">إجراءات</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -59,7 +60,7 @@
                                             }
                                         </td>
                                         <td>@i.Title</td>
-                                        <td>—</td>
+                                        <td class="d-none d-lg-table-cell">—</td>
                                         <td>
                                             @if (i.IsDraft)
                                             {
@@ -70,7 +71,7 @@
                                                 @await Html.PartialAsync("_StatusBadge", i.CurrentStatus)
                                             }
                                         </td>
-                                        <td>
+                                        <td class="d-none d-md-table-cell">
                                             <div class="idea-progress" data-idea-progress
                                                  data-stage="@stage"
                                                  data-stage-label="@stageLabel"
@@ -87,7 +88,15 @@
                                                 <small class="text-muted d-block mt-1">@stageLabel · @(percent)%</small>
                                             </div>
                                         </td>
-                                        <td><small>@(i.SubmittedAt?.ToString("yyyy-MM-dd") ?? i.CreatedAt.ToString("yyyy-MM-dd"))</small></td>
+                                        <td class="d-none d-md-table-cell"><small>@(i.SubmittedAt?.ToString("yyyy-MM-dd") ?? i.CreatedAt.ToString("yyyy-MM-dd"))</small></td>
+                                        <td class="text-end">
+                                            <a class="btn btn-sm btn-outline-primary align-middle"
+                                               asp-controller="MyRequests" asp-action="Details" asp-route-id="@i.Id"
+                                               title="عرض تفاصيل الطلب">
+                                                <span class="material-icons align-middle" style="font-size:16px">visibility</span>
+                                                عرض
+                                            </a>
+                                        </td>
                                     </tr>
                                 }
                             </tbody>

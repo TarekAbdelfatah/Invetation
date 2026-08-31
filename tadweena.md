@@ -7,9 +7,9 @@ sessions:
     session_id: 7c4e8a91-2f3b-4d6e-9a10-b8c5d1e4f702
     started_at: 2026-08-30T22:08:00.0000000Z
   opencode:
-    model: minimax-coding-plan/MiniMax-M3
-    session_id: 6267b628-d894-4200-bb71-ff442d1a7189
-    started_at: 2026-08-31T15:17:08Z
+    model: opencode/big-pickle
+    session_id: 8f2a3c1e-9b4d-4e6a-b7f5-2d8c1a9e4f3b
+    started_at: 2026-08-31T16:39:00Z
   opencode2:
     model: opencode/mimo-v2.5-free
     session_id: b7e3f1a2-4c8d-4e9b-a1f6-3d2e8c5b9a74
