@@ -49,10 +49,10 @@
                                         <td><small>@i.Department</small></td>
                                         <td class="d-none d-md-table-cell"><small>@i.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-outline-primary" disabled title="ستتوفر قريباً">
+                                            <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@i.Id">
                                                 <span class="material-icons align-middle" style="font-size:16px">visibility</span>
                                                 مراجعة
-                                            </button>
+                                            </a>
                                         </td>
                                     </tr>
                                 }

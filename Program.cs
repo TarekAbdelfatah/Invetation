@@ -101,10 +101,11 @@ namespace Ibtikar
             var db = scope.ServiceProvider.GetRequiredService<IbtikarDbContext>();
             try
             {
-                db.Database.Migrate();
+                AuditSchemaUpgrader.EnsureAuditSchema(db);
                 DatabaseSeeder.SeedLookups(db);
                 DatabaseSeeder.SeedSampleIdeas(db);
                 DatabaseSeeder.SeedTestUsers(db, new Pbkdf2PasswordHasher());
+                db.Database.Migrate();
             }
             catch (Exception ex)
             {
