@@ -22,7 +22,7 @@
         <div class="card bog-section">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <strong>الأفكار بانتظار المراجعة</strong>
-                <span class="badge bg-secondary">@Model.Items.Count</span>
+                <span class="badge bg-secondary" id="inboxCount">@Model.Items.Count</span>
             </div>
             <div class="card-body p-0">
                 <form method="get" asp-action="Inbox" asp-controller="Audit" class="row g-2 px-3 pt-3 pb-0" id="inboxFilterForm">
@@ -51,56 +51,31 @@
                         <a asp-action="Inbox" class="btn btn-sm btn-outline-secondary">إعادة ضبط</a>
                     </div>
                 </form>
-                @if (Model.Items.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>المرجع</th>
-                                    <th>العنوان</th>
-                                    <th class="d-none d-lg-table-cell">المجال</th>
-                                    <th>الإدارة</th>
-                                    <th class="d-none d-md-table-cell">تاريخ التقديم</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var i in Model.Items)
-                                {
-                                    <tr class="@(i.IsOverdue ? "table-danger" : null)">
-                                        <td><code>@i.Reference</code></td>
-                                        <td>@i.Title</td>
-                                        <td><small>@i.Domain</small></td>
-                                        <td><small>@i.Department</small></td>
-                                        <td class="d-none d-md-table-cell"><small>@i.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
-                                        <td>
-                                            @if (i.IsOverdue)
-                                            {
-                                                <span class="badge bg-danger mb-1 d-inline-flex align-items-center gap-1" title="لم تتم مراجعة الفكرة منذ أكثر من 48 ساعة">
-                                                    <span class="material-icons" style="font-size:14px">priority_high</span>
-                                                    متأخر
-                                                </span>
-                                            }
-                                            <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@i.Id">
-                                                <span class="material-icons align-middle" style="font-size:16px">visibility</span>
-                                                مراجعة
-                                            </a>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center text-muted p-5">
-                        <span class="material-icons" style="font-size:48px;color:var(--text-muted)">inbox</span>
-                        <p class="mb-0 mt-2">لا توجد أفكار بانتظار المراجعة.</p>
-                    </div>
-                }
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>المرجع</th>
+                                <th>العنوان</th>
+                                <th class="d-none d-lg-table-cell">المجال</th>
+                                <th>الإدارة</th>
+                                <th class="d-none d-md-table-cell">تاريخ التقديم</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="inboxRows" data-inbox-rows
+                            data-applicant-type="@Model.ApplicantType"
+                            data-status="@Model.Status">
+                            @await Html.PartialAsync("_InboxRowsPartial", Model.Items)
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/inbox-poll.js" asp-append-version="true"></script>
+}
