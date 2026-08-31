@@ -30,6 +30,7 @@ namespace Ibtikar.Data
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<IdeaAttachment> IdeaAttachments => Set<IdeaAttachment>();
         public DbSet<IdeaStatusHistory> IdeaStatusHistories => Set<IdeaStatusHistory>();
+        public DbSet<AuditActionItem> AuditActionItems => Set<AuditActionItem>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

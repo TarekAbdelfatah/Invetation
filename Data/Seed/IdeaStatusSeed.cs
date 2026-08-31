@@ -19,6 +19,10 @@ namespace Ibtikar.Data.Seed
             EnsureStatus(db, 8, IdeaStatusCodes.InExecution, "قيد التنفيذ", "In Execution", "#20c997", false);
             EnsureStatus(db, 9, IdeaStatusCodes.Completed, "منجز", "Completed", "#198754", true);
             EnsureStatus(db, 10, IdeaStatusCodes.Cancelled, "ملغي", "Cancelled", "#6c757d", true);
+            EnsureStatus(db, 11, IdeaStatusCodes.UnderStudy, "قيد الدراسة", "Under Study", "#ffc107", false);
+            EnsureStatus(db, 12, IdeaStatusCodes.WaitingForCompletion, "بانتظار الاستكمال", "Waiting for Completion", "#fd7e14", false);
+            EnsureStatus(db, 13, IdeaStatusCodes.ReturnedForDevelopment, "معاد للتطوير", "Returned for Development", "#dc3545", false);
+            EnsureStatus(db, 14, IdeaStatusCodes.Resubmitted, "معاد تقديمه", "Resubmitted", "#0dcaf0", false);
         }
 
         private static void EnsureStatus(IbtikarDbContext db, int displayOrder, string code, string name, string nameEn, string color, bool isTerminal)

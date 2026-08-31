@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 
 namespace Ibtikar.Services.Notifications
 {
-    public sealed class NotificationService
+    public sealed class NotificationService : INotificationClient
     {
         private readonly HttpClient _http;
         private readonly IntegrationOptions _options;

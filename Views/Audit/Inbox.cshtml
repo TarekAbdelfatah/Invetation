@@ -22,52 +22,65 @@
         <div class="card bog-section">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <strong>الأفكار بانتظار المراجعة</strong>
-                <span class="badge bg-secondary">@Model.Items.Count</span>
+                <span class="badge bg-secondary" id="inboxCount">@Model.Items.Count</span>
             </div>
             <div class="card-body p-0">
-                @if (Model.Items.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>المرجع</th>
-                                    <th>العنوان</th>
-                                    <th class="d-none d-lg-table-cell">المجال</th>
-                                    <th>الإدارة</th>
-                                    <th class="d-none d-md-table-cell">تاريخ التقديم</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var i in Model.Items)
-                                {
-                                    <tr>
-                                        <td><code>@i.Reference</code></td>
-                                        <td>@i.Title</td>
-                                        <td><small>@i.Domain</small></td>
-                                        <td><small>@i.Department</small></td>
-                                        <td class="d-none d-md-table-cell"><small>@i.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
-                                        <td>
-                                            <button type="button" class="btn btn-sm btn-outline-primary" disabled title="ستتوفر قريباً">
-                                                <span class="material-icons align-middle" style="font-size:16px">visibility</span>
-                                                مراجعة
-                                            </button>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                <form method="get" asp-action="Inbox" asp-controller="Audit" class="row g-2 px-3 pt-3 pb-0" id="inboxFilterForm">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1" for="applicantType">نوع مقدم الفكرة</label>
+                        <select id="applicantType" name="applicantType" class="form-select form-select-sm">
+                            <option value="" selected="@(string.IsNullOrEmpty(Model.ApplicantType))">الكل</option>
+                            <option value="internal" selected="@(Model.ApplicantType == "internal")">داخلي</option>
+                            <option value="external" selected="@(Model.ApplicantType == "external")">خارجي</option>
+                        </select>
                     </div>
-                }
-                else
-                {
-                    <div class="text-center text-muted p-5">
-                        <span class="material-icons" style="font-size:48px;color:var(--text-muted)">inbox</span>
-                        <p class="mb-0 mt-2">لا توجد أفكار بانتظار المراجعة.</p>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1" for="status">الحالة</label>
+                        <select id="status" name="status" class="form-select form-select-sm">
+                            <option value="" selected="@(string.IsNullOrEmpty(Model.Status))">الكل (جديد + معاد تقديمها)</option>
+                            <option value="new" selected="@(Model.Status == "new")">جديد</option>
+                            <option value="resubmitted" selected="@(Model.Status == "resubmitted")">معاد تقديمها</option>
+                            <option value="rejected" selected="@(Model.Status == "rejected")">مرفوض</option>
+                        </select>
                     </div>
-                }
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1" for="inboxSearch">بحث في الصندوق</label>
+                        <input id="inboxSearch" name="inboxSearch" type="search" class="form-control form-control-sm" placeholder="ابحث بالمرجع أو العنوان أو الاسم" autocomplete="off" />
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <span class="material-icons align-middle" style="font-size:16px">filter_alt</span>
+                            تطبيق
+                        </button>
+                        <a asp-action="Inbox" class="btn btn-sm btn-outline-secondary">إعادة ضبط</a>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>المرجع</th>
+                                <th>العنوان</th>
+                                <th class="d-none d-lg-table-cell">المجال</th>
+                                <th>الإدارة</th>
+                                <th class="d-none d-md-table-cell">تاريخ التقديم</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="inboxRows" data-inbox-rows
+                            data-applicant-type="@Model.ApplicantType"
+                            data-status="@Model.Status">
+                            @await Html.PartialAsync("_InboxRowsPartial", Model.Items)
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/inbox-poll.js" asp-append-version="true"></script>
+    <script src="~/js/inbox-search.js" asp-append-version="true"></script>
+}

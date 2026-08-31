@@ -20,6 +20,9 @@ namespace Ibtikar.Models
         public Guid CurrentStatusId { get; set; }
         public Guid ApplicantUserId { get; set; }
         public Guid? ApplicantDepartmentId { get; set; }
+        public Guid? AssignedDepartmentId { get; set; }
+        public Guid? AuditEmployeeId { get; set; }
+        public DateTime? AuditAssignedAt { get; set; }
 
         public bool IsDraft { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -31,7 +34,9 @@ namespace Ibtikar.Models
         public IdeaStatus? CurrentStatus { get; set; }
         public User? ApplicantUser { get; set; }
         public Department? ApplicantDepartment { get; set; }
+        public Department? AssignedDepartment { get; set; }
         public List<IdeaAttachment> Attachments { get; set; } = new();
         public List<IdeaStatusHistory> StatusHistory { get; set; } = new();
+        public List<AuditActionItem> AuditActions { get; set; } = new();
     }
 }

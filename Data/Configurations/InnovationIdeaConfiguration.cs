@@ -48,6 +48,11 @@ namespace Ibtikar.Data.Configurations
                 .WithMany()
                 .HasForeignKey(i => i.ApplicantDepartmentId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(i => i.AssignedDepartment)
+                .WithMany()
+                .HasForeignKey(i => i.AssignedDepartmentId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }
