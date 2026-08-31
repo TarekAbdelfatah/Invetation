@@ -113,8 +113,11 @@ namespace Ibtikar.Controllers
 
             var fromId = idea.CurrentStatusId;
             idea.CurrentStatusId = underStudyId.Value;
-            idea.AuditEmployeeId = CurrentUserId;
-            idea.AuditAssignedAt = DateTime.UtcNow;
+            if (idea.AuditEmployeeId is null)
+            {
+                idea.AuditEmployeeId = CurrentUserId;
+                idea.AuditAssignedAt = DateTime.UtcNow;
+            }
 
             _db.IdeaStatusHistories.Add(new IdeaStatusHistory
             {
