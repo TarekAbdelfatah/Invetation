@@ -295,6 +295,11 @@ namespace Ibtikar.Services.Committee
             if (idea is null)
                 return new(false, "الفكرة غير موجودة.");
 
+            var ideaStatus = await _db.IdeaStatuses.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == idea.CurrentStatusId, ct);
+            if (ideaStatus is not null && ideaStatus.Code != IdeaStatusCodes.ReferredCommittee)
+                return new(false, "انتهى التصويت على هذه الفكرة أو أنها غير مفتوحة للتصويت.");
+
             var alreadyVoted = await _db.CommitteeVotes.AsNoTracking()
                 .AnyAsync(v => v.InnovationIdeaId == submission.IdeaId && v.MemberUserId == userId, ct);
             if (alreadyVoted)
