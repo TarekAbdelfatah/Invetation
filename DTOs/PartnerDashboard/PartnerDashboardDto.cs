@@ -48,7 +48,8 @@ namespace Ibtikar.DTOs.PartnerDashboard
         string? Comment,
         bool IsNotCompetentReturn,
         string? NotCompetentReason,
-        bool CanReturnNotCompetent);
+        bool CanReturnNotCompetent,
+        PartnerSpecializedAssessmentDto SpecializedAssessment);
 
     public sealed record PartnerCriterionDto(
         Guid Id,
@@ -62,6 +63,21 @@ namespace Ibtikar.DTOs.PartnerDashboard
         string CriterionName,
         int? Score,
         string? Comment);
+
+    public sealed record PartnerSpecializedScoreDto(
+        Guid CriterionId,
+        string CriterionCode,
+        string CriterionName,
+        int Score,
+        string? Comment);
+
+    public sealed record PartnerSpecializedAssessmentDto(
+        bool HasAssessment,
+        string AssessorDepartmentName,
+        decimal? TotalScore,
+        string? Comment,
+        DateTime? SubmittedAt,
+        IReadOnlyList<PartnerSpecializedScoreDto> Scores);
 
     public sealed record PartnerSubmitDto(
         Guid AssignmentId,
