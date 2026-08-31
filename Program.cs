@@ -5,6 +5,7 @@ using Ibtikar.Data.Seed;
 using Ibtikar.Middleware;
 using Ibtikar.Services;
 using Ibtikar.Services.Attachments;
+using Ibtikar.Services.Background;
 using Ibtikar.Services.Ideas;
 using Ibtikar.Services.Integrations;
 using Ibtikar.Services.Security;
@@ -35,6 +36,7 @@ namespace Ibtikar
             builder.Services.AddScoped<FileStorageService>();
             builder.Services.AddScoped<AttachmentService>();
             builder.Services.AddScoped<IdeaOwnerQuery>();
+            builder.Services.AddHostedService<IdeaDeadlineHostedService>();
             builder.Services.Configure<IntegrationOptions>(builder.Configuration.GetSection("Integrations"));
             builder.Services.AddHttpClient<ProcedureGatewayService>();
             builder.Services.AddOptions<FileStorageOptions>()
