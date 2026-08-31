@@ -1,8 +1,6 @@
-using Ibtikar.Data;
 using Ibtikar.Services.Attachments;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Ibtikar.Controllers
@@ -11,16 +9,13 @@ namespace Ibtikar.Controllers
     [Route("api/[controller]")]
     public class AttachmentController : ControllerBase
     {
-        private readonly IbtikarDbContext _db;
         private readonly AttachmentService _attachments;
         private readonly ILogger<AttachmentController> _logger;
 
         public AttachmentController(
-            IbtikarDbContext db,
             AttachmentService attachments,
             ILogger<AttachmentController> logger)
         {
-            _db = db;
             _attachments = attachments;
             _logger = logger;
         }
@@ -41,17 +36,14 @@ namespace Ibtikar.Controllers
             if (!Guid.TryParse(userIdRaw, out var userId))
                 return Challenge();
 
-            var ownsIdea = await _db.InnovationIdeas
-                .AsNoTracking()
-                .AnyAsync(i => i.Id == ideaId && i.ApplicantUserId == userId, ct);
-            if (!ownsIdea)
+            if (!await _attachments.UserOwnsIdeaAsync(ideaId, userId, ct))
                 return Forbid();
 
             var result = await _attachments.SaveAsync(ideaId, userId, file, ct);
             if (!result.Success)
                 return UnprocessableEntity(new { error = result.Error });
 
-            var existingCount = await _db.IdeaAttachments.CountAsync(a => a.InnovationIdeaId == ideaId, ct);
+            var existingCount = await _attachments.CountForIdeaAsync(ideaId, ct);
             return Ok(new
             {
                 id = result.AttachmentId,
@@ -74,10 +66,8 @@ namespace Ibtikar.Controllers
             if (!Guid.TryParse(userIdRaw, out var userId))
                 return Challenge();
 
-            var ownsIdea = await _db.InnovationIdeas
-                .AsNoTracking()
-                .AnyAsync(i => i.Id == ideaId && i.ApplicantUserId == userId, ct);
-            if (!ownsIdea) return Forbid();
+            if (!await _attachments.UserOwnsIdeaAsync(ideaId, userId, ct))
+                return Forbid();
 
             var items = await _attachments.ListForIdeaAsync(ideaId, ct);
             return Ok(new

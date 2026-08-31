@@ -82,6 +82,14 @@ namespace Ibtikar.Services.Attachments
                 .OrderBy(a => a.UploadedAt)
                 .ToListAsync(ct);
         }
+
+        public Task<int> CountForIdeaAsync(Guid ideaId, CancellationToken ct)
+            => _db.IdeaAttachments.CountAsync(a => a.InnovationIdeaId == ideaId, ct);
+
+        public async Task<bool> UserOwnsIdeaAsync(Guid ideaId, Guid userId, CancellationToken ct)
+            => await _db.InnovationIdeas
+                .AsNoTracking()
+                .AnyAsync(i => i.Id == ideaId && i.ApplicantUserId == userId, ct);
     }
 
     public sealed record AttachmentSaveResult(bool Success, string? Error, Guid? AttachmentId, string? FileName, long SizeBytes)
