@@ -18,13 +18,11 @@ sessions:
 
 # Graph note (requires direction)
 
-On this project the workflow engine treats `requires` as:
+`wire_graph requires` follows the MCP tool text: **source depends on target** (waiter → prerequisite). Do not mass-flip edges.
 
-- **source** = prerequisite (must finish first)
-- **target** = waiter (cannot start until source is done)
+- ViewModel `499fcc2b` has no outbound `requires` — it can `finish_task` first.
+- Create `13012599` requires ViewModel only — finish after ViewModel.
+- Form follow-ups (counters, Other, tech, PDF UI, Submit, SaveDraft, Autofill, audience, ProcedureGateway) require Create — they wait; Create does not wait on them.
 
-Wrong: `SendToCommittee requires CSRF` — CSRF looks blocked by later POSTs (deadlock).
-Right: `CSRF requires SendToCommittee` in wire_graph terms for *this* engine, i.e. `sourceId=CSRF`, `targetId=SendToCommittee`.
-
-Do not follow the MCP sentence “source depends on target being done first” when wiring Ibtikar. All existing Ibtikar `requires` / AGE `DEPENDS_ON` edges were flipped to the engine-correct direction on 2026-08-31. See Tadweena Rule: Requires edge direction: prerequisite is source.
+Never wire both directions. Never treat inbound consumers as a reason to invert the whole graph. Keep `BlockLinks` and AGE `DEPENDS_ON` in the same direction.
 
