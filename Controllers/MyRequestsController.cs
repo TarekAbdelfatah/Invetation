@@ -139,6 +139,71 @@ namespace Ibtikar.Controllers
             });
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResubmitCompletion(
+            Guid id,
+            string description,
+            string? problemStatement,
+            string? proposedSolution,
+            string? expectedBenefits,
+            CancellationToken ct)
+        {
+            var applicantId = ResolveApplicantId();
+            if (applicantId == Guid.Empty) return Challenge();
+
+            var idea = await _ownerQuery
+                .ForCurrentApplicant(_db.InnovationIdeas, applicantId)
+                .Include(i => i.CurrentStatus)
+                .FirstOrDefaultAsync(i => i.Id == id, ct);
+
+            if (idea is null) return NotFound();
+            if (!string.Equals(idea.CurrentStatus?.Code, "waiting_for_completion", StringComparison.OrdinalIgnoreCase))
+                return BadRequest("لا يمكن إعادة التقديم خارج حالة انتظار الاستكمال.");
+
+            var newDescription = description?.Trim() ?? string.Empty;
+            var newProblem = problemStatement?.Trim();
+            var newSolution = proposedSolution?.Trim();
+            var newBenefits = expectedBenefits?.Trim();
+
+            if (string.IsNullOrWhiteSpace(newDescription))
+                return BadRequest("وصف الفكرة مطلوب.");
+
+            if (!IsMaterialChange(idea, newDescription, newProblem, newSolution, newBenefits))
+                return UnprocessableEntity(new
+                {
+                    error = "يجب إجراء تغيير حقيقي على فكرة واحدة على الأقل قبل إعادة التقديم."
+                });
+
+            idea.Description = newDescription;
+            idea.ProblemStatement = string.IsNullOrWhiteSpace(newProblem) ? null : newProblem;
+            idea.ProposedSolution = string.IsNullOrWhiteSpace(newSolution) ? null : newSolution;
+            idea.ExpectedBenefits = string.IsNullOrWhiteSpace(newBenefits) ? null : newBenefits;
+
+            var underStudy = await _db.IdeaStatuses.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Code == "under_study", ct);
+            if (underStudy is not null) idea.CurrentStatusId = underStudy.Id;
+
+            await _db.SaveChangesAsync(ct);
+
+            TempData["IdeaResubmitted"] = "تم إعادة تقديم الفكرة للمراجعة.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        private static bool IsMaterialChange(
+            InnovationIdea idea,
+            string newDescription,
+            string? newProblem,
+            string? newSolution,
+            string? newBenefits)
+        {
+            if (!string.Equals(idea.Description?.Trim(), newDescription, StringComparison.Ordinal)) return true;
+            if (!string.Equals(idea.ProblemStatement?.Trim() ?? string.Empty, newProblem ?? string.Empty, StringComparison.Ordinal)) return true;
+            if (!string.Equals(idea.ProposedSolution?.Trim() ?? string.Empty, newSolution ?? string.Empty, StringComparison.Ordinal)) return true;
+            if (!string.Equals(idea.ExpectedBenefits?.Trim() ?? string.Empty, newBenefits ?? string.Empty, StringComparison.Ordinal)) return true;
+            return false;
+        }
+
         private static bool IsDeletableNewIdea(InnovationIdea idea) =>
             !idea.IsDraft && string.Equals(idea.CurrentStatus?.Code, "new", StringComparison.OrdinalIgnoreCase);
 

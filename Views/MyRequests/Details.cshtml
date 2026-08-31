@@ -2,6 +2,7 @@
 @model MyRequestDetailsVm
 @{
     ViewData["Title"] = string.IsNullOrEmpty(Model.Reference) ? "تفاصيل المسودة" : $"تفاصيل الطلب {Model.Reference}";
+    var isResubmittable = Model.StatusCode == "waiting_for_completion";
 }
 
 <div class="bog-main">
@@ -151,5 +152,52 @@
                 }
             </div>
         </div>
+
+        @if (isResubmittable)
+        {
+            <div class="card bog-section mb-3 border-warning">
+                <div class="card-header bg-white"><strong>إعادة التقديم بعد الاستكمال</strong></div>
+                <div class="card-body">
+                    <form method="post" asp-action="ResubmitCompletion" asp-route-id="@Model.Id" id="resubmitCompletionForm">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label class="form-label">وصف الفكرة</label>
+                            <textarea name="description" class="form-control" rows="4" required>@Model.Description</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">المشكلة</label>
+                            <textarea name="problemStatement" class="form-control" rows="3">@Model.ProblemStatement</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">الحل المقترح</label>
+                            <textarea name="proposedSolution" class="form-control" rows="3">@Model.ProposedSolution</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">الفوائد المتوقعة</label>
+                            <textarea name="expectedBenefits" class="form-control" rows="3">@Model.ExpectedBenefits</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="resubmitCompletionBtn">
+                            <span class="material-icons align-middle" style="font-size:18px">send</span>
+                            إعادة التقديم
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById('resubmitCompletionForm');
+            const btn = document.getElementById('resubmitCompletionBtn');
+            if (form && btn) {
+                form.addEventListener('submit', function () {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm align-middle"></span> جاري الإرسال...';
+                });
+            }
+        })();
+    </script>
+}
