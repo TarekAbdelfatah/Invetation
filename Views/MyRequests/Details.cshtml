@@ -5,6 +5,7 @@
     ViewData["Title"] = string.IsNullOrEmpty(Model.Reference) ? "تفاصيل المسودة" : $"تفاصيل الطلب {Model.Reference}";
     var isResubmittable = Model.StatusCode == IdeaStatusCodes.WaitingForCompletion;
     var isResubmittableForDevelopment = Model.StatusCode == IdeaStatusCodes.ReturnedForDevelopment;
+    var isRejected = Model.StatusCode == IdeaStatusCodes.Rejected;
 }
 
 <div class="bog-main">
@@ -87,6 +88,14 @@
                 </dl>
             </div>
         </div>
+
+        @if (isRejected && !string.IsNullOrWhiteSpace(Model.RejectionReason))
+        {
+            <div class="rejection-reason-box mb-3">
+                <strong>سبب الرفض:</strong>
+                <p class="mb-0 mt-2">@Model.RejectionReason</p>
+            </div>
+        }
 
         <div class="card bog-section mb-3">
             <div class="card-header bg-white"><strong>وصف الفكرة</strong></div>

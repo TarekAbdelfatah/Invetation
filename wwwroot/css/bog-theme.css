@@ -155,3 +155,15 @@
 .audit-notes-box p {
   white-space: pre-line;
 }
+
+.rejection-reason-box {
+  background: var(--error-50, #FEF3F2);
+  border: 1px solid var(--error-100, #FEE4E2);
+  border-inline-start: 4px solid var(--error, #D92D20);
+  border-radius: 6px;
+  padding: 1rem;
+  color: var(--gray-900, #161B26);
+}
+.rejection-reason-box p {
+  white-space: pre-line;
+}

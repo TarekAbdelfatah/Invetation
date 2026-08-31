@@ -304,6 +304,7 @@ namespace Ibtikar.Controllers
         DateTime? SubmittedAt,
         string? CompletionNotes,
         string? DevelopmentNotes,
+        string? RejectionReason,
         List<MyRequestAttachmentVm> Attachments)
     {
         public static MyRequestDetailsVm FromEntity(InnovationIdea i)
@@ -330,6 +331,12 @@ namespace Ibtikar.Controllers
                 developmentNotes = LatestNoteFor(IdeaStatusCodes.ReturnedForDevelopment);
             }
 
+            string? rejectionReason = null;
+            if (string.Equals(i.CurrentStatus?.Code, IdeaStatusCodes.Rejected, StringComparison.OrdinalIgnoreCase))
+            {
+                rejectionReason = LatestNoteFor(IdeaStatusCodes.Rejected);
+            }
+
             return new MyRequestDetailsVm(
                 i.Id,
                 i.ReferenceNumber,
@@ -352,6 +359,7 @@ namespace Ibtikar.Controllers
                 i.SubmittedAt,
                 completionNotes,
                 developmentNotes,
+                rejectionReason,
                 (i.Attachments ?? new List<IdeaAttachment>())
                     .OrderBy(a => a.UploadedAt)
                     .Select(a => new MyRequestAttachmentVm(a.Id, a.FileName, a.SizeBytes, a.UploadedAt))
