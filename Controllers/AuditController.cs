@@ -56,6 +56,9 @@ namespace Ibtikar.Controllers
                 _ => ideasQuery
             };
 
+            var now = DateTime.UtcNow;
+            var overdueThreshold = TimeSpan.FromHours(48);
+
             var items = await ideasQuery
                 .Include(i => i.CurrentStatus)
                 .Include(i => i.InnovationDomain)
@@ -70,7 +73,8 @@ namespace Ibtikar.Controllers
                     i.InnovationDomain != null ? i.InnovationDomain.Name : "—",
                     i.ApplicantUser != null ? i.ApplicantUser.FullName : "—",
                     i.ApplicantDepartment != null ? i.ApplicantDepartment.Name : "—",
-                    i.CreatedAt))
+                    i.CreatedAt,
+                    now - i.CreatedAt > overdueThreshold))
                 .ToListAsync(ct);
 
             return View(new AuditInboxVm(items, applicantTypeNorm, statusNorm));
@@ -325,7 +329,7 @@ namespace Ibtikar.Controllers
             ApplicantType = applicantType ?? string.Empty;
             Status = status ?? string.Empty;
         }
-        public record Row(Guid Id, string Reference, string Title, string Domain, string ApplicantName, string Department, DateTime SubmittedAt);
+        public record Row(Guid Id, string Reference, string Title, string Domain, string ApplicantName, string Department, DateTime SubmittedAt, bool IsOverdue);
     }
 
     public class AuditDetailsVm
