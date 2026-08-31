@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Data
 {
+    // Ibtikar rule: all queries use EF LINQ. FromSqlRaw is forbidden
+    // unless a later documented exception uses parameters only.
+    // No string-concatenated SQL from request values.
     public class IbtikarDbContext : DbContext
     {
         public IbtikarDbContext(DbContextOptions<IbtikarDbContext> options)
