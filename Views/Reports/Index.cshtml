@@ -1,0 +1,167 @@
+@model Ibtikar.ViewModels.ReportsVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = "تقرير الفترة الزمنية";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var fromStr = Model.From.ToString("yyyy-MM-dd");
+    var toStr = Model.To.ToString("yyyy-MM-dd");
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="bog-page-header">
+            <h1>
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">date_range</span>
+                </span>
+                تقرير الفترة الزمنية
+            </h1>
+            <span class="bog-page-role">
+                <span class="material-icons" aria-hidden="true">admin_panel_settings</span>
+                مدير النظام
+            </span>
+        </div>
+
+        @if (TempData["AlertError"] is string errMsg && !string.IsNullOrEmpty(errMsg))
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+                <span class="material-icons">error</span>
+                <span>@errMsg</span>
+            </div>
+        }
+
+        <div class="card bog-section mb-3">
+            <div class="card-header bg-white d-flex align-items-center gap-2">
+                <span class="material-icons text-primary">filter_alt</span>
+                <strong>تحديد الفترة</strong>
+            </div>
+            <div class="card-body">
+                <form method="get" asp-action="Index" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="from" class="form-label">من تاريخ</label>
+                        <input id="from" name="from" type="date" class="form-control" value="@fromStr" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label for="to" class="form-label">إلى تاريخ</label>
+                        <input id="to" name="to" type="date" class="form-control" value="@toStr" required />
+                    </div>
+                    <div class="col-md-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="material-icons align-middle" style="font-size:18px">insights</span>
+                            عرض التقرير
+                        </button>
+                        <a class="btn btn-outline-secondary" asp-action="Challenges" asp-route-from="@fromStr" asp-route-to="@toStr">
+                            <span class="material-icons align-middle" style="font-size:18px">report_problem</span>
+                            تقرير التحديات
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @if (Model.ShowValidation)
+        {
+            <div class="card bog-section">
+                <div class="card-body text-center text-muted p-5">
+                    <span class="material-icons" style="font-size:48px;color:var(--text-muted)">inbox</span>
+                    <p class="mb-1 mt-2">@(Model.ValidationMessage ?? "لا توجد بيانات في الفترة المختارة.")</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row g-3 mb-3">
+                <div class="col-md-3 col-sm-6">
+                    <div class="card bog-section h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted small">إجمالي الأفكار</span>
+                                <span class="material-icons text-primary">inventory</span>
+                            </div>
+                            <h2 class="mb-0 mt-2">@Model.Kpis.TotalIdeas</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="card bog-section h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted small">المُقدَّمة</span>
+                                <span class="material-icons text-info">send</span>
+                            </div>
+                            <h2 class="mb-0 mt-2">@Model.Kpis.Submitted</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="card bog-section h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted small">المعتمدة</span>
+                                <span class="material-icons text-success">verified</span>
+                            </div>
+                            <h2 class="mb-0 mt-2">@Model.Kpis.Approved</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="card bog-section h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted small">قيد التنفيذ والمنجزة</span>
+                                <span class="material-icons text-warning">engineering</span>
+                            </div>
+                            <h2 class="mb-0 mt-2">@(Model.Kpis.InExecution + Model.Kpis.Completed)</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bog-section">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-primary">donut_large</span>
+                    <strong>توزيع الحالات حسب المرحلة</strong>
+                    <span class="badge bg-secondary ms-auto">@Model.StageMix.Count</span>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.Warning))
+                    {
+                        <div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+                            <span class="material-icons">warning</span>
+                            <span>@Model.Warning</span>
+                        </div>
+                    }
+                    <div class="table-responsive">
+                        <table class="bog-card-list mb-0">
+                            <thead>
+                                <tr>
+                                    <th>الحالة</th>
+                                    <th>العدد</th>
+                                    <th>النسبة المئوية</th>
+                                    <th>التمثيل البصري</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in Model.StageMix)
+                                {
+                                    <tr>
+                                        <td data-label="الحالة">
+                                            <span class="status-badge badge rounded-pill" style="background-color:@r.Color">@r.Name</span>
+                                        </td>
+                                        <td data-label="العدد"><strong>@r.Count</strong></td>
+                                        <td data-label="النسبة"><strong>@r.Percent.ToString("0.00") %</strong></td>
+                                        <td data-label="التمثيل">
+                                            <div class="progress" style="height: 10px;">
+                                                <div class="progress-bar" role="progressbar" style="width:@r.Percent.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)%; background-color:@r.Color" aria-valuenow="@r.Percent" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

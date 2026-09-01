@@ -390,6 +390,42 @@ namespace Ibtikar.Migrations
                     b.ToTable("Departments");
                 });
 
+            modelBuilder.Entity("Ibtikar.Models.ExecutionProgress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ChangedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ExecutionStageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("InnovationIdeaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("ExecutionStageId");
+
+                    b.HasIndex("InnovationIdeaId");
+
+                    b.HasIndex("InnovationIdeaId", "ChangedAt");
+
+                    b.ToTable("ExecutionProgresses");
+                });
+
             modelBuilder.Entity("Ibtikar.Models.ExecutionStage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1164,6 +1200,32 @@ namespace Ibtikar.Migrations
                     b.Navigation("InnovationIdea");
 
                     b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("Ibtikar.Models.ExecutionProgress", b =>
+                {
+                    b.HasOne("Ibtikar.Models.User", "ChangedBy")
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Ibtikar.Models.ExecutionStage", "ExecutionStage")
+                        .WithMany()
+                        .HasForeignKey("ExecutionStageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Ibtikar.Models.InnovationIdea", "InnovationIdea")
+                        .WithMany()
+                        .HasForeignKey("InnovationIdeaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChangedBy");
+
+                    b.Navigation("ExecutionStage");
+
+                    b.Navigation("InnovationIdea");
                 });
 
             modelBuilder.Entity("Ibtikar.Models.IdeaAttachment", b =>
