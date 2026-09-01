@@ -24,7 +24,7 @@
 
         @if (TempData["AlertError"] is string errMsg && !string.IsNullOrEmpty(errMsg))
         {
-            <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+            <div class="alert alert-danger d-flex align-items-center gap-2" role="alert" data-testid="alert-error">
                 <span class="material-icons">error</span>
                 <span>@errMsg</span>
             </div>
@@ -36,14 +36,16 @@
                 <strong>تحديد الفترة</strong>
             </div>
             <div class="card-body">
-                <form method="get" asp-action="Index" class="row g-3 align-items-end">
+                <form method="get" asp-action="Index" class="row g-3 align-items-end" id="dateRangeForm">
                     <div class="col-md-4">
                         <label for="from" class="form-label">من تاريخ</label>
-                        <input id="from" name="from" type="date" class="form-control" value="@fromStr" required />
+                        <input id="from" name="from" type="date" class="form-control" value="@fromStr" required data-testid="from-date" />
+                        <span class="text-danger small d-none" id="fromError">تاريخ البداية بعد تاريخ النهاية.</span>
                     </div>
                     <div class="col-md-4">
                         <label for="to" class="form-label">إلى تاريخ</label>
-                        <input id="to" name="to" type="date" class="form-control" value="@toStr" required />
+                        <input id="to" name="to" type="date" class="form-control" value="@toStr" required data-testid="to-date" />
+                        <span class="text-danger small d-none" id="toError">يجب أن يكون تاريخ النهاية بعد أو يساوي البداية.</span>
                     </div>
                     <div class="col-md-4 d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
@@ -61,10 +63,10 @@
 
         @if (Model.ShowValidation)
         {
-            <div class="card bog-section">
+            <div class="card bog-section" data-testid="empty-range-card">
                 <div class="card-body text-center text-muted p-5">
                     <span class="material-icons" style="font-size:48px;color:var(--text-muted)">inbox</span>
-                    <p class="mb-1 mt-2">@(Model.ValidationMessage ?? "لا توجد بيانات في الفترة المختارة.")</p>
+                    <p class="mb-1 mt-2" data-testid="empty-range-message">@(Model.ValidationMessage ?? "لا توجد بيانات في الفترة المختارة.")</p>
                 </div>
             </div>
         }
@@ -165,3 +167,36 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById('dateRangeForm');
+            const fromInput = document.getElementById('from');
+            const toInput = document.getElementById('to');
+            const fromError = document.getElementById('fromError');
+            const toError = document.getElementById('toError');
+            if (!form || !fromInput || !toInput) return;
+
+            form.addEventListener('submit', function (e) {
+                const f = fromInput.value;
+                const t = toInput.value;
+                let valid = true;
+                fromError?.classList.add('d-none');
+                toError?.classList.add('d-none');
+                if (!f || !t) return;
+                if (f > t) {
+                    e.preventDefault();
+                    fromError?.classList.remove('d-none');
+                    toError?.classList.remove('d-none');
+                    fromInput.classList.add('is-invalid');
+                    toInput.classList.add('is-invalid');
+                    valid = false;
+                } else {
+                    fromInput.classList.remove('is-invalid');
+                    toInput.classList.remove('is-invalid');
+                }
+            });
+        })();
+    </script>
+}
