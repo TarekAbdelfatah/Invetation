@@ -86,6 +86,32 @@ namespace Ibtikar.Controllers
             return RedirectToAction(nameof(Update), new { id });
         }
 
+        [HttpPost("Execution/UploadCompletion")]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> UploadCompletion(Guid ideaId, [FromForm] List<IFormFile> files, CancellationToken ct)
+        {
+            if (files is null || files.Count != 2)
+                return BadRequest(new { success = false, message = "يجب رفع ملفَي PDF بالضبط." });
+
+            var userId = ResolveUserId();
+            if (userId is null)
+                return Unauthorized(new { success = false, message = "الجلسة منتهية." });
+
+            var attachmentService = HttpContext.RequestServices.GetRequiredService<Ibtikar.Services.Attachments.AttachmentService>();
+            var saved = new List<Guid>();
+            foreach (var f in files)
+            {
+                var result = await attachmentService.SaveAsync(ideaId, userId.Value, f, ct);
+                if (!result.Success)
+                    return BadRequest(new { success = false, message = result.Error ?? "فشل حفظ الملف." });
+                if (result.AttachmentId is not null) saved.Add(result.AttachmentId.Value);
+            }
+            if (saved.Count != 2)
+                return BadRequest(new { success = false, message = "تعذر حفظ الملفين." });
+
+            return Ok(new { success = true, attachmentIds = saved });
+        }
+
         [HttpGet("Execution/Timeline/{id:guid}")]
         public async Task<IActionResult> Timeline(Guid id, CancellationToken ct)
         {

@@ -1,0 +1,211 @@
+@model Ibtikar.ViewModels.ExecutionHeaderVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = $"تحديث مرحلة تنفيذ {Model.Reference}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var nextStage = Model.Stages
+        .Where(s => s.Order > Model.CurrentStageOrder)
+        .OrderBy(s => s.Order)
+        .FirstOrDefault();
+    var isCompletion = nextStage != null && nextStage.Order == Model.Stages.Max(s => s.Order);
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <h2 class="mb-0 d-flex align-items-center gap-2">
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">edit_note</span>
+                </span>
+                تحديث مرحلة تنفيذ
+            </h2>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" asp-action="Index">
+                    <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
+                    العودة للقائمة
+                </a>
+                <a class="btn btn-outline-info" asp-action="Timeline" asp-route-id="@Model.IdeaId">
+                    <span class="material-icons align-middle" style="font-size:18px">timeline</span>
+                    السجل الزمني
+                </a>
+            </div>
+        </div>
+
+        @if (TempData["AlertMessage"] is string okMsg && !string.IsNullOrEmpty(okMsg))
+        {
+            <div class="alert alert-success d-flex align-items-center gap-2" role="alert">
+                <span class="material-icons">check_circle</span>
+                <span>@okMsg</span>
+            </div>
+        }
+        @if (TempData["AlertError"] is string errMsg && !string.IsNullOrEmpty(errMsg))
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+                <span class="material-icons">error</span>
+                <span>@errMsg</span>
+            </div>
+        }
+
+        <div class="card bog-section mb-3">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <code class="fs-6">@Model.Reference</code>
+                    <span class="status-badge badge rounded-pill" style="background-color:@Model.StatusColor">@Model.StatusName</span>
+                </div>
+                <h1 class="h3 mb-2">@Model.Title</h1>
+                <div class="text-muted small">
+                    المجال: @Model.DomainName | المُقدِّم: @Model.ApplicantName (@Model.ApplicantDepartmentName) | الإدارة المنفذة: @Model.AssignedDepartmentName
+                </div>
+            </div>
+        </div>
+
+        <div class="card bog-section mb-3">
+            <div class="card-header bg-white d-flex align-items-center gap-2">
+                <span class="material-icons text-primary align-middle">timeline</span>
+                <strong>المراحل الخمس للتنفيذ</strong>
+            </div>
+            <div class="card-body">
+                <ol class="list-group list-group-numbered list-group-flush">
+                    @foreach (var s in Model.Stages)
+                    {
+                        var isCurrent = Model.CurrentStageId.HasValue && s.Id == Model.CurrentStageId.Value;
+                        <li class="list-group-item d-flex justify-content-between align-items-center @(isCurrent ? "list-group-item-primary" : null)">
+                            <span>@s.Name</span>
+                            @if (isCurrent)
+                            {
+                                <span class="badge bg-primary rounded-pill">المرحلة الحالية</span>
+                            }
+                        </li>
+                    }
+                </ol>
+            </div>
+        </div>
+
+        @if (Model.CanUpdate && nextStage != null && !isCompletion)
+        {
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-success align-middle">arrow_upward</span>
+                    <strong>الانتقال إلى المرحلة التالية</strong>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-action="Update" asp-route-id="@Model.IdeaId" class="row g-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="executionStageId" value="@nextStage.Id" />
+                        <div class="col-md-12">
+                            <label for="note" class="form-label">العبارة المقترحة (مطلوبة)</label>
+                            <textarea id="note" name="note" class="form-control" rows="3" minlength="5" required
+                                      placeholder="يرجى إدخال عبارة موجزة تصف الإنجاز الحالي قبل الحفظ."></textarea>
+                            <div class="form-text">سيتم تسجيل العبارة مع اسم المستخدم والإدارة والطابع الزمني على الخادم.</div>
+                        </div>
+                        <div class="col-12 d-flex justify-content-end gap-2">
+                            <a class="btn btn-outline-secondary" asp-action="Index">إلغاء</a>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="material-icons align-middle" style="font-size:18px">save</span>
+                                تسجيل المرحلة: @nextStage.Name
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+        else if (!Model.CanUpdate)
+        {
+            <div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+                <span class="material-icons">lock</span>
+                <span>لا تملك صلاحية تحديث هذه الفكرة لأنها محالة إلى إدارة أخرى.</span>
+            </div>
+        }
+        else if (isCompletion)
+        {
+            <div class="alert alert-info d-flex align-items-center gap-2" role="alert">
+                <span class="material-icons">info</span>
+                <span>هذه هي المرحلة الأخيرة (تم التنفيذ) — استخدم نموذج إكمال التنفيذ أدناه.</span>
+            </div>
+            @if (Model.CanComplete)
+            {
+                <div class="card bog-section mb-3">
+                    <div class="card-header bg-white d-flex align-items-center gap-2">
+                        <span class="material-icons text-success align-middle">task_alt</span>
+                        <strong>إكمال التنفيذ</strong>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" asp-action="Complete" asp-route-id="@Model.IdeaId" enctype="multipart/form-data" class="row g-3" id="completeForm">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="completionStageId" value="@nextStage!.Id" />
+                            <div class="col-md-12">
+                                <label for="completeNote" class="form-label">ملخص ما تم تنفيذه (مطلوب)</label>
+                                <textarea id="completeNote" name="note" class="form-control" rows="3" minlength="5" required
+                                          placeholder="صف بإيجاز ما تم إنجازه وما تم تسليمه."></textarea>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">ملفا PDF لإثبات الإغلاق (مطلوب: ملفان)</label>
+                                <input type="file" name="files" class="form-control" accept="application/pdf" id="pdfFile" required />
+                                <div class="form-text">سيتم رفع الملفين وربطهما تلقائياً بنفس الفكرة.</div>
+                            </div>
+                            <div class="col-md-12 d-flex justify-content-end gap-2">
+                                <a class="btn btn-outline-secondary" asp-action="Index">إلغاء</a>
+                                <button type="button" class="btn btn-success" id="completeBtn">
+                                    <span class="material-icons align-middle" style="font-size:18px">check_circle</span>
+                                    إكمال التنفيذ
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const btn = document.getElementById('completeBtn');
+            const fileInput = document.getElementById('pdfFile');
+            const form = document.getElementById('completeForm');
+            if (!btn || !fileInput || !form) return;
+
+            btn.addEventListener('click', async function () {
+                const files = fileInput.files;
+                if (!files || files.length !== 2) {
+                    alert('يرجى إرفاق ملفَي PDF بالضبط.');
+                    return;
+                }
+                for (const f of files) {
+                    if (f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) {
+                        alert('يجب أن يكون الملفان بصيغة PDF.');
+                        return;
+                    }
+                }
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> جارٍ الرفع...';
+                try {
+                    const fd = new FormData();
+                    for (const f of files) fd.append('files', f);
+                    const url = '@Url.Action("UploadCompletion", "Execution")' + '?ideaId=' + '@Model.IdeaId';
+                    const res = await fetch(url, { method: 'POST', body: fd, headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value } });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        alert(data.message || 'فشل رفع الملف.');
+                        btn.disabled = false;
+                        btn.innerHTML = '<span class="material-icons align-middle" style="font-size:18px">check_circle</span> إكمال التنفيذ';
+                        return;
+                    }
+                    data.attachmentIds.forEach(id => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'attachmentId';
+                        input.value = id;
+                        form.appendChild(input);
+                    });
+                    form.submit();
+                } catch (e) {
+                    alert('حدث خطأ أثناء رفع الملفات: ' + e);
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-icons align-middle" style="font-size:18px">check_circle</span> إكمال التنفيذ';
+                }
+            });
+        })();
+    </script>
+}
