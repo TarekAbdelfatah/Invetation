@@ -3,9 +3,6 @@
 @{
     ViewData["Title"] = $"طلب رأي جهات أخرى · {Model.Reference}";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var partnersJson = System.Text.Json.JsonSerializer.Serialize(
-        Model.AvailablePartners.Select(p => new { id = p.Id, name = p.Name, code = p.Code ?? string.Empty })
-    );
 }
 
 <div class="bog-main">
@@ -62,10 +59,8 @@
         <form method="post" asp-action="ConfirmRequest" id="request-form" autocomplete="off">
             @Html.AntiForgeryToken()
             <input type="hidden" name="IdeaId" value="@Model.IdeaId" />
-            <div data-partner-picker
-                 data-max="2"
-                 data-partners='@Html.Raw(partnersJson)'>
-                <div class="card bog-section mb-3">
+            <div data-partner-picker data-max="2">
+                <div class="card bog-section mb-3 bog-partner-picker-card">
                     <div class="card-header bg-white d-flex align-items-center gap-2">
                         <span class="material-icons text-primary">add_business</span>
                         <strong>اختر الجهات لطلب الرأي</strong>
@@ -83,22 +78,35 @@
                                     <span class="material-icons bog-partner-picker__icon">search</span>
                                     <input type="text"
                                            class="form-control"
-                                           placeholder="ابحث عن إدارة لإضافتها…"
+                                           placeholder="ابحث عن إدارة…"
                                            data-partner-search
                                            aria-label="ابحث عن إدارة"
-                                           aria-autocomplete="list"
-                                           aria-controls="partner-suggestions"
-                                           disabled="@(Model.AvailablePartners.Count == 0 ? "disabled" : null)" />
+                                           autocomplete="off" />
                                 </div>
-                                <ul class="bog-partner-picker__suggestions d-none"
-                                    id="partner-suggestions"
-                                    role="listbox"
-                                    data-partner-suggestions></ul>
+
+                                <div class="bog-partner-picker__list" data-partner-list>
+                                    @foreach (var p in Model.AvailablePartners)
+                                    {
+                                        <button type="button"
+                                                class="bog-partner-option"
+                                                data-partner-option
+                                                data-id="@p.Id"
+                                                data-name="@p.Name"
+                                                title="@p.Name">
+                                            <span class="material-icons bog-partner-option__icon">apartment</span>
+                                            <span class="bog-partner-option__name">@p.Name</span>
+                                            <span class="bog-partner-option__check">
+                                                <span class="material-icons">add</span>
+                                            </span>
+                                        </button>
+                                    }
+                                </div>
+
+                                <div class="text-danger small mt-2" data-partner-error></div>
                                 <small class="text-muted d-block mt-2" data-partner-help>
-                                    اكتب اسم الإدارة ثم اخترها من القائمة. الحد الأقصى إدارتان.
+                                    اختر حتى إدارتين فقط. عند بلوغ الحد يتحول الاختيار إلى غير متاح حتى تحذف إدارة من الاختيار.
                                 </small>
                             </div>
-                            <div class="text-danger small mt-2" data-partner-error></div>
                         }
                     </div>
                 </div>
@@ -160,27 +168,21 @@
         if (!root) return;
 
         const maxPartners = parseInt(root.dataset.max || '2', 10);
-        let partners = [];
-        try {
-            partners = JSON.parse(root.dataset.partners || '[]');
-        } catch (e) {
-            partners = [];
-        }
 
         const search = root.querySelector('[data-partner-search]');
-        const suggestions = root.querySelector('[data-partner-suggestions]');
+        const list = root.querySelector('[data-partner-list]');
         const notesHost = root.querySelector('[data-partner-notes]');
         const emptyHint = root.querySelector('[data-partner-empty]');
         const countBadge = root.querySelector('[data-partner-count]');
         const errorBox = root.querySelector('[data-partner-error]');
+        const helpBox = root.querySelector('[data-partner-help]');
         const submitBtn = root.querySelector('[data-partner-submit]');
         const noteTemplate = document.getElementById('bog-partner-note-template');
 
-        if (!search || !suggestions || !notesHost || !countBadge || !submitBtn || !noteTemplate) return;
+        if (!list || !notesHost || !countBadge || !submitBtn || !noteTemplate) return;
 
-        const state = {
-            selected: new Map()
-        };
+        const options = Array.prototype.slice.call(list.querySelectorAll('[data-partner-option]'));
+        const state = { selected: new Map() };
 
         function normalize(s) {
             return (s || '').toString().trim().toLowerCase();
@@ -201,65 +203,46 @@
             errorBox.classList.remove('d-none');
         }
 
-        function getAvailable() {
-            return partners.filter(p => !isSelected(p.id));
-        }
-
         function updateCount() {
             const count = state.selected.size;
             countBadge.textContent = count + ' / ' + maxPartners;
             const reachedMax = count >= maxPartners;
-            search.disabled = reachedMax;
-            search.placeholder = reachedMax
-                ? 'تم اختيار الحد الأقصى (' + maxPartners + ' إدارات)'
-                : 'ابحث عن إدارة لإضافتها…';
+
+            list.classList.toggle('--locked', reachedMax);
+            options.forEach(opt => {
+                const id = opt.dataset.id;
+                const isSel = isSelected(id);
+                opt.classList.toggle('--selected', isSel);
+                opt.disabled = reachedMax || isSel;
+                const icon = opt.querySelector('.bog-partner-option__check .material-icons');
+                if (icon) icon.textContent = isSel ? 'check' : 'add';
+            });
+
+            if (search) {
+                search.disabled = reachedMax;
+                search.placeholder = reachedMax
+                    ? 'تم اختيار الحد الأقصى (' + maxPartners + ' إدارات)'
+                    : 'ابحث عن إدارة…';
+            }
+            if (helpBox) {
+                helpBox.textContent = reachedMax
+                    ? 'تم بلوغ الحد الأقصى. احذف إدارة من الأسفل لإتاحة الاختيار مجدداً.'
+                    : 'اختر حتى إدارتين فقط. عند بلوغ الحد يتحول الاختيار إلى غير متاح حتى تحذف إدارة من الاختيار.';
+            }
             submitBtn.disabled = count === 0;
         }
 
-        function renderSuggestions(filter) {
-            const term = normalize(filter);
-            const matches = partners
-                .filter(p => !isSelected(p.id))
-                .filter(p => term === '' || normalize(p.name).includes(term) || normalize(p.code).includes(term))
-                .slice(0, 8);
-
-            suggestions.innerHTML = '';
-            if (matches.length === 0) {
-                suggestions.classList.add('d-none');
-                return;
-            }
-
-            matches.forEach(p => {
-                const li = document.createElement('li');
-                li.className = 'bog-partner-picker__suggestion';
-                li.setAttribute('role', 'option');
-                li.dataset.id = p.id;
-                li.tabIndex = 0;
-                li.innerHTML = '<span class="material-icons text-primary">apartment</span>' +
-                    '<span class="bog-partner-picker__suggestion-name"></span>';
-                li.querySelector('.bog-partner-picker__suggestion-name').textContent = p.name;
-                li.addEventListener('mousedown', function (e) {
-                    e.preventDefault();
-                    addPartner(p);
-                    search.value = '';
-                    hideSuggestions();
-                });
-                li.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        addPartner(p);
-                        search.value = '';
-                        hideSuggestions();
-                    }
-                });
-                suggestions.appendChild(li);
+        function filterList() {
+            if (!search) return;
+            const term = normalize(search.value);
+            let visible = 0;
+            options.forEach(opt => {
+                const name = normalize(opt.dataset.name || '');
+                const match = term === '' || name.includes(term);
+                opt.hidden = !match || isSelected(opt.dataset.id);
+                if (!opt.hidden) visible++;
             });
-            suggestions.classList.remove('d-none');
-        }
-
-        function hideSuggestions() {
-            suggestions.classList.add('d-none');
-            suggestions.innerHTML = '';
+            list.classList.toggle('--empty', visible === 0);
         }
 
         function syncHiddenInputs() {
@@ -308,25 +291,25 @@
             }
         }
 
-        function addPartner(p) {
-            if (!p || isSelected(p.id)) return;
+        function addPartner(id, name) {
+            if (!id || isSelected(id)) return;
             if (state.selected.size >= maxPartners) {
                 setError('لا يمكن طلب رأي أكثر من ' + maxPartners + ' إدارات في المرة الواحدة.');
                 return;
             }
             setError('');
-            state.selected.set(p.id, { name: p.name, note: '' });
+            state.selected.set(id, { name: name, note: '' });
 
             const node = noteTemplate.content.firstElementChild.cloneNode(true);
-            node.dataset.partnerId = p.id;
-            node.querySelector('[data-partner-name]').textContent = p.name;
+            node.dataset.partnerId = id;
+            node.querySelector('[data-partner-name]').textContent = name;
             const removeBtn = node.querySelector('[data-partner-remove]');
             removeBtn.addEventListener('click', function () {
-                removePartner(p.id);
+                removePartner(id);
             });
             const noteInput = node.querySelector('[data-partner-note-input]');
             noteInput.addEventListener('input', function () {
-                const existing = state.selected.get(p.id);
+                const existing = state.selected.get(id);
                 if (existing) existing.note = noteInput.value;
                 syncHiddenInputs();
             });
@@ -335,6 +318,7 @@
             notesHost.appendChild(node);
 
             updateCount();
+            filterList();
             syncHiddenInputs();
         }
 
@@ -345,31 +329,25 @@
             if (state.selected.size === 0 && emptyHint) emptyHint.classList.remove('d-none');
             setError('');
             updateCount();
+            filterList();
             syncHiddenInputs();
-            renderSuggestions(search.value);
         }
 
-        search.addEventListener('input', function () {
-            setError('');
-            renderSuggestions(search.value);
-        });
-        search.addEventListener('focus', function () {
-            renderSuggestions(search.value);
-        });
-        search.addEventListener('blur', function () {
-            setTimeout(hideSuggestions, 120);
-        });
-        search.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') {
-                hideSuggestions();
-            }
+        options.forEach(opt => {
+            opt.addEventListener('click', function () {
+                addPartner(opt.dataset.id, opt.dataset.name || opt.textContent.trim());
+            });
         });
 
-        document.addEventListener('click', function (e) {
-            if (!root.contains(e.target)) hideSuggestions();
-        });
+        if (search) {
+            search.addEventListener('input', function () {
+                setError('');
+                filterList();
+            });
+        }
 
         updateCount();
+        filterList();
         syncHiddenInputs();
     })();
 </script>
