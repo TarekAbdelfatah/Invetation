@@ -15,6 +15,9 @@
     const listEndpoint = card.dataset.listEndpoint || `/api/Attachment/list?ideaId=${encodeURIComponent(ideaId)}`;
     const uploadField = card.dataset.uploadField || 'ideaId';
     const isDraft = String(card.dataset.draftMode || '').toLowerCase() === 'true';
+    // The list endpoint targets the saved idea in DB whenever it's available,
+    // even when the idea is still an unsaved draft (no reference number yet).
+    const hasRealIdea = listEndpoint && /\/api\/Attachment\/list(\?|$)/.test(listEndpoint);
     const isReadOnly = String(card.dataset.readOnly || '').toLowerCase() === 'true';
     const fileInput = card.querySelector('[data-attachments-input]');
     const uploadBtn = card.querySelector('[data-attachments-upload]');
@@ -35,10 +38,13 @@
     }
 
     function downloadUrlFor(a) {
+      if (hasRealIdea) {
+        return `/Attachment/Download?attachmentId=${encodeURIComponent(a.id)}`;
+      }
       if (isDraft) {
         return `/api/Attachment/downloadDraft?draftId=${encodeURIComponent(ideaId)}&fileName=${encodeURIComponent(a.fileName)}`;
       }
-      return `/api/Attachment/download/${encodeURIComponent(a.id)}`;
+      return `/Attachment/Download?attachmentId=${encodeURIComponent(a.id)}`;
     }
 
     function renderList(items) {

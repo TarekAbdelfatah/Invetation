@@ -3,15 +3,23 @@
     var ideaId = (Guid)Model.Id;
     var ideaRef = (string)(Model.ReferenceNumber ?? string.Empty);
     var title = (string)(Model.Title ?? string.Empty);
-    bool isDraft = ideaId == Guid.Empty || string.IsNullOrEmpty(ideaRef);
+    var existsInDb = false;
+    var v = ViewContext.ViewData;
+    if (v != null)
+    {
+        if (v["ExistsInDb"] is bool b) existsInDb = b;
+        else if (v["ExistsInDb"] is string s && bool.TryParse(s, out var parsed)) existsInDb = parsed;
+    }
     bool isReadOnly = (bool)(Model.ReadOnly ?? false);
-    string uploadEndpoint = isDraft
+    bool isDraft = !existsInDb || ideaId == Guid.Empty;
+    bool isUploadingToDraft = !existsInDb;
+    string uploadEndpoint = isUploadingToDraft
         ? $"/api/Attachment/uploadDraft?draftId={ideaId}"
         : "/api/Attachment/upload";
-    string listEndpoint = isDraft
-        ? $"/api/Attachment/listDraft?draftId={ideaId}"
-        : $"/api/Attachment/list?ideaId={ideaId}";
-    string uploadField = isDraft ? "draftId" : "ideaId";
+    string listEndpoint = existsInDb
+        ? $"/api/Attachment/list?ideaId={ideaId}"
+        : (ideaId != Guid.Empty ? $"/api/Attachment/listDraft?draftId={ideaId}" : "#");
+    string uploadField = isUploadingToDraft ? "draftId" : "ideaId";
 }
 
 <div style="display:none">@Html.AntiForgeryToken()</div>
