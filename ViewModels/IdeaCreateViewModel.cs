@@ -109,6 +109,9 @@ namespace Ibtikar.ViewModels
             if (string.IsNullOrWhiteSpace(ExpectedBenefits))
                 yield return FieldRequired(nameof(ExpectedBenefits));
 
+            if (string.IsNullOrWhiteSpace(RequiredResources))
+                yield return FieldRequired(nameof(RequiredResources));
+
             if (!ExpectedImpactId.HasValue || ExpectedImpactId.Value == Guid.Empty)
                 yield return FieldRequired(nameof(ExpectedImpactId));
 
@@ -125,6 +128,7 @@ namespace Ibtikar.ViewModels
                 nameof(ProblemStatement) => "التحديات الحالية",
                 nameof(ProposedSolution) => "الحل المقترح",
                 nameof(ExpectedBenefits) => "الفوائد المتوقعة",
+                nameof(RequiredResources) => "الموارد المطلوبة",
                 nameof(ExpectedImpactId) => "الأثر المتوقع",
                 nameof(TargetAudienceId) => "الفئة المستهدفة",
                 _ => member

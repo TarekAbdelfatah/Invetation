@@ -90,9 +90,11 @@
 
                         <div class="mb-4">
                             <label asp-for="RequiredResources" class="form-label fw-semibold"></label>
+                            <span class="text-danger">*</span>
                             <textarea asp-for="RequiredResources" class="form-control" rows="3"
                                       placeholder="مثل: فريق تطوير متخصص، خوادم إضافية، ميزانية تشغيل..."
-                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.RequiredResourcesMax"></textarea>
+                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.RequiredResourcesMax"
+                                      data-required-on-submit="true"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="RequiredResources"></small>
                             <span asp-validation-for="RequiredResources" class="text-danger small invalid-feedback-shim"></span>
                         </div>
@@ -178,7 +180,7 @@
                         <div class="mb-4">
                             <label class="form-label fw-semibold">
                                 <span class="material-icons align-middle" style="font-size:18px">attach_file</span>
-                                المرفقات (اختيارية)
+                                المرفقات (اختيارية عند الإرسال)
                             </label>
                             <small class="form-text text-muted d-block mb-2">
                                 PDF فقط، حتى ملفين، 5 ميجا لكل ملف.
