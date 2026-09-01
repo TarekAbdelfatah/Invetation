@@ -35,7 +35,7 @@ namespace Ibtikar
             builder.Services.AddSingleton<PdfValidator>();
             builder.Services.AddScoped<FileStorageService>();
             builder.Services.AddScoped<AttachmentService>();
-            builder.Services.AddScoped<PartnerAssignmentQuery>();
+            builder.Services.AddScoped<IPartnerAssignmentQuery, PartnerAssignmentQuery>();
             builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
             builder.Services.AddScoped<IIdeaService, IdeaService>();
             builder.Services.AddScoped<IAdminOverviewRepository, AdminOverviewRepository>();
