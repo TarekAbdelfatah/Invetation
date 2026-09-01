@@ -1,6 +1,6 @@
 using Ibtikar.DTOs.MyRequests;
 
-namespace Ibtikar.Services.MyRequests
+namespace Ibtikar.Services.Interfaces
 {
     public interface IMyRequestsService
     {

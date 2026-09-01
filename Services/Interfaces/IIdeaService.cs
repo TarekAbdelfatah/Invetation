@@ -1,7 +1,7 @@
 using Ibtikar.DTOs.Ideas;
 using Microsoft.AspNetCore.Http;
 
-namespace Ibtikar.Services.Ideas
+namespace Ibtikar.Services.Interfaces
 {
     public interface IIdeaService
     {

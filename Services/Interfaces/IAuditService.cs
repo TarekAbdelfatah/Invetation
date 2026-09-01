@@ -1,6 +1,6 @@
 using Ibtikar.DTOs.Audit;
 
-namespace Ibtikar.Services.Audit
+namespace Ibtikar.Services.Interfaces
 {
     public interface IAuditService
     {

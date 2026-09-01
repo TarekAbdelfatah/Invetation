@@ -1,6 +1,6 @@
 using Ibtikar.DTOs.AdminOverview;
 
-namespace Ibtikar.Services.Admin
+namespace Ibtikar.Services.Interfaces
 {
     public interface IAdminOverviewService
     {
