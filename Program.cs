@@ -29,9 +29,11 @@ namespace Ibtikar
             });
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddDbContext<IbtikarDbContext>(options =>
-                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
             builder.Services.AddScoped<Pbkdf2PasswordHasher>();
             builder.Services.AddScoped<AuthService>();
+            builder.Services.AddHttpClient();
+            builder.Services.AddScoped<SsoService>();
             builder.Services.AddScoped<AuditLogService>();
             builder.Services.AddSingleton<PdfValidator>();
             builder.Services.AddScoped<FileStorageService>();

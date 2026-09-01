@@ -106,6 +106,58 @@ namespace Ibtikar.Services.Implementations
                 ct: httpContext.RequestAborted);
         }
 
+        public async Task<User> SyncSsoUserAsync(DTOs.SSoUserInfo userInfo, CancellationToken ct = default)
+        {
+            if (userInfo is null) throw new ArgumentNullException(nameof(userInfo));
+
+            var username = !string.IsNullOrWhiteSpace(userInfo.PreferredUsername)
+                ? userInfo.PreferredUsername
+                : (!string.IsNullOrWhiteSpace(userInfo.Email) ? userInfo.Email : userInfo.Sub);
+
+            var user = await _db.Users
+                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+                .Include(u => u.Department)
+                .FirstOrDefaultAsync(u => u.Username == username, ct);
+
+            if (user is null)
+            {
+                var fullName = !string.IsNullOrWhiteSpace(userInfo.Name)
+                    ? userInfo.Name
+                    : $"{userInfo.GivenName} {userInfo.FamilyName}".Trim();
+                if (string.IsNullOrWhiteSpace(fullName)) fullName = username;
+
+                user = new User
+                {
+                    Id = Guid.NewGuid(),
+                    Username = username,
+                    FullName = fullName,
+                    Email = userInfo.Email ?? string.Empty,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                // Assign default role (Beneficiary / Employee)
+                var defaultRole = await _db.Roles.FirstOrDefaultAsync(r => r.Code == RoleCodes.ExternalBeneficiary || r.Code == RoleCodes.InternalBeneficiary, ct);
+                if (defaultRole is not null)
+                {
+                    user.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = defaultRole.Id });
+                }
+
+                _db.Users.Add(user);
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(userInfo.Name) && user.FullName != userInfo.Name)
+                    user.FullName = userInfo.Name;
+                if (!string.IsNullOrWhiteSpace(userInfo.Email) && user.Email != userInfo.Email)
+                    user.Email = userInfo.Email;
+            }
+
+            user.LastLoginAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync(ct);
+            return user;
+        }
+
         public readonly record struct LoginResult(bool IsSuccess, string? ErrorMessage, User? User)
         {
             public static LoginResult Failed(string message) => new(false, message, null);
