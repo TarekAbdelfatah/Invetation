@@ -125,6 +125,13 @@ namespace Ibtikar.DTOs.SpecializedDashboard
         string? Message,
         int Created);
 
+    public sealed record SpecializedPartnerScoreLineDto(
+        Guid CriterionId,
+        string CriterionCode,
+        string CriterionName,
+        int Score,
+        string? Comment);
+
     public sealed record SpecializedPartnerFollowUpRowDto(
         Guid AssignmentId,
         Guid IdeaId,
@@ -137,7 +144,12 @@ namespace Ibtikar.DTOs.SpecializedDashboard
         DateTime? RespondedAt,
         double DaysOpen,
         bool IsLate,
-        string? Note);
+        string? Note,
+        bool HasResponse,
+        string? ResponseComment,
+        decimal? TotalScore,
+        DateTime? ResponseSubmittedAt,
+        IReadOnlyList<SpecializedPartnerScoreLineDto> Scores);
 
     public sealed record SpecializedPartnerOpinionDto(
         Guid IdeaId,
@@ -158,4 +170,8 @@ namespace Ibtikar.DTOs.SpecializedDashboard
         bool Success,
         string? Message,
         bool RequiresConfirmation);
+
+    public sealed record SpecializedReturnNotCompetentOutcomeDto(
+        bool Success,
+        string? Message);
 }

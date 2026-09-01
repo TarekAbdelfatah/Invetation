@@ -156,7 +156,17 @@
                                     <span class="material-icons align-middle" style="font-size:16px">forum</span>
                                     متابعة ردود الجهات المستشارة
                                 </a>
+                                <button type="button"
+                                        class="btn btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#returnNotCompetentModal">
+                                    <span class="material-icons align-middle" style="font-size:16px">block</span>
+                                    رفض لعدم الاختصاص
+                                </button>
                             </div>
+                            <small class="text-muted d-block mt-2">
+                                استخدم هذا الخيار إذا كان الملف خارج نطاق اختصاص إدارتك. سيتم إرجاع الفكرة إلى المدقق مع تسجيل سبب الرفض.
+                            </small>
                         </div>
                     </div>
                 }
@@ -196,3 +206,107 @@
         </div>
     </div>
 </div>
+
+@if (canAssess)
+{
+    <div class="modal fade" id="returnNotCompetentModal" tabindex="-1"
+         aria-labelledby="returnNotCompetentTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" asp-action="ReturnNotCompetent" id="returnNotCompetentForm" autocomplete="off">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ideaId" value="@Model.Id" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="returnNotCompetentTitle">
+                            <span class="material-icons align-middle text-danger">block</span>
+                            رفض لعدم الاختصاص
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted small mb-3">
+                            سيتم إرجاع الفكرة إلى المدقق (<strong>@Model.Reference</strong>) مع تسجيل سبب الرفض.
+                            يمكنك بعدها إعادة إحالتها إلى إدارة أخرى من داخل صندوق التدقيق.
+                        </p>
+                        <label for="notCompetentReason" class="form-label">
+                            سبب عدم الاختصاص <span class="text-danger">*</span>
+                        </label>
+                        <textarea id="notCompetentReason"
+                                  name="reason"
+                                  class="form-control"
+                                  rows="4"
+                                  required
+                                  minlength="10"
+                                  maxlength="1000"
+                                  placeholder="اشرح بإيجاز سبب أن الفكرة خارج نطاق اختصاص إدارتك (10 أحرف على الأقل)"></textarea>
+                        <div class="form-text">
+                            سيتم تسجيل هذا السبب في سجل الحالات وإظاره للمدقق ليتسنى له إعادة التوجيه.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="submit"
+                                class="btn btn-danger"
+                                id="returnNotCompetentSubmit">
+                            <span class="material-icons align-middle" style="font-size:16px">undo</span>
+                            تأكيد الإرجاع للمدقق
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById('returnNotCompetentForm');
+            if (!form) return;
+
+            const submitBtn = document.getElementById('returnNotCompetentSubmit');
+            const reasonInput = document.getElementById('notCompetentReason');
+            const modalEl = document.getElementById('returnNotCompetentModal');
+
+            function validate() {
+                if (!reasonInput) return true;
+                const v = (reasonInput.value || '').trim();
+                if (v.length < 10) {
+                    reasonInput.setCustomValidity('يجب أن يكون السبب 10 أحرف على الأقل.');
+                    return false;
+                }
+                reasonInput.setCustomValidity('');
+                return true;
+            }
+
+            if (reasonInput) {
+                reasonInput.addEventListener('input', validate);
+            }
+
+            form.addEventListener('submit', function (e) {
+                if (!validate()) {
+                    e.preventDefault();
+                    if (reasonInput) reasonInput.reportValidity();
+                    return;
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm align-middle"></span> جاري الإرسال...';
+                }
+            });
+
+            if (modalEl) {
+                modalEl.addEventListener('hidden.bs.modal', function () {
+                    if (reasonInput) {
+                        reasonInput.value = '';
+                        reasonInput.setCustomValidity('');
+                    }
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<span class="material-icons align-middle" style="font-size:16px">undo</span> تأكيد الإرجاع للمدقق';
+                    }
+                });
+            }
+        })();
+    </script>
+}

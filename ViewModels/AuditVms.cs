@@ -64,6 +64,10 @@ namespace Ibtikar.ViewModels
         public bool IsRoutedToSpecialist { get; }
         public bool IsTerminal { get; }
         public bool IsRouted { get; }
+        public bool IsReturnedBySpecialist { get; }
+        public string? ReturnedBySpecialistReason { get; }
+        public string? ReturnedBySpecialistDepartment { get; }
+        public DateTime? ReturnedBySpecialistAt { get; }
         public string? LatestCompletionNote { get; }
         public DateTime? LatestCompletionNoteAt { get; }
         public List<DepartmentOption> ActiveDepartments { get; }
@@ -99,6 +103,9 @@ namespace Ibtikar.ViewModels
             bool isTerminal,
             string? latestCompletionNote,
             DateTime? latestCompletionNoteAt,
+            string? returnedBySpecialistReason,
+            string? returnedBySpecialistDepartment,
+            DateTime? returnedBySpecialistAt,
             List<DepartmentOption> activeDepartments,
             List<AuditHistoryRow> history,
             List<Attachment> attachments)
@@ -130,6 +137,10 @@ namespace Ibtikar.ViewModels
             IsRoutedToSpecialist = isRoutedToSpecialist;
             IsTerminal = isTerminal;
             IsRouted = isRoutedToSpecialist && !string.IsNullOrWhiteSpace(assignedDepartment);
+            IsReturnedBySpecialist = !string.IsNullOrWhiteSpace(returnedBySpecialistReason);
+            ReturnedBySpecialistReason = returnedBySpecialistReason;
+            ReturnedBySpecialistDepartment = returnedBySpecialistDepartment;
+            ReturnedBySpecialistAt = returnedBySpecialistAt;
             LatestCompletionNote = latestCompletionNote;
             LatestCompletionNoteAt = latestCompletionNoteAt;
             ActiveDepartments = activeDepartments;

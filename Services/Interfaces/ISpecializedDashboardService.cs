@@ -36,5 +36,12 @@ namespace Ibtikar.Services.Interfaces
             Guid ideaId,
             bool skipPartnerWarning,
             CancellationToken ct);
+
+        Task<SpecializedReturnNotCompetentOutcomeDto> ReturnNotCompetentAsync(
+            Guid? departmentId,
+            Guid actorUserId,
+            Guid ideaId,
+            string reason,
+            CancellationToken ct);
     }
 }

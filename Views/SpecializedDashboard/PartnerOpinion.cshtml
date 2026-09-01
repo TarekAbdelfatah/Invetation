@@ -62,8 +62,8 @@
                                 <th>الجهة المستشارة</th>
                                 <th>الحالة</th>
                                 <th>منذ الطلب</th>
-                                <th>الرد</th>
-                                <th>ملاحظة</th>
+                                <th>الرد (تعليق الإدارة)</th>
+                                <th>التقييم (الملاحظات)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -84,10 +84,62 @@
                                             <span class="badge bg-danger ms-1">متأخر (أكثر من 4 أيام)</span>
                                         }
                                     </td>
-                                    <td data-label="الرد" dir="ltr">
-                                        @r.RespondedAt.FormatDateTime()
+                                    <td data-label="الرد" class="small">
+                                        @if (r.HasResponse)
+                                        {
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="badge bg-success">تم الرد</span>
+                                                @if (r.TotalScore.HasValue)
+                                                {
+                                                    <span class="badge bg-primary">إجمالي: @r.TotalScore</span>
+                                                }
+                                                @if (r.ResponseSubmittedAt.HasValue)
+                                                {
+                                                    <small class="text-muted" dir="ltr">@r.ResponseSubmittedAt.Value.FormatDateTime()</small>
+                                                }
+                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(r.ResponseComment))
+                                            {
+                                                <div class="text-break" style="white-space:pre-line">@r.ResponseComment</div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">(لم تُرفق ملاحظة)</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">لم يرد بعد</span>
+                                        }
                                     </td>
-                                    <td data-label="ملاحظة" class="small">@(r.Note ?? "—")</td>
+                                    <td data-label="التقييم" class="small">
+                                        @if (r.HasResponse && r.Scores.Any())
+                                        {
+                                            <ul class="list-unstyled mb-0 bog-partner-scores">
+                                                @foreach (var s in r.Scores)
+                                                {
+                                                    <li class="bog-partner-score-line">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <span class="bog-partner-score-line__name">@s.CriterionName</span>
+                                                            <span class="badge bg-primary ms-auto">@s.Score</span>
+                                                        </div>
+                                                        @if (!string.IsNullOrWhiteSpace(s.Comment))
+                                                        {
+                                                            <div class="text-muted text-break mt-1" style="white-space:pre-line">@s.Comment</div>
+                                                        }
+                                                    </li>
+                                                }
+                                            </ul>
+                                        }
+                                        else if (r.HasResponse)
+                                        {
+                                            <span class="text-muted small">تم الرد دون تقييم مفصّل.</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">—</span>
+                                        }
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -97,3 +149,22 @@
         }
     </div>
 </div>
+
+<style>
+    .bog-partner-scores {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: 360px;
+    }
+    .bog-partner-score-line {
+        padding: 6px 10px;
+        background: var(--gray-50, #f8f9fa);
+        border: 1px solid var(--border-light, #ECECED);
+        border-radius: var(--radius-md, 8px);
+    }
+    .bog-partner-score-line__name {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+</style>

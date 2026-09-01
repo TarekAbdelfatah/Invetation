@@ -22,6 +22,8 @@ namespace Ibtikar.Repositories
         Task<IReadOnlyList<PartnerAssignment>> GetPartnerAssignmentsForIdeaAsync(Guid ideaId, CancellationToken ct);
         Task AddPartnerAssignmentsAsync(IEnumerable<PartnerAssignment> rows, CancellationToken ct);
         Task AddOrUpdateAssessmentHeaderAsync(AssessmentHeader header, CancellationToken ct);
+        Task AddStatusHistoryAsync(IdeaStatusHistory history, CancellationToken ct);
+        Task AddAuditActionAsync(AuditActionItem action, CancellationToken ct);
         Task SaveChangesAsync(CancellationToken ct);
     }
 
@@ -255,12 +257,52 @@ namespace Ibtikar.Repositories
                 .Select(p => new PartnerOpinionRowRaw(
                     p.Id,
                     p.InnovationIdeaId,
+                    p.PartnerDepartmentId,
                     p.PartnerDepartment!.Name,
                     p.Status,
                     p.SentAt,
                     p.RespondedAt,
                     p.Note))
                 .ToListAsync(ct);
+
+            // Fetch the latest partner assessment (per partner department) — the response comment + scores.
+            var partnerDeptIds = rows.Select(r => r.PartnerDepartmentId).Distinct().ToList();
+            var latestAssessments = await _db.AssessmentHeaders
+                .AsNoTracking()
+                .Include(h => h.Details)
+                .Where(h => h.InnovationIdeaId == ideaId
+                    && h.Source == AssessmentHeader.SourcePartner
+                    && partnerDeptIds.Contains(h.AssessorDepartmentId)
+                    && !h.IsDraft)
+                .GroupBy(h => h.AssessorDepartmentId)
+                .Select(g => g.OrderByDescending(h => h.SubmittedAt ?? h.CreatedAt).First())
+                .ToListAsync(ct);
+
+            var assessmentByDept = latestAssessments
+                .GroupBy(a => a.AssessorDepartmentId)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            var scoreLinesByHeader = await _db.AssessmentDetails
+                .AsNoTracking()
+                .Where(d => latestAssessments.Select(a => a.Id).Contains(d.AssessmentHeaderId))
+                .Join(_db.AssessmentCriteria.AsNoTracking(),
+                    d => d.CriterionId,
+                    c => c.Id,
+                    (d, c) => new
+                    {
+                        d.AssessmentHeaderId,
+                        CriterionId = c.Id,
+                        CriterionCode = c.Code,
+                        CriterionName = c.Name,
+                        d.Score,
+                        d.Comment
+                    })
+                .ToListAsync(ct);
+
+            var scoresByHeader = scoreLinesByHeader
+                .GroupBy(s => s.AssessmentHeaderId)
+                .ToDictionary(g => g.Key, g => g.Select(s => new SpecializedPartnerScoreLineDto(
+                    s.CriterionId, s.CriterionCode, s.CriterionName, s.Score, s.Comment)).ToList());
 
             var items = rows.Select(p =>
             {
@@ -276,10 +318,26 @@ namespace Ibtikar.Repositories
                 var label = isLate && p.Status == PartnerAssignment.StatusPending
                     ? PartnerAssignment.StatusLate
                     : p.Status;
+
+                AssessmentHeader? assessment = null;
+                if (assessmentByDept.TryGetValue(p.PartnerDepartmentId, out var a))
+                {
+                    assessment = a;
+                }
+
+                var hasResponse = assessment is not null;
+                var responseComment = assessment?.Comment;
+                var totalScore = assessment?.TotalScore;
+                var submittedAt = assessment?.SubmittedAt;
+                var scores = assessment is not null && scoresByHeader.TryGetValue(assessment.Id, out var s)
+                    ? s
+                    : new List<SpecializedPartnerScoreLineDto>();
+
                 return new SpecializedPartnerFollowUpRowDto(
                     p.Id, p.InnovationIdeaId, header.ReferenceNumber, header.Title,
                     p.PartnerDepartmentName, label, badge,
-                    p.SentAt, p.RespondedAt, daysOpen, isLate, p.Note);
+                    p.SentAt, p.RespondedAt, daysOpen, isLate, p.Note,
+                    hasResponse, responseComment, totalScore, submittedAt, scores);
             }).ToList();
 
             return new SpecializedPartnerOpinionDto(header.Id, header.ReferenceNumber, header.Title, items);
@@ -392,6 +450,12 @@ namespace Ibtikar.Repositories
             }
         }
 
+        public async Task AddStatusHistoryAsync(IdeaStatusHistory history, CancellationToken ct)
+            => await _db.IdeaStatusHistories.AddAsync(history, ct);
+
+        public async Task AddAuditActionAsync(AuditActionItem action, CancellationToken ct)
+            => await _db.AuditActionItems.AddAsync(action, ct);
+
         public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
 
         private sealed record SpecializedDetailsHeader(
@@ -416,6 +480,7 @@ namespace Ibtikar.Repositories
         private sealed record PartnerOpinionRowRaw(
             Guid Id,
             Guid InnovationIdeaId,
+            Guid PartnerDepartmentId,
             string PartnerDepartmentName,
             string Status,
             DateTime SentAt,

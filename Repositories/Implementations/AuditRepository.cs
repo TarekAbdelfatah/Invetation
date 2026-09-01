@@ -55,8 +55,44 @@ namespace Ibtikar.Repositories
                     i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
                     i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d",
                     i.SubmittedAt ?? i.CreatedAt,
-                    now - (i.SubmittedAt ?? i.CreatedAt) > overdueThreshold))
+                    now - (i.SubmittedAt ?? i.CreatedAt) > overdueThreshold,
+                    false,
+                    null,
+                    null))
                 .ToListAsync(ct);
+
+            if (rows.Count > 0)
+            {
+                var ideaIds = rows.Select(r => r.Id).ToList();
+                var returns = await _db.AuditActionItems
+                    .AsNoTracking()
+                    .Where(a => a.Decision == "not_competent_return" && ideaIds.Contains(a.IdeaId))
+                    .GroupBy(a => a.IdeaId)
+                    .Select(g => new
+                    {
+                        IdeaId = g.Key,
+                        Reason = g.OrderByDescending(x => x.AuditDate).First().DecisionText,
+                        At = g.OrderByDescending(x => x.AuditDate).First().AuditDate,
+                        DepartmentName = g.OrderByDescending(x => x.AuditDate).First().TargetDepartment != null
+                            ? g.OrderByDescending(x => x.AuditDate).First().TargetDepartment!.Name
+                            : null
+                    })
+                    .ToListAsync(ct);
+
+                var returnMap = returns.ToDictionary(r => r.IdeaId);
+                for (var i = 0; i < rows.Count; i++)
+                {
+                    if (returnMap.TryGetValue(rows[i].Id, out var info))
+                    {
+                        rows[i] = rows[i] with
+                        {
+                            IsReturnedBySpecialist = true,
+                            ReturnedReason = info.Reason,
+                            ReturnedAt = info.At
+                        };
+                    }
+                }
+            }
 
             return new AuditInboxDto(rows, applicantTypeFilter, string.Empty, page, pageSize, totalCount);
         }
@@ -133,7 +169,8 @@ namespace Ibtikar.Repositories
             var actionableStatuses = new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted };
             var isUnderStudy = header.StatusCode == IdeaStatusCodes.UnderStudy;
             var isRoutedToSpecialist = isUnderStudy && header.AssignedDepartmentId.HasValue;
-            var canDecide = actionableStatuses.Contains(header.StatusCode);
+            var canDecide = actionableStatuses.Contains(header.StatusCode)
+                || (isUnderStudy && !header.AssignedDepartmentId.HasValue);
 
             var latestCompletionNote = await _db.IdeaStatusHistories
                 .AsNoTracking()
@@ -142,6 +179,18 @@ namespace Ibtikar.Repositories
                     && h.ToStatus.Code == IdeaStatusCodes.WaitingForCompletion)
                 .OrderByDescending(h => h.ChangedAt)
                 .Select(h => new { h.Note, h.ChangedAt })
+                .FirstOrDefaultAsync(ct);
+
+            var latestNotCompetent = await _db.AuditActionItems
+                .AsNoTracking()
+                .Where(a => a.IdeaId == id && a.Decision == "not_competent_return")
+                .OrderByDescending(a => a.AuditDate)
+                .Select(a => new
+                {
+                    a.DecisionText,
+                    a.AuditDate,
+                    DepartmentName = a.TargetDepartment != null ? a.TargetDepartment.Name : null
+                })
                 .FirstOrDefaultAsync(ct);
 
             return new AuditDetailsDto(
@@ -173,6 +222,9 @@ namespace Ibtikar.Repositories
                 header.IsTerminal,
                 latestCompletionNote?.Note,
                 latestCompletionNote?.ChangedAt,
+                latestNotCompetent?.DecisionText,
+                latestNotCompetent?.DepartmentName,
+                latestNotCompetent?.AuditDate,
                 departments,
                 history,
                 attachments);

@@ -204,6 +204,25 @@ namespace Ibtikar.Controllers
             return RedirectToAction(nameof(Referrals), new { status = (string?)null });
         }
 
+        [HttpPost("SpecializedDashboard/ReturnNotCompetent")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReturnNotCompetent(Guid ideaId, string reason, CancellationToken ct)
+        {
+            var result = await _service.ReturnNotCompetentAsync(ResolveDepartmentId(), ResolveUserId(), ideaId, reason ?? string.Empty, ct);
+
+            if (result.Success)
+            {
+                TempData["AlertMessage"] = result.Message;
+                TempData["AlertType"] = "success";
+            }
+            else
+            {
+                TempData["AlertError"] = result.Message;
+                TempData["AlertType"] = "danger";
+            }
+            return RedirectToAction(nameof(Referrals), new { status = (string?)null });
+        }
+
         [HttpGet("SpecializedDashboard/Request/{id:guid}")]
         public new async Task<IActionResult> Request(Guid id, CancellationToken ct)
         {
@@ -285,7 +304,11 @@ namespace Ibtikar.Controllers
                 Rows = dto.Rows.Select(r => new SpecializedPartnerFollowUpVm(
                     r.AssignmentId, r.IdeaId, r.IdeaReference, r.IdeaTitle,
                     r.PartnerDepartmentName, r.Status, r.StatusBadgeClass,
-                    r.SentAt, r.RespondedAt, r.DaysOpen, r.IsLate, r.Note)).ToList()
+                    r.SentAt, r.RespondedAt, r.DaysOpen, r.IsLate, r.Note,
+                    r.HasResponse, r.ResponseComment, r.TotalScore, r.ResponseSubmittedAt,
+                    r.Scores.Select(s => new SpecializedPartnerScoreLineVm(
+                        s.CriterionId, s.CriterionCode, s.CriterionName, s.Score, s.Comment)).ToList()
+                )).ToList()
             };
             return View(vm);
         }

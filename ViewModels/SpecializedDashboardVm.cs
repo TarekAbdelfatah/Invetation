@@ -128,6 +128,13 @@ namespace Ibtikar.ViewModels
         public List<SpecializedPartnerFollowUpVm> Rows { get; set; } = new();
     }
 
+    public sealed record SpecializedPartnerScoreLineVm(
+        Guid CriterionId,
+        string CriterionCode,
+        string CriterionName,
+        int Score,
+        string? Comment);
+
     public sealed record SpecializedPartnerFollowUpVm(
         Guid AssignmentId,
         Guid IdeaId,
@@ -140,7 +147,12 @@ namespace Ibtikar.ViewModels
         DateTime? RespondedAt,
         double DaysOpen,
         bool IsLate,
-        string? Note);
+        string? Note,
+        bool HasResponse,
+        string? ResponseComment,
+        decimal? TotalScore,
+        DateTime? ResponseSubmittedAt,
+        IReadOnlyList<SpecializedPartnerScoreLineVm> Scores);
 
     public class SpecializedSendToCommitteeVm
     {

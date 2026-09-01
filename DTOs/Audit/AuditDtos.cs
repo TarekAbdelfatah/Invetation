@@ -12,7 +12,10 @@ namespace Ibtikar.DTOs.Audit
         string StatusName,
         string StatusColor,
         DateTime SubmittedAt,
-        bool IsOverdue);
+        bool IsOverdue,
+        bool IsReturnedBySpecialist,
+        string? ReturnedReason,
+        DateTime? ReturnedAt);
 
     public sealed record AuditInboxDto(
         IReadOnlyList<AuditInboxRowDto> Items,
@@ -67,6 +70,9 @@ namespace Ibtikar.DTOs.Audit
         bool IsTerminal,
         string? LatestCompletionNote,
         DateTime? LatestCompletionNoteAt,
+        string? ReturnedBySpecialistReason,
+        string? ReturnedBySpecialistDepartment,
+        DateTime? ReturnedBySpecialistAt,
         IReadOnlyList<AuditDepartmentOptionDto> ActiveDepartments,
         IReadOnlyList<AuditHistoryRowDto> History,
         IReadOnlyList<AuditAttachmentDto> Attachments);
