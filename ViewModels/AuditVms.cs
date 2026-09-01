@@ -32,6 +32,13 @@ namespace Ibtikar.ViewModels
         public string? ProblemStatement { get; }
         public string? ProposedSolution { get; }
         public string? ExpectedBenefits { get; }
+        public string? RequiredResources { get; }
+        public string? ExpectedImpactName { get; }
+        public string? ExpectedImpactOther { get; }
+        public string? TargetAudienceName { get; }
+        public string? TargetAudienceOther { get; }
+        public bool UsesEmergingTech { get; }
+        public string? TechnologyOther { get; }
         public string Domain { get; }
         public string ApplicantName { get; }
         public string ApplicantDepartment { get; }
@@ -39,12 +46,13 @@ namespace Ibtikar.ViewModels
         public string StatusName { get; }
         public string StatusColor { get; }
         public DateTime SubmittedAt { get; }
-        public bool CanOpen { get; }
+        public bool CanDecide { get; }
         public bool IsUnderStudy { get; }
         public bool IsRoutedToSpecialist { get; }
         public bool IsTerminal { get; }
         public List<DepartmentOption> ActiveDepartments { get; }
         public List<AuditHistoryRow> History { get; }
+        public List<Attachment> Attachments { get; }
 
         public AuditDetailsVm(
             Guid id,
@@ -54,6 +62,13 @@ namespace Ibtikar.ViewModels
             string? problemStatement,
             string? proposedSolution,
             string? expectedBenefits,
+            string? requiredResources,
+            string? expectedImpactName,
+            string? expectedImpactOther,
+            string? targetAudienceName,
+            string? targetAudienceOther,
+            bool usesEmergingTech,
+            string? technologyOther,
             string domain,
             string applicantName,
             string applicantDepartment,
@@ -61,12 +76,13 @@ namespace Ibtikar.ViewModels
             string statusName,
             string statusColor,
             DateTime submittedAt,
-            bool canOpen,
+            bool canDecide,
             bool isUnderStudy,
             bool isRoutedToSpecialist,
             bool isTerminal,
             List<DepartmentOption> activeDepartments,
-            List<AuditHistoryRow> history)
+            List<AuditHistoryRow> history,
+            List<Attachment> attachments)
         {
             Id = id;
             Reference = reference;
@@ -75,6 +91,13 @@ namespace Ibtikar.ViewModels
             ProblemStatement = problemStatement;
             ProposedSolution = proposedSolution;
             ExpectedBenefits = expectedBenefits;
+            RequiredResources = requiredResources;
+            ExpectedImpactName = expectedImpactName;
+            ExpectedImpactOther = expectedImpactOther;
+            TargetAudienceName = targetAudienceName;
+            TargetAudienceOther = targetAudienceOther;
+            UsesEmergingTech = usesEmergingTech;
+            TechnologyOther = technologyOther;
             Domain = domain;
             ApplicantName = applicantName;
             ApplicantDepartment = applicantDepartment;
@@ -82,15 +105,17 @@ namespace Ibtikar.ViewModels
             StatusName = statusName;
             StatusColor = statusColor;
             SubmittedAt = submittedAt;
-            CanOpen = canOpen;
+            CanDecide = canDecide;
             IsUnderStudy = isUnderStudy;
             IsRoutedToSpecialist = isRoutedToSpecialist;
             IsTerminal = isTerminal;
             ActiveDepartments = activeDepartments;
             History = history;
+            Attachments = attachments;
         }
 
         public record DepartmentOption(Guid Id, string Name);
         public record AuditHistoryRow(DateTime ChangedAt, string FromStatus, string ToStatus, string By, string? Note);
+        public record Attachment(Guid Id, string FileName, long SizeBytes, string ContentType, DateTime UploadedAt);
     }
 }

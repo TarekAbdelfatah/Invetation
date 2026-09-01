@@ -20,6 +20,13 @@ namespace Ibtikar.DTOs.Audit
 
     public sealed record AuditDepartmentOptionDto(Guid Id, string Name);
 
+    public sealed record AuditAttachmentDto(
+        Guid Id,
+        string FileName,
+        long SizeBytes,
+        string ContentType,
+        DateTime UploadedAt);
+
     public sealed record AuditHistoryRowDto(
         DateTime ChangedAt,
         string FromStatus,
@@ -35,6 +42,13 @@ namespace Ibtikar.DTOs.Audit
         string? ProblemStatement,
         string? ProposedSolution,
         string? ExpectedBenefits,
+        string? RequiredResources,
+        string? ExpectedImpactName,
+        string? ExpectedImpactOther,
+        string? TargetAudienceName,
+        string? TargetAudienceOther,
+        bool UsesEmergingTech,
+        string? TechnologyOther,
         string Domain,
         string ApplicantName,
         string ApplicantDepartment,
@@ -42,12 +56,13 @@ namespace Ibtikar.DTOs.Audit
         string StatusName,
         string StatusColor,
         DateTime SubmittedAt,
-        bool CanOpen,
+        bool CanDecide,
         bool IsUnderStudy,
         bool IsRoutedToSpecialist,
         bool IsTerminal,
         IReadOnlyList<AuditDepartmentOptionDto> ActiveDepartments,
-        IReadOnlyList<AuditHistoryRowDto> History);
+        IReadOnlyList<AuditHistoryRowDto> History,
+        IReadOnlyList<AuditAttachmentDto> Attachments);
 
     public enum AuditActionOutcome
     {

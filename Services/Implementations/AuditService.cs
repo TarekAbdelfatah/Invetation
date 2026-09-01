@@ -90,11 +90,34 @@ namespace Ibtikar.Services.Implementations
             if (department is null)
                 return new(AuditActionOutcome.InvalidInput, "يرجى اختيار إدارة تحويل صحيحة.");
 
-            if (idea.CurrentStatus?.Code != IdeaStatusCodes.UnderStudy)
-                return new(AuditActionOutcome.InvalidState, "لا يمكن التحويل لجهة إلا بعد فتح الملف للدراسة.");
+            var actionableStatuses = new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted, IdeaStatusCodes.UnderStudy };
+            if (!actionableStatuses.Contains(idea.CurrentStatus?.Code ?? string.Empty))
+                return new(AuditActionOutcome.InvalidState, "لا يمكن التحويل لجهة في حالة الطلب الحالية.");
+
+            var fromId = idea.CurrentStatusId;
+            var wasOpen = idea.AuditEmployeeId is null;
 
             idea.AssignedDepartmentId = departmentId;
             idea.AuditEmployeeId = auditorId;
+
+            if (wasOpen)
+            {
+                var underStudyId = await _repo.GetStatusIdByCodeAsync(IdeaStatusCodes.UnderStudy, ct);
+                if (underStudyId is null)
+                    return new(AuditActionOutcome.InvalidState, "لم يتم إعداد حالة (قيد الدراسة) بعد.");
+
+                idea.AuditAssignedAt = DateTime.UtcNow;
+                idea.CurrentStatusId = underStudyId.Value;
+
+                await _repo.AddStatusHistoryAsync(new IdeaStatusHistory
+                {
+                    InnovationIdeaId = idea.Id,
+                    FromStatusId = fromId,
+                    ToStatusId = underStudyId.Value,
+                    ChangedByUserId = auditorId,
+                    Note = "فتح الملف وتحويله إلى جهة مختصة"
+                }, ct);
+            }
 
             await _repo.AddAuditActionAsync(new AuditActionItem
             {
@@ -129,6 +152,10 @@ namespace Ibtikar.Services.Implementations
             if (idea.CurrentStatus?.Code == IdeaStatusCodes.Rejected || idea.CurrentStatus?.IsTerminal == true)
                 return new(AuditActionOutcome.InvalidState, "الملف في حالة نهائية ولا يمكن رفضه مجدداً.");
 
+            var actionableStatuses = new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted, IdeaStatusCodes.UnderStudy };
+            if (!actionableStatuses.Contains(idea.CurrentStatus?.Code ?? string.Empty))
+                return new(AuditActionOutcome.InvalidState, "لا يمكن رفض الملف في حالته الحالية.");
+
             var rejectedId = await _repo.GetStatusIdByCodeAsync(IdeaStatusCodes.Rejected, ct);
             if (rejectedId is null)
                 return new(AuditActionOutcome.InvalidState, "لم يتم إعداد حالة (مرفوض) بعد.");
@@ -136,6 +163,7 @@ namespace Ibtikar.Services.Implementations
             var fromId = idea.CurrentStatusId;
             var trimmedReason = reason.Trim();
             idea.CurrentStatusId = rejectedId.Value;
+            idea.AuditEmployeeId = auditorId;
 
             await _repo.AddAuditActionAsync(new AuditActionItem
             {
@@ -176,6 +204,10 @@ namespace Ibtikar.Services.Implementations
             if (idea.CurrentStatus?.IsTerminal == true)
                 return new(AuditActionOutcome.InvalidState, "الملف في حالة نهائية ولا يمكن طلب استكماله.");
 
+            var actionableStatuses = new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted, IdeaStatusCodes.UnderStudy };
+            if (!actionableStatuses.Contains(idea.CurrentStatus?.Code ?? string.Empty))
+                return new(AuditActionOutcome.InvalidState, "لا يمكن طلب استكمال الملف في حالته الحالية.");
+
             var waitingId = await _repo.GetStatusIdByCodeAsync(IdeaStatusCodes.WaitingForCompletion, ct);
             if (waitingId is null)
                 return new(AuditActionOutcome.InvalidState, "لم يتم إعداد حالة (بانتظار الاستكمال) بعد.");
@@ -183,6 +215,7 @@ namespace Ibtikar.Services.Implementations
             var fromId = idea.CurrentStatusId;
             var trimmed = instructions.Trim();
             idea.CurrentStatusId = waitingId.Value;
+            idea.AuditEmployeeId = auditorId;
 
             await _repo.AddAuditActionAsync(new AuditActionItem
             {

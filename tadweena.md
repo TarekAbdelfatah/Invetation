@@ -38,6 +38,10 @@ sessions:
     model: opencode/big-pickle
     session_id: 5d67a304-8c21-465f-9b1f-473ef6c2ca9d
     started_at: 2026-09-01T12:14:02Z
+  minimax-audit-fix:
+    model: minimax-coding-plan/MiniMax-M3
+    session_id: c60c7822-0bd1-479a-8cf5-ab721a1d4b14
+    started_at: 2026-09-01T15:59:33Z
 ---
 
 # Graph note (requires)

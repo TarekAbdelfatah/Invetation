@@ -109,6 +109,13 @@ namespace Ibtikar.Controllers
                 dto.ProblemStatement,
                 dto.ProposedSolution,
                 dto.ExpectedBenefits,
+                dto.RequiredResources,
+                dto.ExpectedImpactName,
+                dto.ExpectedImpactOther,
+                dto.TargetAudienceName,
+                dto.TargetAudienceOther,
+                dto.UsesEmergingTech,
+                dto.TechnologyOther,
                 dto.Domain,
                 dto.ApplicantName,
                 dto.ApplicantDepartment,
@@ -116,11 +123,12 @@ namespace Ibtikar.Controllers
                 dto.StatusName,
                 dto.StatusColor,
                 dto.SubmittedAt,
-                dto.CanOpen,
+                dto.CanDecide,
                 dto.IsUnderStudy,
                 dto.IsRoutedToSpecialist,
                 dto.IsTerminal,
                 dto.ActiveDepartments.Select(d => new AuditDetailsVm.DepartmentOption(d.Id, d.Name)).ToList(),
-                dto.History.Select(h => new AuditDetailsVm.AuditHistoryRow(h.ChangedAt, h.FromStatus, h.ToStatus, h.By, h.Note)).ToList());
+                dto.History.Select(h => new AuditDetailsVm.AuditHistoryRow(h.ChangedAt, h.FromStatus, h.ToStatus, h.By, h.Note)).ToList(),
+                dto.Attachments.Select(a => new AuditDetailsVm.Attachment(a.Id, a.FileName, a.SizeBytes, a.ContentType, a.UploadedAt)).ToList());
     }
 }

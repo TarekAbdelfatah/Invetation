@@ -180,6 +180,220 @@
   }
 }
 
+/* ---------- Decision card (redesigned, used by Audit/Details) ---------- */
+.bog-decision {
+  border: 1px solid var(--border-light, #ECECED);
+  background: #fff;
+  overflow: hidden;
+}
+
+.bog-decision__head {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4, 16px);
+  padding: var(--spacing-5, 20px) var(--spacing-6, 24px);
+  background: linear-gradient(135deg, var(--brand-50, #F3FCF6), var(--brand-25, #F7FDF9));
+  border-bottom: 1px solid var(--border-light, #ECECED);
+}
+
+.bog-decision__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-lg, 10px);
+  background: var(--primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px -8px rgba(27, 131, 84, 0.55);
+}
+
+.bog-decision__icon .material-icons {
+  font-size: 26px;
+}
+
+.bog-decision__title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bog-decision__title strong {
+  font-size: var(--text-lg, 18px);
+  color: var(--text-primary, #161B26);
+}
+
+.bog-decision__title small {
+  font-size: var(--text-sm, 14px);
+  color: var(--text-tertiary, #61646C);
+}
+
+.bog-decision__body {
+  display: grid;
+  gap: var(--spacing-4, 16px);
+  padding: var(--spacing-5, 20px) var(--spacing-6, 24px) var(--spacing-6, 24px);
+}
+
+@media (min-width: 992px) {
+  .bog-decision__body {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.bog-decision-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--border-light, #ECECED);
+  border-radius: var(--radius-lg, 10px);
+  padding: var(--spacing-5, 20px);
+  display: flex;
+  flex-direction: column;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.bog-decision-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border-top: 3px solid currentColor;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.bog-decision-card--success { color: #079455; }
+.bog-decision-card--warning { color: #DC6803; }
+.bog-decision-card--danger  { color: #D92D20; }
+
+.bog-decision-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px -16px rgba(15, 23, 42, 0.18);
+}
+
+.bog-decision-card:focus-within {
+  box-shadow: 0 0 0 3px rgba(27, 131, 84, 0.12);
+}
+
+.bog-decision-card--success:focus-within { box-shadow: 0 0 0 3px rgba(7, 148, 85, 0.18); }
+.bog-decision-card--warning:focus-within { box-shadow: 0 0 0 3px rgba(220, 104, 3, 0.18); }
+.bog-decision-card--danger:focus-within  { box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.18); }
+
+.bog-decision-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3, 12px);
+  margin-bottom: var(--spacing-4, 16px);
+}
+
+.bog-decision-card__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md, 8px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #fff;
+}
+
+.bog-decision-card--success .bog-decision-card__icon { background: #079455; }
+.bog-decision-card--warning .bog-decision-card__icon { background: #DC6803; }
+.bog-decision-card--danger  .bog-decision-card__icon { background: #D92D20; }
+
+.bog-decision-card__icon .material-icons { font-size: 22px; }
+
+.bog-decision-card__title {
+  font-size: var(--text-md, 16px);
+  font-weight: 700;
+  color: var(--text-primary, #161B26);
+  margin: 0 0 4px 0;
+}
+
+.bog-decision-card__hint {
+  margin: 0;
+  font-size: var(--text-sm, 13px);
+  color: var(--text-tertiary, #61646C);
+  line-height: 1.55;
+}
+
+.bog-decision-card__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.bog-decision-card__form textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.bog-decision-card__btn {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding-block: var(--spacing-3, 12px);
+}
+
+.bog-decision-card__btn .material-icons {
+  margin-inline-end: 6px;
+}
+
+/* ---------- Attachment list (Audit/Details) ---------- */
+.bog-attachment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bog-attachment-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3, 12px);
+  padding: var(--spacing-4, 16px) var(--spacing-6, 24px);
+  border-bottom: 1px solid var(--border-light, #ECECED);
+}
+
+.bog-attachment-list__item:last-child { border-bottom: 0; }
+
+.bog-attachment-list__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md, 8px);
+  background: #FEE4E2;
+  color: #D92D20;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.bog-attachment-list__icon .material-icons { font-size: 20px; }
+
+.bog-attachment-list__meta {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bog-attachment-list__name {
+  color: var(--text-primary, #161B26);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+@media (max-width: 575.98px) {
+  .bog-decision__head,
+  .bog-decision__body {
+    padding-inline: var(--spacing-4, 16px);
+  }
+
+  .bog-attachment-list__item {
+    padding-inline: var(--spacing-4, 16px);
+    flex-wrap: wrap;
+  }
+}
+
 /* ---------- Status history timeline ---------- */
 .bog-idea-history {
   list-style: none;

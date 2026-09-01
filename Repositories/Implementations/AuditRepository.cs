@@ -24,6 +24,7 @@ namespace Ibtikar.Repositories
 
             var query = _db.InnovationIdeas
                 .AsNoTracking()
+                .Where(i => !i.IsDraft)
                 .Where(i => _db.IdeaStatuses
                     .Where(s => statusCodes.Contains(s.Code))
                     .Select(s => s.Id)
@@ -39,7 +40,7 @@ namespace Ibtikar.Repositories
             var totalCount = await query.CountAsync(ct);
 
             var rows = await query
-                .OrderByDescending(i => i.CreatedAt)
+                .OrderByDescending(i => i.SubmittedAt ?? i.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(i => new AuditInboxRowDto(
@@ -49,8 +50,8 @@ namespace Ibtikar.Repositories
                     i.InnovationDomain != null ? i.InnovationDomain.Name : "—",
                     i.ApplicantUser != null ? i.ApplicantUser.FullName : "—",
                     i.ApplicantDepartment != null ? i.ApplicantDepartment.Name : "—",
-                    i.CreatedAt,
-                    now - i.CreatedAt > overdueThreshold))
+                    i.SubmittedAt ?? i.CreatedAt,
+                    now - (i.SubmittedAt ?? i.CreatedAt) > overdueThreshold))
                 .ToListAsync(ct);
 
             return new AuditInboxDto(rows, applicantTypeFilter, string.Empty, page, pageSize, totalCount);
@@ -60,7 +61,7 @@ namespace Ibtikar.Repositories
         {
             var header = await _db.InnovationIdeas
                 .AsNoTracking()
-                .Where(i => i.Id == id)
+                .Where(i => i.Id == id && !i.IsDraft)
                 .Select(i => new
                 {
                     i.Id,
@@ -70,7 +71,14 @@ namespace Ibtikar.Repositories
                     i.ProblemStatement,
                     i.ProposedSolution,
                     i.ExpectedBenefits,
+                    i.RequiredResources,
+                    i.ExpectedImpactOther,
+                    i.TargetAudienceOther,
+                    i.UsesEmergingTech,
+                    i.TechnologyOther,
                     DomainName = i.InnovationDomain != null ? i.InnovationDomain.Name : "—",
+                    ExpectedImpactName = i.ExpectedImpact != null ? i.ExpectedImpact.Name : null,
+                    TargetAudienceName = i.TargetAudience != null ? i.TargetAudience.Name : null,
                     ApplicantName = i.ApplicantUser != null ? i.ApplicantUser.FullName : "—",
                     ApplicantDepartmentName = i.ApplicantDepartment != null ? i.ApplicantDepartment.Name : "خارجي",
                     AssignedDepartmentName = i.AssignedDepartment != null ? i.AssignedDepartment.Name : null,
@@ -84,6 +92,18 @@ namespace Ibtikar.Repositories
                 .FirstOrDefaultAsync(ct);
 
             if (header is null) return null;
+
+            var attachments = await _db.IdeaAttachments
+                .AsNoTracking()
+                .Where(a => a.InnovationIdeaId == id)
+                .OrderBy(a => a.UploadedAt)
+                .Select(a => new AuditAttachmentDto(
+                    a.Id,
+                    a.FileName,
+                    a.SizeBytes,
+                    a.ContentType,
+                    a.UploadedAt))
+                .ToListAsync(ct);
 
             var history = await _db.IdeaStatusHistories
                 .AsNoTracking()
@@ -105,8 +125,8 @@ namespace Ibtikar.Repositories
                 .Select(d => new AuditDepartmentOptionDto(d.Id, d.Name))
                 .ToListAsync(ct);
 
-            var openStatuses = new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted };
-            var canOpen = openStatuses.Contains(header.StatusCode);
+            var actionableStatuses = new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted, IdeaStatusCodes.UnderStudy };
+            var canDecide = actionableStatuses.Contains(header.StatusCode);
             var isUnderStudy = header.StatusCode == IdeaStatusCodes.UnderStudy;
             var isRoutedToSpecialist = isUnderStudy && !string.IsNullOrEmpty(header.AssignedDepartmentName);
 
@@ -118,6 +138,13 @@ namespace Ibtikar.Repositories
                 header.ProblemStatement,
                 header.ProposedSolution,
                 header.ExpectedBenefits,
+                header.RequiredResources,
+                header.ExpectedImpactName,
+                header.ExpectedImpactOther,
+                header.TargetAudienceName,
+                header.TargetAudienceOther,
+                header.UsesEmergingTech,
+                header.TechnologyOther,
                 header.DomainName,
                 header.ApplicantName,
                 header.ApplicantDepartmentName,
@@ -125,12 +152,13 @@ namespace Ibtikar.Repositories
                 header.StatusName,
                 header.StatusColor,
                 header.SubmittedAt ?? header.CreatedAt,
-                canOpen,
+                canDecide,
                 isUnderStudy,
                 isRoutedToSpecialist,
                 header.IsTerminal,
                 departments,
-                history);
+                history,
+                attachments);
         }
 
         public async Task<InnovationIdea?> GetForTransitionAsync(Guid id, CancellationToken ct)
