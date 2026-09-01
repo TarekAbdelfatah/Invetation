@@ -184,6 +184,12 @@
             e.preventDefault();
             clearAllSubmitErrors();
 
+            try {
+                if (window.BogLoading && typeof window.BogLoading.cancel === 'function') {
+                    window.BogLoading.cancel();
+                }
+            } catch (_) { /* ignore */ }
+
             var names = [];
             for (var k = 0; k < empties.length; k++) {
                 var it = empties[k];

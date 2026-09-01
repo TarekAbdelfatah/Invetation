@@ -66,6 +66,10 @@
         }, 250);
     }
 
+    function cancel() {
+        hide();
+    }
+
     function shouldShowForForm(form) {
         if (!form) return false;
         if (form.dataset && form.dataset.loading === 'false') return false;
@@ -136,5 +140,5 @@
         attachFetchListeners();
     });
 
-    window.BogLoading = { show, hide };
+    window.BogLoading = { show, hide, cancel };
 })();
