@@ -1,6 +1,6 @@
 using Ibtikar.Data;
 using Ibtikar.DTOs.Reports;
-using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Repositories

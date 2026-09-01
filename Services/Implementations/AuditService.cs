@@ -1,7 +1,7 @@
 using Ibtikar.DTOs.Audit;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
-using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Notifications;
 
 namespace Ibtikar.Services.Audit

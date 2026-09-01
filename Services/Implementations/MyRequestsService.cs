@@ -1,7 +1,7 @@
 using Ibtikar.DTOs.MyRequests;
 using Ibtikar.Repositories;
 using Ibtikar.Services.Attachments;
-using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Helpers;
 
 namespace Ibtikar.Services.MyRequests
 {

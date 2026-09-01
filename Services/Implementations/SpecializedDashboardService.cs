@@ -1,7 +1,7 @@
 using Ibtikar.DTOs.SpecializedDashboard;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
-using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Helpers;
 
 namespace Ibtikar.Services.SpecializedDashboard
 {

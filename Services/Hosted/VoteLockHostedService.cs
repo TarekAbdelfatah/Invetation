@@ -1,6 +1,6 @@
 using Ibtikar.Data;
 using Ibtikar.Models;
-using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
