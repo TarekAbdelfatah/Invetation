@@ -164,7 +164,10 @@
             const btn = document.getElementById('completeBtn');
             const fileInput = document.getElementById('pdfFile');
             const form = document.getElementById('completeForm');
+            const confirmModalEl = document.getElementById('confirmCompleteModal');
             if (!btn || !fileInput || !form) return;
+            const confirmModal = confirmModalEl ? new bootstrap.Modal(confirmModalEl) : null;
+            const confirmBtn = document.getElementById('confirmCompleteBtn');
 
             btn.addEventListener('click', async function () {
                 const files = fileInput.files;
@@ -199,13 +202,53 @@
                         input.value = id;
                         form.appendChild(input);
                     });
-                    form.submit();
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-icons align-middle" style="font-size:18px">check_circle</span> إكمال التنفيذ';
+                    if (confirmModal) {
+                        confirmModal.show();
+                    } else {
+                        form.submit();
+                    }
                 } catch (e) {
                     alert('حدث خطأ أثناء رفع الملفات: ' + e);
                     btn.disabled = false;
                     btn.innerHTML = '<span class="material-icons align-middle" style="font-size:18px">check_circle</span> إكمال التنفيذ';
                 }
             });
+
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function () {
+                    if (confirmModal) confirmModal.hide();
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> جارٍ الإكمال...';
+                    form.submit();
+                });
+            }
         })();
     </script>
 }
+
+<div class="modal fade" id="confirmCompleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <span class="material-icons align-middle">check_circle</span>
+                    تأكيد إكمال التنفيذ
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">هل أنت متأكد من إكمال تنفيذ هذه الفكرة؟</p>
+                <p class="small text-muted mb-0">سيتم تغيير حالة الفكرة إلى (مكتملة التنفيذ) ولن يمكن التراجع. سيتم حفظ ملفَي PDF المرفقين كدليل إغلاق.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-success" id="confirmCompleteBtn">
+                    <span class="material-icons align-middle" style="font-size:18px">check</span>
+                    نعم، إكمال التنفيذ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
