@@ -105,9 +105,9 @@
 
     function ensureConfirmModal() {
       let modal = document.getElementById('confirm-modal');
-      if (modal) return modal;
-      const tpl = document.createElement('div');
-      tpl.innerHTML = `
+      if (!modal) {
+        const tpl = document.createElement('div');
+        tpl.innerHTML = `
 <div id="confirm-modal" class="bog-modal" hidden role="dialog" aria-modal="true"
      aria-labelledby="confirm-modal-title" aria-describedby="confirm-modal-message">
     <div class="bog-modal-backdrop" data-confirm-cancel></div>
@@ -122,8 +122,9 @@
         </div>
     </div>
 </div>`;
-      modal = tpl.firstElementChild;
-      document.body.appendChild(modal);
+        modal = tpl.firstElementChild;
+        document.body.appendChild(modal);
+      }
       bindStandaloneModal(modal);
       return modal;
     }
@@ -133,6 +134,7 @@
       const okBtn = modal.querySelector('[data-confirm-ok]');
       const cancelBtns = modal.querySelectorAll('[data-confirm-cancel]');
       let resolver = null;
+
       window.__bogConfirm = function (msg, okLabel) {
         if (messageEl) messageEl.textContent = msg;
         if (okLabel) okBtn.textContent = okLabel;
@@ -141,6 +143,10 @@
         okBtn.focus();
         return new Promise((res) => { resolver = res; });
       };
+
+      if (modal.__bogBound) return;
+      modal.__bogBound = true;
+
       okBtn.addEventListener('click', () => {
         modal.hidden = true;
         modal.removeAttribute('data-open');
