@@ -1,0 +1,547 @@
+# دليل اختبار نظام ابتكار (Ibtikar) — Cycle التحقق
+
+> **اسم النظام:** ابتكار (Ibtikar) — منصة استقبال الأفكار الابتكارية لمكتب المظالم
+> **نوع التطبيق:** ASP.NET Core MVC + EF Core + PostgreSQL + Bootstrap 5 RTL
+> **اللغة:** عربي (RTL) — `ar-SA`
+> **عدد الفيتشرز المنجزة:** 9 فيتشرز (133/133 مهمة done)
+> **عدد المستخدمين (الأدوار):** 6 أنواع
+> **حالة الـ Committee:** ⚠️ فيتشر لجنة الابتكار به **24 مهمة pending** — يغطّي هذا الدليل ما هو **منجز فقط**
+> **⚠️ تحديث مهم (دورة الدمج):** لوحة "الإدارة الشريكة" (`/PartnerDashboard`) وُلجت في لوحة "الإدارة المختصة" (`/SpecializedDashboard`) لأن الإدارة الواحدة تستقبل الأفكار المحوّلة إليها تخصصياً + استشارات واردة من إدارات أخرى. كل دور يُحوَّل إلى `/SpecializedDashboard` بعد الدخول. هذا الدليل يوثّق السلوك الموحَّد.
+
+---
+
+## 0. كيف تستخدم هذا الدليل
+
+كل مختبر يستلم **دوره فقط** (Role-specific section) ويُنفّذ الـ Cycle خطوة خطوة.
+
+| الرمز | المعنى |
+|---|---|
+| ✅ Pass | النتيجة مطابقة للسلوك المتوقع |
+| ❌ Fail | خطأ فعلي — يُسجَّل في جدول الـ Defects |
+| ⚠️ Blocked | لا يمكن الاستمرار (تعتمد على مختبر آخر) |
+| N/A | لا ينطبق على هذا المختبر |
+
+**قواعد عامة:**
+1. **لا تعدّل بيانات الـ Seed** (المستخدمين السبعة، الأقسام، الحالات، المعايير).
+2. سجّل الـ Reference Number لكل فكرة تنشئها — ستحتاجه في أدوار أخرى.
+3. CSRF مفعّل تلقائياً على كل POST (Login، Submit، Assess، إلخ) — لا تُعطّل الـ Token.
+4. ملفات PDF فقط، حد أقصى 2 ملف × 5MB، تُفحص فعلياً بـ signature (لا تخطّيها).
+5. الأدوار لا تتشارك جلسات — افتح **متصفح خفي** (Incognito) لكل دور أو **سجّل خروج** قبل تبديل الدور.
+6. الأخطاء (404 / 500 / Exception) تُسجَّل في جدول `AuditLog` — لا تتجاهلها.
+
+---
+
+## 1. بيانات الدخول المُسبقة الـ Seed (لكل الأدوار الستة)
+
+كلمة المرور الموحّدة لجميع المستخدمين: حسب الـ Seed (يُسلَّم للمختبرين بشكل منفصل — **راجع ملف `appsettings.Development.json` أو الـ README**).
+
+| # | اسم المستخدم (المتوقّع) | الدور / الشاشة | ينتقل بعد الدخول إلى |
+|---|---|---|---|
+| 1 | `beneficiary@ibtikar.local` (داخلي) أو `ext-user@ibtikar.local` (خارجي) | External beneficiary | `/MyRequests` |
+| 2 | `audit@ibtikar.local` | Audit employee | `/AuditInbox` |
+| 3 | `committee@ibtikar.local` | Innovation committee member | `/Committee` *(قد يكون فارغاً — راجع §6)* |
+| 4 | `specialized-ai@ibtikar.local` | Specialized department (مثال: AI — judicial) | `/SpecializedDashboard` (لوحة موحّدة) |
+| 5 | `system-manager@ibtikar.local` | System manager | `/Reports` |
+| 6 | `partner@ibtikar.local` *(Username للتوضيح فقط — الإدارة الفعلية: تقنية/tech)* | Partner department *(= نفس الإدارة — لوحة موحّدة)* | `/SpecializedDashboard` (لوحة موحّدة) |
+
+> ⚠️ الأسماء أعلاه **متوقّعة** بناءً على وصف الـ Seed. على المختبر **التحقق من قائمة المستخدمين الفعلية** عبر شاشة Login (بعد الخطأ تظهر اسماء أدوار بدون ذكر كلمة سر) أو من خلال `psql -d ibtikar -c 'SELECT u.username, r.code FROM users u JOIN user_roles ur ON ur.user_id=u.id JOIN roles r ON r.id=ur.role_id;'`.
+
+---
+
+## 2. الـ Cycle الكاملة لكل مستخدم
+
+### 👤 المستخدم 1: External Beneficiary (مستفيد / موظف — خارجي أو داخلي)
+
+**الـ Scope:** إنشاء فكرة + متابعة الطلبات + حذف/تعديل في الحالات المسموحة.
+
+#### 2.1 Login Test
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 1.1 | افتح `/Account/Login`، أدخل اسم المستخدم وكلمة السر الصحيحة | الانتقال إلى `/MyRequests` |
+| 1.2 | أدخل كلمة سر خاطئة 5 مرات متتالية | Rate limiting — رسالة "تم تجاوز عدد المحاولات" |
+| 1.3 | افتح أي URL محمي (مثل `/Ideas/Create`) بدون تسجيل دخول | إعادة التوجيه إلى `/Account/Login` |
+| 1.4 | بعد تسجيل الدخول، انتظر 20 دقيقة بدون حركة | تسجيل خروج تلقائي |
+
+#### 2.2 Empty State
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 2.1 | كمستخدم جديد بـ 0 أفكار، افتح `/MyRequests` | رسالة "لم تقم بتقديم أي أفكار حتى الآن" + زر **ابتكر الآن** |
+| 2.2 | اضغط الزر | الانتقال إلى `/Ideas/Create` |
+
+#### 2.3 Submit Idea — Happy Path
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 3.1 | افتح `/Ideas/Create` | نموذج كامل: عنوان، ملخص، تحديات، حل مقترح، التصنيف (InnovationDomain)، التأثير المتوقع، الجمهور، التقنية، Other، المرفقات |
+| 3.2 | اختر `Other` في التأثير/الجمهور/التقنية **بدون** كتابة نص بديل | Validation error: "يرجى تحديد قيمة Other" |
+| 3.3 | أدخل Summary بطول 3001 حرف | Validation: "الملخص يجب ألا يتجاوز 3000 حرف" |
+| 3.4 | حاول رفع ملف `.exe` أو `.zip` | رفض — PDF فقط |
+| 3.5 | حاول رفع ملف PDF أكبر من 5MB | رفض — رسالة حجم |
+| 3.6 | حاول رفع ملف نصي بامتداد `.pdf` (fake PDF) | رفض — فحص التوقيع الحقيقي |
+| 3.7 | ارفع ملفَين PDF صالحَين، أكمل الحقول المطلوبة، اضغط **Submit** | الحالة → `New`، ظهور Reference Number (مثال: `IBT-2026-0001`)، كتابة صف في `IdeaStatusHistory` |
+| 3.8 | حاول فتح `/Ideas/Create` بـ GET ثم POST مباشرة | CSRF token مطلوب — يُرفض بدونه |
+| 3.9 | سجّل الخروج، حاول الـ POST عبر أداة (curl) | مرفوض (AntiForgery + Auth) |
+
+#### 2.4 My Requests List
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 4.1 | افتح `/MyRequests` | جدول: Reference، Title، Date، Status Badge، Progress Bar (5 مراحل)، الأحدث أولاً |
+| 4.2 | اضغط على فكرة في الحالة `New` | تفاصيل: read-only للـ original fields والـ attachments + زر **Delete** |
+| 4.3 | اضغط Delete في الحالة `New` | تأكيد modal، ثم حذف فعلي |
+| 4.4 | حاول الوصول لـ `/MyRequests/Details/{id}` بمعرّف فكرة **موظف آخر** | 404 — IDOR محمي |
+| 4.5 | بعد التدقيق يقبل الفكرة (`Under Study`) → عد للـ My Requests | Progress Bar يتقدّم |
+
+#### 2.5 Resubmit (Rejected / Returned)
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 5.1 | عندما تكون الحالة `Returned for development` أو `Returned for completion`، افتح التفاصيل | نموذج كامل لإعادة التقديم + نقاط التطوير (development points) |
+| 5.2 | اضغط Submit بدون إدخال نقاط التطوير | رفض — "يرجى إدخال نقاط التطوير" |
+| 5.3 | اضغط Submit مرتين بسرعة (double click) | الزر معطّل بعد الضغطة الأولى (disable-on-click) |
+| 5.4 | أكمل البيانات وأرسل | ينتقل إلى الحالة التالية، يكتب History |
+
+#### 2.6 Timeout Closed
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 6.1 | فكرة في حالة `Waiting for completion` أو `Waiting for development`، مرّ عليها 14 يوم | Hosted service يُغلقها آلياً → الحالة `Closed` |
+| 6.2 | افتح الفكرة `Closed` | رسالة "تم إغلاق الفكرة" + إخفاء أزرار Edit |
+
+#### 2.7 Out of Scope (Boundary Tests)
+- ❌ لا يستطيع التعديل على حقول الفكرة الأصلية بعد الـ Submit (Read-only).
+- ❌ لا يرى أسماء الموظفين أو تواريخ الإجراءات الداخلية (Out of scope per SRS).
+- ❌ لا يصل لـ `/AuditInbox` أو `/SpecializedDashboard` (Authorize يرفضه).
+
+---
+
+### 👤 المستخدم 2: Audit Employee (موظف التدقيق)
+
+**الـ Scope:** الـ Inbox + القبول/الرفض/طلب استكمال + التوجيه لإدارة متخصصة.
+
+#### 2.8 Login & Empty Inbox
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 8.1 | Login كـ `audit@ibtikar.local` | ينتقل إلى `/AuditInbox` |
+| 8.2 | inbox فارغ | رسالة "لا توجد أفكار جديدة" |
+
+#### 2.9 Inbox Filter
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 9.1 | موظف التدقيق يفتح الـ Inbox | الصفوف الافتراضية = `New` و `Resubmitted` فقط |
+| 9.2 | استخدم فلتر البحث (نص/تاريخ/نوع) | النتائج تتقلّص بدون إعادة تحميل الصفحة (أو reload صحيح) |
+| 9.3 | افتح فكرة من النوع `New` | ثلاث أزرار: **Accept** / **Reject** / **Request Missing Data** |
+
+#### 2.10 Accept
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 10.1 | افتح فكرة، اضغط Accept، أكّد | الحالة → `Under Study`، كتابة History، انتقال الفكرة لـ Specialized department المختار في نموذج التوجيه |
+
+#### 2.11 Reject
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 11.1 | اضغط Reject، أدخل سبب (إلزامي)، أكّد | الحالة → `Rejected`، يظهر للـ applicant كـ read-only مع السبب فقط |
+
+#### 2.12 Request Missing Data
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 12.1 | اضغط Request Missing Data، أدخل ملاحظات | الحالة → `Returned for completion`، يظهر للـ applicant كإشعار لإعادة التقديم |
+
+#### 2.13 IDOR / Scope Tests
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 13.1 | حاول فتح `/AuditInbox/Details/{id}` بمعرّف فكرة **لم تُحال لقسمه** | 404 |
+| 13.2 | حاول POST لـ Action بدون CSRF token | مرفوض |
+| 13.3 | حاول POST لـ Action كمستخدم `beneficiary` | 403 / 404 |
+
+#### 2.14 Out of Scope
+- ❌ لا يعدّل فكرة بعد القبول (Read-only).
+- ❌ لا يصل لـ `/Committee` أو `/SpecializedDashboard`.
+
+---
+
+### 👤 المستخدم 3: Innovation Committee Member (عضو لجنة الابتكار)
+
+**⚠️ حالة الفيتشر:** الفيتشر به **24 مهمة pending** — الـ Cycle الكامل غير متاح بعد.
+**ما يمكن اختباره الآن:**
+
+#### 3.1 Login فقط
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 14.1 | Login كـ `committee@ibtikar.local` | ينتقل إلى `/Committee` (قد يكون فارغاً أو مع لوحة غير مكتملة) |
+| 14.2 | حاول فتح `/Committee/Details/{id}` | إذا كانت الـ action موجودة: يفتح بشكل read-only أو 404 |
+| 14.3 | حاول POST لـ أي action تقييم | مرفوض (404 / 405 / Not Implemented) |
+
+**🛑 لا تكمل باقي الـ Cycle الآن.** سجّل النتيجة كـ "Pending Feature" في الـ Sign-off.
+
+#### 3.2 عند توفر الفيتشر لاحقاً، الـ Cycle الكامل المتوقّع:
+1. استلام فكرة من Specialized department.
+2. تقييم 5 معايير (نفس معايير Specialized، 1-5).
+3. التصويت (موافق/غير موافق/امتناع).
+4. إذا كان النصاب مكتمل: القرار → قبول/رفض/طلب تعديل.
+5. في حالة القبول → التوجيه لـ Execution (5 مراحل تنفيذ).
+
+---
+
+### 👤 المستخدم 4: Specialized Department (إدارة متخصصة — مثال: AI)
+
+**الـ Scope:** لوحة موحّدة (تخصص + استشارات) + التقييم بـ 5 معايير + طلب رأي جهات أخرى + الإرسال للجنة.
+
+> ℹ️ **دمج مهم:** هذه اللوحة هي نفسها المستخدمة من قبل "الإدارة الشريكة" (§6). الإدارة الواحدة تستقبل **أفكاراً محوّلة تخصصياً** (تقيّمها) و**استشارات واردة من إدارات أخرى** (تبيّن رأيها). كل شيء في صفحة واحدة.
+
+#### 4.1 Dashboard (اللوحة الموحّدة)
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 15.1 | Login كـ `specialized-ai@ibtikar.local` | ينتقل إلى `/SpecializedDashboard` |
+| 15.2 | افحص العنوان | "لوحة {DepartmentName}" (مثال: "لوحة الشؤون القضائية") بأيقونة engineering |
+| 15.3 | افحص قسم "الأفكار المحوّلة لإدارتك" — KPI cards الأربعة | قيد الدراسة / أُرسل لجهات أخرى / أُرسلت للتنفيذ / مرفوضة بعد التحويل (تستبعد رفض التدقيق) |
+| 15.4 | كل KPI card في هذا القسم هو link يستدعي `/SpecializedDashboard/Referrals?status=...` | التصفية تفتح الـ Referrals بالحالة الصحيحة |
+| 15.5 | افحص قسم "الاستشارات الواردة" — KPI cards الثلاثة | استشارات بانتظار الرد / استشارات متأخرة (تجاوزت 4 أيام) / تم الرد خلال 30 يوم |
+| 15.6 | افحص جدول الـ inbox في قسم الاستشارات | يعرض فقط `PartnerAssignment` لإدارتي — IDOR-safe (`PartnerAssignmentQuery.ForDepartment`) |
+| 15.7 | افحص جدول الإحالات عبر "كل الأفكار المحوّلة" | يعرض فقط أفكار القسم الحالي + stay duration (الأيام منذ الإحالة) |
+| 15.8 | طبّق فلتر (status / applicant-type) في Referrals | النتائج تتقلّص |
+| 15.9 | تحقّق من اسم الإدارة في الـ hero | الاسم الفعلي (مثال: "الشؤون القضائية") وليس "الإدارة المختصة" أو "الإدارة الشريكة" |
+
+#### 4.2 IDOR / Scope
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 16.1 | حاول فتح Details لفكرة **محالة لقسم آخر** (كمستخدم `specialized-it` مثلاً) | 404 — فلتر `AssignedDepartmentId` يطبّق على الخادم |
+| 16.2 | حاول POST كـ `partner-dept` | 403 |
+| 16.3 | تحقّق من استشارة واردة من إدارة أخرى (في قسم "الاستشارات الواردة") — اضغط مراجعة | يجب أن يعرض التفاصيل مع `partner-department` أو `specialized-department` كلاهما مقبول (لأنهما نفس الإدارة) |
+
+#### 4.3 Assess — 5 Criteria
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 17.1 | افتح فكرة محالة، اضغط Assess | نموذج 5 معايير: dropdown 1-5 لكل معيار، Total/Percent live update |
+| 17.2 | غيّر قيمة معيار | الـ Total يتحدث فوراً (JS calc)، النسبة المئوية = sum/25 * 100 |
+| 17.3 | اضغط Save as Draft بدون إكمال كل المعايير | يحفظ Draft، يبقى في نفس الحالة |
+| 17.4 | حاول الإرسال للجنة بدون إكمال كل الـ 5 معايير | **مرفوض** بالضبط برسالة: `يرجى استكمال تقييم كافة المعايير قبل اتخاذ إجراء الإرسال`، الـ criterion الفارغ يظهر بإطار أحمر |
+
+#### 4.4 Request Partner Opinions
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 18.1 | بعد إكمال التقييم، اضغط Request Partner | قائمة بالإدارات (تستبعد القسم الحالي وأي شريك تم تكليفه سابقاً) |
+| 18.2 | اختر إدارة شريكة → Submit | إنشاء صف `PartnerAssignment` بـ `Status=Pending` |
+
+#### 4.5 Follow-up Partner Replies
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 19.1 | انتظر (أو simulate) 4 أيام على PartnerAssignment | الحالة → `Late`، يظهر عمود LateNote |
+| 19.2 | الشريك يرد (دوره في §6) | الحالة → `Submitted`، تظهر آراء الشريك |
+
+#### 4.6 Re-enable Scores After Partner Opinions
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 20.1 | بعد رد الشريك، ارجع لـ Assess | النموذج يفتح للتعديل مرة أخرى |
+| 20.2 | عدّل، اضغط Submit | يُحفظ، يقفل |
+
+#### 4.7 Send to Committee
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 21.1 | اضغط Send to Committee | Modal تأكيد، ثم تحقّق من 5 معايير + شرط عدم وجود partners في `Pending` بدون skip صريح |
+| 21.2 | إذا كان في partners لم يردّوا | تحذير مع cancel / skip-and-send |
+| 21.3 | اضغط skip-and-send | يُرسل، يكتب History، يُعلِم (notification stub) |
+
+#### 4.8 Out of Scope
+- ❌ لا يعدّل الفكرة بعد الإرسال للجنة (Read-only).
+- ❌ لا يصل لـ `/AuditInbox` أو `/Committee` كـ writer.
+
+---
+
+### 👤 المستخدم 5: System Manager (مدير النظام)
+
+**⚠️ الفيتشر قد يكون جزئياً أو غير مكتمل — راجع حالة الـ 24 pending task.**
+
+#### 5.1 Login & Read-Only View
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 22.1 | Login كـ `system-manager@ibtikar.local` | ينتقل إلى `/Reports` (أو لوحة overview) |
+| 22.2 | افحص KPIs / Reports | شامل كل الأقسام، read-only |
+| 22.3 | من/إلى تاريخ → Generate | تقرير بنفس الفترة: KPI + stage-mix totals، فارغ وممتلئ |
+
+#### 5.2 Committee Administration
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 23.1 | نموذج تشكيل لجنة: head + ≥1 member | إنشاء، حالة `Active`، يُرسل إشعار لكل عضو |
+| 23.2 | محاولة POST بدون إكمال الأعضاء | رفض |
+| 23.3 | محاولة تعديل/حذف committee في حالة `Active` و عليها أعمال جارية | تحذير أو رفض |
+
+#### 5.3 Admin / Lookups
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 24.1 | افتح `/Admin/Lookups` | CRUD لكل lookup table (IdeaStatus, InnovationDomain, ExpectedImpact, TargetAudience, Technology, ExecutionStage, AssessmentCriterion, CriterionScoring, Role, Department) |
+| 24.2 | عدّل اسم حالة فكرة موجودة | ❌ ممنوع (لا يجب تغيير أسماء الـ Seed لأنها مرجع الـ workflow) |
+
+#### 5.4 Out of Scope
+- ❌ لا يقيّم أفكار (Read-only).
+- ❌ لا يعمل workflow (لا يقبل/يرفض).
+
+---
+
+### 👤 المستخدم 6: Partner Department (إدارة شريكة / استشاري — **نفس الإدارة المختصة**)
+
+**الـ Scope:** اللوحة الموحّدة (§4) + تقييم استشاري بـ 5 معايير + إرجاع للتخصصية + إرجاع لعدم الاختصاص خلال 3 أيام عمل.
+
+> ⚠️ **مهم جداً (دمج):** "الإدارة الشريكة" و"الإدارة المختصة" هما **نفس الإدارة** فعلاً. الفرق:
+> - "مختصة" = تستقبل الأفكار المحوّلة إليها تخصصياً (لتقييمها).
+> - "شريكة / مستشارة" = تستقبل استشارات من إدارات أخرى (لتبيّن رأيها).
+> كل ذلك يظهر في **صفحة واحدة** (`/SpecializedDashboard`).
+>
+> الـ Username في الـ seed (`partner` مع fullName "الإدارة الشريكة" داخل قسم `tech`) **للتوضيح فقط** — ليس له معنى تنظيمي.
+
+#### 6.1 Dashboard (اللوحة الموحّدة — نفس §4)
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 25.1 | Login كـ `partner@ibtikar.local` | ينتقل إلى `/SpecializedDashboard` (ليس `/PartnerDashboard` — تم الدمج) |
+| 25.2 | العنوان | "لوحة التقنية" (اسم الإدارة الفعلي من الـ Claim، وليس "الإدارة المختصة" أو "الإدارة الشريكة") |
+| 25.3 | قسم "الأفكار المحوّلة لإدارتك" | KPI cards التخصصية الأربعة (التي تستقبلها إدارتي تخصصياً) |
+| 25.4 | قسم "الاستشارات الواردة" | KPI cards الثلاثة + جدول الـ inbox (الاستشارات من إدارات أخرى) |
+| 25.5 | الجدول يعرض فقط `PartnerAssignment` لإدارتي | فلتر `PartnerAssignmentQuery.ForDepartment` يطبّق على الخادم (IDOR-safe) |
+| 25.6 | الـ header user-chip | يعرض `الإدارة الشريكة` كـ fullName و `partner-department` كـ role (username للتوضيح) |
+
+#### 6.2 IDOR / Scope
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 26.1 | حاول فتح Details بـ `assignmentId` لـ **إدارة أخرى** (مثلاً استشارة محالة للتقنية ومحاولة فتحها كمستخدم `partner`) | 404 — `GetAssignmentForPartnerAsync` يطبّق `PartnerDepartmentId == departmentId` على الخادم |
+| 26.2 | حاول POST لتوجيه الفكرة لإدارة ثالثة | ❌ ممنوع — الـ Partner لا يحوّل، فقط يرد (Submit/Return/NotCompetent) |
+| 26.3 | سجّل دخول كمستخدم `partner` (دور `partner-department`) وحاول فتح `/SpecializedDashboard/Details/{ideaId}` (تخصّص) | يجب أن يعمل — كلا الدورين (`specialized-department` + `partner-department`) مسموح لهما |
+
+#### 6.3 Sequential Details (الأقسام الثلاثة المتتالية)
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 27.1 | افتح Details لاستشارة واردة | ثلاث أقسام مرتبة: 1) الفكرة الأصلية (read-only) 2) تقييم الإدارة صاحبة الفكرة (read-only) 3) نموذج التقييم الاستشاري |
+| 27.2 | قسما الفكرة الأصلية + تقييم المتخصصة | كل القيم في `<dl>` read-only، لا توجد أي `<input>` أو `<select>` على حقول الفكرة |
+| 27.3 | قسم "تقييم الإدارة صاحبة الفكرة" | يظهر badge "lock — للاطلاع فقط" إذا لم تكمل الإدارة تقييماً بعد، أو جدول بالدرجات إذا تم |
+| 27.4 | نموذج التقييم الاستشاري | 5 معايير (dropdown 1-5) + حقل تعليق عام + 3 أزرار: إرجاع لعدم الاختصاص (modal) / إرجاع دون تقييم / إرسال التقييم |
+
+#### 6.4 Advisory Assess (التقييم الاستشاري)
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 28.1 | اختر قيمة لـ 5 معايير (مثال: 4,3,5,4,5) + أضف "تعليق عام" + اضغط "إرسال التقييم الاستشاري" | Status=`Submitted`، كتابة `IdeaStatusHistory`، إشعار (notification stub) للإدارة الطالبة، النموذج يختفي، "إجمالي الدرجات" يظهر في قسم التواريخ، جدول "التقييم المُرسَل" يظهر read-only |
+| 28.2 | اضغط "إرسال التقييم الاستشاري" بدون اختيار أي درجة | رفض — "أدخل درجة واحدة على الأقل" |
+| 28.3 | اضغط "إرسال التقييم الاستشاري" مع درجة خارج 1-5 (مثل 6) | رفض — "الدرجة يجب أن تكون بين 1 و 5" |
+| 28.4 | اضغط "إرسال التقييم الاستشاري" مرتين بسرعة | الزر معطّل بعد الضغطة الأولى (disable-on-click) |
+| 28.5 | بعد الـ submit، حدّث الصفحة | النموذج يختفي (CanScore=false لأن Status=Submitted)، يظهر جدول "التقييم المُرسَل" بالقيم المرسلة |
+| 28.6 | ارجع للـ Dashboard الموحّد | KPI "تم الرد خلال 30 يوم" يزيد بـ 1، "استشارات بانتظار الرد" ينقص بـ 1 |
+
+#### 6.5 Return to Specialized (إرجاع دون تقييم)
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 29.1 | اضغط "إرجاع دون تقييم" مع **بدون** كتابة "تعليق عام" | رفض — TempData: "يرجى كتابة مرئيات وملاحظات إدارتك قبل إعادته للإدارة صاحبة الفكرة." (الـ Comment/Opinions إلزامي عند `returnOnly=true`) |
+| 29.2 | اضغط "إرجاع دون تقييم" مع كتابة opinion | Status=`Returned`، Note يحفظ النص، كتابة History، إشعار (notification stub) للإدارة الطالبة، النموذج يختفي |
+
+#### 6.6 Return Not-Competent (إرجاع لعدم الاختصاص — 3 أيام عمل)
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 30.1 | اضغط "إرجاع لعدم الاختصاص" | يفتح modal بنظام `bog-modal` (vanilla JS، بدون Bootstrap JS) مع حقل "سبب الإعادة (إلزامي)" |
+| 30.2 | اضغط "تأكيد الإعادة" بدون سبب | المتصفح يمنع الـ submit (HTML5 required) أو يظهر خطأ — "يرجى كتابة سبب الإعادة (خطأ في التوجيه)." |
+| 30.3 | اضغط "إلغاء" | الـ modal يُغلق بدون حفظ |
+| 30.4 | اكتب سبب (مثال: "هذه الفكرة لا تخص إدارتنا") + اضغط "تأكيد الإعادة" | Status=`Returned`، Note=`"NotCompetent: {سبب}"`، History يكتب، modal يُغلق، **شارة حمراء** "معاد للإدارة صاحبة الفكرة — خطأ في التوجيه" + السبب يظهر في alert أحمر |
+| 30.5 | اختبر نافذة 3 أيام عمل: أنشئ `PartnerAssignment` بتاريخ قديم (مثلاً 5 أيام عمل ماضية) عبر تعديل الـ DB مباشرة | "إرجاع لعدم الاختصاص" **لا يظهر** (CanReturnNotCompetent=false)، أو يظهر رفض "انتهت مهلة الإعادة" |
+| 30.6 | اضغط "إرجاع لعدم الاختصاص" على assignment بتاريخ قديم جداً | رفض: "انتهت مهلة الإعادة لعدم الاختصاص (N أيام عمل من 3)" |
+| 30.7 | **التحقق من الـ WorkingDays helper:** | يحسب أيام العمل الأحد-الخميس (الرياض). الجمعة والسبت = عطلة. TimeZone Asia/Riyadh. |
+| 30.8 | **التحقق من الإشعار (notification):** | `SafeNotifyAsync("Partner.Return" أو "Partner.Submit", ...)` يُرسل عبر `INotificationClient.SendAsync` بدون rollback عند الفشل |
+
+#### 6.7 Out of Scope
+- ❌ لا يستطيع تعديل الفكرة الأصلية أو تقييم الإدارة الطالبة.
+- ❌ لا يحوّل الفكرة لإدارة ثالثة (فقط يرد).
+- ❌ لا يطّلع على استشارات الإدارات الأخرى (فلتر `PartnerDepartmentId` على الخادم).
+
+---
+
+## 3. مصفوفة الفيتشرز × الأدوار (ما يمكن لكل دور اختباره)
+
+| الفيتشر | المستفيد | التدقيق | اللجنة | التخصصية | المدير | الشريك |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|
+| Foundation & project shell (38) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Unified login (7) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Security & CSRF (11) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Shared idea form (20) | ✅ إنشاء | — | — | — | — | — |
+| Applicant follow-up (15) | ✅ متابعة | — | — | — | — | — |
+| Audit inbox (15) | — | ✅ Inbox | — | — | — | — |
+| Specialized scoring (15) | — | — | — | ✅ تخصصي | — | — |
+| **Partner department advisory scoring (6)** | — | — | — | ✅ **استشاري** | — | ✅ **استشاري** |
+| Committee *(24 pending)* | — | — | ⚠️ محدود | — | — | — |
+| System manager *(جزئي)* | — | — | — | — | ⚠️ جزئي | — |
+
+> **ملاحظة الدمج:** فيتشر "Partner department advisory scoring" (الـ 6 مهام) يظهر تحت كل من "التخصصية" و"الشريك" لأن اللوحة الموحّدة (`/SpecializedDashboard`) تعرض القسمين معاً. الـ 6 مهام هي:
+> 1. `3bd49360` Partner dashboard with three KPI cards
+> 2. `6b51f71a` Advisory scores + required opinions
+> 3. `efa164df` Return opinions to specialized
+> 4. `881584d0` Return not-competent within 3 working days
+> 5. `febd1dbd` Sequential partner details with locked original idea
+> 6. `c2558e17` Scope partner assignments to current department (`PartnerAssignmentQuery.ForDepartment`)
+
+---
+
+## 4. سيناريوهات End-to-End (تمرين كامل على كل الأدوار)
+
+> **يُنفَّذ بترتيب:** المستفيد → التدقيق → التخصصية → الشريك → (اللجنة — عند التوفر) → (المدير — عند التوفر).
+
+### E2E #1 — Happy Path كامل
+1. **Beneficiary:** Submit فكرة جديدة (5 حقول + مرفقَين PDF) → Reference `IBT-...`.
+2. **Audit:** Accept الفكرة → توجيه لقسم AI.
+3. **Specialized (AI):** تقييم 5 معايير (5/5/5/5/5 = 100%) → Submit Draft.
+4. **Specialized (AI):** Request Partner Opinions من قسم IT.
+5. **IT (الـ Partner):** يفتح نفس اللوحة الموحّدة → قسم "الاستشارات الواردة" → تقييم استشاري (4/4/4/4/4 = 80%) + opinions → Return.
+6. **AI (الـ Specialized):** نفس اللوحة → قسم "الأفكار المحوّلة" → عدّل التقييم (يصل 5/5/5/5/5) → Send to Committee.
+7. **Committee:** *(عند التوفر)* استلام + تقييم + قرار.
+
+**يتوقع:** كل خطوة تكتب صف في `IdeaStatusHistory` + `AuditLog` + Reference Number ثابت. لاحظ أن الـ AI والـ IT يستخدمان **نفس اللوحة** (`/SpecializedDashboard`) — الفرق هو القسمين (تخصصي vs استشارات واردة).
+
+### E2E #2 — Rejected
+1. Beneficiary: Submit.
+2. Audit: Reject بسبب "موضوع مكرر" → الحالة `Rejected`، read-only للـ applicant.
+
+### E2E #3 — Returned for Completion → Resubmit → Re-evaluate
+1. Beneficiary: Submit.
+2. Audit: Request Missing Data.
+3. Beneficiary: عدّل + development points → Resubmit.
+4. Audit: Accept → Specialized.
+5. Specialized: تقييم → Send.
+
+### E2E #4 — IDOR Smoke Test (لكل دور)
+- سجّل دخول دور A.
+- انسخ URL فكرة دور B (أو حاول تخمين GUID).
+- افتحه.
+- **المتوقع: 404 أو 403 لكل الأدوار** — لا تسرّب بيانات.
+
+### E2E #5 — CSRF Smoke Test
+- لأي POST (Login Submit، Idea Submit، Audit Accept، Specialized Assess، Partner Submit):
+- أرسل POST من `curl` بدون `__RequestVerificationToken`.
+- **المتوقع: 400 Bad Request.**
+
+### E2E #6 — Rate Limiting
+- 10 محاولات Login فاشلة متتالية من نفس IP.
+- **المتوقع: رفض مع رسالة واضحة**، ثم الرجوع بعد نافذة.
+
+### E2E #7 — Session Timeout
+- Login، انتظر 20 دقيقة بدون حركة → Access أي صفحة → redirect إلى Login.
+
+### E2E #8 — Audit Log Verification
+- بعد كل سيناريو، افحص جدول `AuditLog` (من الـ DB أو شاشة Admin):
+- يسجل: User, Timestamp, IP, Before/After JSON.
+
+### E2E #9 — Partner Advisory (الاستشارة) — Happy Path
+1. **Specialized (AI):** بعد تقييم الفكرة، اضغط "طلب رأي جهات أخرى" → اختر "التقنية" → Submit.
+2. **شريك (تقنية):** يفتح `/SpecializedDashboard` → قسم "الاستشارات الواردة" → KPI "استشارات بانتظار الرد" = 1 → جدول الـ inbox فيه الاستشارة.
+3. **شريك:** اضغط "مراجعة" → يفتح Details بثلاثة أقسام (فكرة / تقييم الإدارة صاحبة الفكرة / نموذج التقييم).
+4. **شريك:** اختر درجات (4,3,5,4,5) + أضف opinion → اضغط "إرسال التقييم الاستشاري" → Status=`Submitted`.
+5. **شريك:** ارجع للّوحة → KPI "استشارات بانتظار الرد" = 0، "تم الرد خلال 30 يوم" = 1.
+6. **شريك:** اضغط "مراجعة" مرة أخرى على نفس الـ assignment → النموذج يختفي، يظهر جدول "التقييم المُرسَل" بالقيم المرسلة.
+7. **AI (المتخصصة):** نفس اللوحة → "الأفكار المحوّلة" → المرجع → يمكن تعديل التقييم مرة أخرى (CanScore=true لأن Status=Submitted لكن Partner.IdOrDepartmentId scopes it).
+
+**يتوقع:** كل خطوة تكتب صف في `AuditLog`. الـ notification `Partner.Submit` يُرسل (stub إذا الـ API خارجي).
+
+### E2E #10 — Partner Advisory — Required Opinions Validation
+1. **شريك:** افتح Details لاستشارة جديدة.
+2. **شريك:** اضغط "إرجاع دون تقييم" **بدون** كتابة "تعليق عام".
+3. **المتوقع:** TempData alert أحمر: "يرجى كتابة مرئيات وملاحظات إدارتك قبل إعادته للإدارة صاحبة الفكرة."
+
+### E2E #11 — Partner Advisory — Not-Competent (3-Day Window)
+1. **شريك:** افتح Details لاستشارة جديدة (مفترضة من نفس اليوم).
+2. **شريك:** اضغط "إرجاع لعدم الاختصاص" → modal بـ bog-modal يفتح.
+3. **شريك:** اضغط "تأكيد الإعادة" بدون سبب → المتصفح يمنع الـ submit (HTML5 required).
+4. **شريك:** اكتب سبب (مثال: "خطأ في التوجيه") → اضغط "تأكيد الإعادة".
+5. **المتوقع:** Status=`Returned`، Note=`"NotCompetent: خطأ في التوجيه"`، badge أحمر "معاد للإدارة صاحبة الفكرة — خطأ في التوجيه" + السبب في alert أحمر.
+6. **التحقق من الـ 3-day window:** عبر تعديل DB مباشرة لـ SentAt (5 أيام عمل ماضية)، الـ button "إرجاع لعدم الاختصاص" يختفي أو يُرفض بـ "انتهت مهلة الإعادة".
+
+### E2E #12 — Partner Advisory — IDOR Cross-Department
+1. **شريك (تقنية):** افتح Details لاستشارة محالة للتقنية.
+2. سجّل خروج، Login كمستخدم `specialized` (دور `specialized-department` — نفس اللوحة الموحّدة).
+3. **متخصص (القضائية):** افتح الـ Details بنفس الـ assignmentId.
+4. **المتوقع:** 404 — `PartnerAssignmentQuery.ForDepartment` يطبّق `PartnerDepartmentId == departmentId` على الخادم.
+
+### E2E #13 — Unified Dashboard Navigation
+1. **أي دور** (`specialized` أو `partner`): يفتح `/SpecializedDashboard`.
+2. يضغط "كل الأفكار المحوّلة" → ينتقل إلى `/SpecializedDashboard/Referrals`.
+3. يضغط "لوحة الإدارة" → يرجع للوحة الموحّدة.
+4. يفتح Details استشارة → يضغط "مراجعة" → `PartnerDashboard/Details/{id}`.
+5. يضغط "العودة للوحة الإدارة" → يرجع للوحة الموحّدة (`/SpecializedDashboard`).
+
+**المتوقع:** كل التنقلات تعمل بدون أخطاء. الـ breadcrumb واضح (لوحة الإدارة ← الأفكار المحوّلة / الاستشارات الواردة).
+
+### E2E #14 — Department Name Claim
+1. Login كـ `specialized` (دور `specialized-department` — في قسم `judicial`).
+2. افتح `/SpecializedDashboard`.
+3. **المتوقع:** العنوان "لوحة {DepartmentName}" (مثال: "لوحة الشؤون القضائية") — **ليس** "الإدارة المختصة" أو "الإدارة الشريكة".
+4. **المتوقع:** الـ hero badge يعرض نفس اسم الإدارة الفعلي.
+5. Login كـ `partner` (دور `partner-department` — في قسم `tech`).
+6. افتح `/SpecializedDashboard`.
+7. **المتوقع:** العنوان "لوحة التقنية" (نفس القسم الفعلي للمستخدم).
+8. **المتوقع:** الـ header user-chip يعرض `الإدارة الشريكة` كـ fullName + `partner-department` كـ role (هذا مقبول — الـ username للتوضيح فقط).
+
+---
+
+## 5. Checklist المختبر (قبل التسليم)
+
+- [ ] قمت بتسجيل جميع الـ Test Cases المنفّذة في جدول منفصل (Case ID / Description / Result / Notes).
+- [ ] كل Fail أرفقت معه: خطوات إعادة الإنتاج، الـ Reference Number، الـ Screenshot، الـ Browser Console، الـ AuditLog entry.
+- [ ] لا توجد حالة "متروكة في النص" — كل سيناريو Pass أو Fail أو Blocked.
+- [ ] Sign-off section في الأسفل موقّع ومؤرّخ.
+
+---
+
+## 6. Sign-off (التوقيع)
+
+| المختبر | الدور المُختبر | عدد Test Cases | Pass | Fail | Blocked | ملاحظات | التاريخ | التوقيع |
+|---|---|---:|---:|---:|---:|---|---|---|
+|  | المستفيد |  |  |  |  |  |  |  |
+|  | التدقيق |  |  |  |  |  |  |  |
+|  | اللجنة |  |  |  |  | (Pending) |  |  |
+|  | التخصصية |  |  |  |  |  |  |  |
+|  | مدير النظام |  |  |  |  | (جزئي) |  |  |
+|  | إدارة شريكة |  |  |  |  |  |  |  |
+
+**اعتماد نهائي (Lead QA):**
+
+| الاسم | التاريخ | التوقيع |
+|---|---|---|
+|  |  |  |
+
+---
+
+## 7. ملاحظات حرجة على الـ Cycle
+
+> 🚨 **تغييرات حرجة بعد الدمج (يجب أن يعرفها كل مختبر):**
+> 1. **لا توجد "إدارة شريكة" منفصلة.** الـ username `partner@ibtikar.local` في الـ seed (مع fullName "الإدارة الشريكة" داخل قسم `tech`) للتوضيح فقط — الإدارة الواحدة تستقبل **تخصصياً** + **استشارات**. كلتا الدورين `specialized-department` و `partner-department` ينتقلان إلى `/SpecializedDashboard` بعد الدخول.
+> 2. **لا تستخدم `/PartnerDashboard` كـ "home" لدور الشريك** — هذا الـ URL ما زال موجوداً للأكشنز (Details/Submit/ReturnNotCompetent) لكن `Index` يحوّل إلى `/SpecializedDashboard`. كل روابط "العودة" في Details تشير الآن إلى `/SpecializedDashboard`.
+> 3. **المصطلحات المتغيرة في الـ UI:** "الإدارة الشريكة" لم تعد تظهر في عناوين الـ UI. بدلاً منها: "جهات أخرى" (للاستشارات) / "الإدارة صاحبة الفكرة" / "الجهات المستشارة".
+> 4. **زر "إرجاع لعدم الاختصاص"** يستخدم modal بنظام `bog-modal` المخصص (vanilla JS) — لا تعتمد على Bootstrap JS (غير محمّل). اختبر بـ Esc للـ close.
+
+> 🚨 **ما هو NOT في scope هذا الـ Cycle:**
+> - فيتشر **Committee** (24 مهمة pending) — لا تحاول الـ Cycle الكامل، سجّل "Pending Feature".
+> - فيتشر **System Manager** (جزء منه في الـ 24 pending) — اختبر ما هو ظاهر فقط.
+> - إشعارات الـ Notification Service — الـ API خارجي وقد لا يكون مفعّلاً في بيئة الـ Staging. الـ stub يكتب log فقط.
+> - النسخ الاحتياطي / الاستعادة (`Document backup and restore`) — وثائقي، لا يحتاج اختبار وظيفي.
+
+> ✅ **ما هو في scope هذا الـ Cycle (133/133 done):**
+> 1. Login + CSRF + Session Timeout
+> 2. Submit Idea + Attachments + Validation
+> 3. My Requests + Details + Resubmit + Delete + Timeout
+> 4. Audit Inbox + Accept/Reject/Request Data + Route
+> 5. Specialized Dashboard + Assess 5 criteria + Partner Request + Send to Committee
+> 6. **Partner department advisory scoring (دمج مع Specialized — نفس اللوحة):**
+>    - 3 KPI cards (Pending / Late / Submitted) + جدول inbox للاستشارات
+>    - تقييم 5 معايير + opinions إلزامية عند `returnOnly=true`
+>    - إرجاع دون تقييم (Returned) + كتابة history
+>    - إرجاع لعدم الاختصاص خلال 3 أيام عمل (WorkingDays helper، Sun-Thu Riyadh)
+>    - 3 أقسام متتالية في Details (فكرة أصلية read-only + تقييم الإدارة صاحبة الفكرة + نموذج التقييم)
+>    - IDOR scoping عبر `PartnerAssignmentQuery.ForDepartment` (يستعمل في كل read path)
+>    - شارة حمراء "معاد للإدارة صاحبة الفكرة — خطأ في التوجيه" + alert بالسبب
+>    - modal بـ bog-modal (vanilla JS، بدون Bootstrap JS)
+>    - claim اسم الإدارة الفعلي (`ibtikar_department_name` بدل fallback "الإدارة الشريكة")
+
+---
+
+## 8. جهات الاتصال عند الفشل
+
+| نوع المشكلة | المسؤول |
+|---|---|
+| خطأ في الـ Login / CSRF / Session | فريق الـ Security (Foundation & Security features) |
+| خطأ في الـ Submit / Attachments / My Requests | فريق الـ Beneficiary flow |
+| خطأ في الـ Inbox / Routing | فريق الـ Audit |
+| خطأ في التقييم / الشركاء / الإرسال | فريق الـ Specialized + Partner (لوحة موحّدة) |
+| خطأ في الـ Modal / bog-modal / vanilla JS | فريق الـ Frontend (Foundation) |
+| خطأ في بيانات الـ Seed | فريق الـ DevOps (DB migration) |
+
+---
+
+> 📌 **مصدر الدليل:** تم إعداده بناءً على قراءة 9 فيتشرز و 133 تاسك منجزة في مشروع Ibtikar (Project `a8ffd050-3155-4522-b7cc-57e22dec4266`).
+> **آخر تحديث للـ Doc:** بعد دمج فيتشر "Partner department advisory scoring" (6 مهام) في لوحة "الإدارة المختصة" الموحّدة — `2026-09-01`.
