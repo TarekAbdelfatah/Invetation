@@ -1,7 +1,8 @@
 using Ibtikar.Services.Implementations;
+using Ibtikar.Services.Notifications;
 using Microsoft.Extensions.Options;
 
-namespace Ibtikar.Services.Notifications
+namespace Ibtikar.Services.Implementations
 {
     public sealed class NotificationService : INotificationClient
     {
