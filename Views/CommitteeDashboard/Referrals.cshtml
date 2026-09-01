@@ -59,7 +59,7 @@
                                     <span class="badge" style="background-color:@i.StatusColor">@i.StatusName</span>
                                 </td>
                                 <td class="@(i.IsOverdue ? "text-danger fw-semibold" : "text-muted")">
-                                    @i.StayDays.ToString("0.#") يوم
+                                    @Math.Ceiling(i.StayDays).ToString("0") يوم
                                 </td>
                                 <td>
                                     <div class="d-flex gap-1">

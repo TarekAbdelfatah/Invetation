@@ -78,7 +78,7 @@
                                         <span class="badge @r.StatusBadgeClass">@r.Status</span>
                                     </td>
                                     <td data-label="منذ الطلب">
-                                        <small dir="ltr">@r.DaysOpen.ToString("0.0") يوم</small>
+                                        <small dir="ltr">@Math.Ceiling(r.DaysOpen).ToString("0") يوم</small>
                                         @if (r.IsLate)
                                         {
                                             <span class="badge bg-danger ms-1">متأخر (أكثر من 4 أيام)</span>

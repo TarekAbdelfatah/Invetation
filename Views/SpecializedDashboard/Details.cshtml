@@ -158,14 +158,24 @@
                                 </a>
                                 <button type="button"
                                         class="btn btn-outline-danger"
-                                        data-open-not-competent>
+                                        data-open-not-competent
+                                        @(Model.CanReturnNotCompetent ? null : "disabled")>
                                     <span class="material-icons align-middle" style="font-size:16px">block</span>
                                     رفض لعدم الاختصاص
                                 </button>
                             </div>
-                            <small class="text-muted d-block mt-2">
-                                استخدم هذا الخيار إذا كان الملف خارج نطاق اختصاص إدارتك. سيتم إرجاع الفكرة إلى المدقق مع تسجيل سبب الرفض.
-                            </small>
+                            @if (Model.CanReturnNotCompetent)
+                            {
+                                <small class="text-muted d-block mt-2">
+                                    استخدم هذا الخيار إذا كان الملف خارج نطاق اختصاص إدارتك. سيتم إرجاع الفكرة إلى المدقق مع تسجيل سبب الرفض.
+                                </small>
+                            }
+                            else
+                            {
+                                <small class="text-muted d-block mt-2">
+                                    لا يمكن الإرجاع لعدم الاختصاص بعد القيام بالتقييم أو طلب رأي جهات أخرى.
+                                </small>
+                            }
                         </div>
                     </div>
                 }

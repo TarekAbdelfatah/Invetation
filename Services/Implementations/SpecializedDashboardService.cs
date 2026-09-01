@@ -283,6 +283,14 @@ namespace Ibtikar.Services.Implementations
             if (idea.CurrentStatus?.Code != IdeaStatusCodes.UnderStudy)
                 return new(false, "لا يمكن إعادة الفكرة لعدم الاختصاص في حالتها الحالية.");
 
+            var hasLockedAssessment = await _repo.HasLockedAssessmentAsync(ideaId, departmentId.Value, ct);
+            if (hasLockedAssessment)
+                return new(false, "لا يمكن الإرجاع لعدم الاختصاص بعد إرسال تقييم الإدارة.");
+
+            var hasPartnerRequest = await _repo.HasPartnerAssignmentsAsync(ideaId, ct);
+            if (hasPartnerRequest)
+                return new(false, "لا يمكن الإرجاع لعدم الاختصاص بعد طلب رأي جهات أخرى.");
+
             var fromStatusId = idea.CurrentStatusId;
             var historyNote = $"[رفض لعدم الاختصاص] {trimmed}";
 

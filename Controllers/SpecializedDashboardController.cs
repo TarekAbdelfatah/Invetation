@@ -100,6 +100,7 @@ namespace Ibtikar.Controllers
                 StatusCode = dto.StatusCode,
                 SubmittedAt = dto.SubmittedAt,
                 AssignedAt = dto.AssignedAt,
+                CanReturnNotCompetent = dto.CanReturnNotCompetent,
                 Attachments = dto.Attachments.Select(a => new SpecializedAttachmentVm(a.Id, a.FileName, a.SizeBytes, a.UploadedAt)).ToList(),
                 History = dto.History.Select(h => new SpecializedHistoryRowVm(h.ChangedAt, h.FromStatus, h.ToStatus, h.By, h.Note)).ToList()
             };

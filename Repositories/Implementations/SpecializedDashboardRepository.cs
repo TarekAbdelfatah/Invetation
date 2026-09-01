@@ -19,6 +19,8 @@ namespace Ibtikar.Repositories
         Task<AssessmentHeader?> GetDraftHeaderAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
         Task<IReadOnlyList<AssessmentHeader>> GetSpecializedFinalHeadersAsync(Guid ideaId, CancellationToken ct);
         Task<InnovationIdea?> GetIdeaForDepartmentAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
+        Task<bool> HasLockedAssessmentAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
+        Task<bool> HasPartnerAssignmentsAsync(Guid ideaId, CancellationToken ct);
         Task<IReadOnlyList<PartnerAssignment>> GetPartnerAssignmentsForIdeaAsync(Guid ideaId, CancellationToken ct);
         Task AddPartnerAssignmentsAsync(IEnumerable<PartnerAssignment> rows, CancellationToken ct);
         Task AddOrUpdateAssessmentHeaderAsync(AssessmentHeader header, CancellationToken ct);
@@ -152,13 +154,28 @@ namespace Ibtikar.Repositories
                     h.Note))
                 .ToListAsync(ct);
 
+            var hasLockedAssessment = await _db.AssessmentHeaders
+                .AsNoTracking()
+                .AnyAsync(h => h.InnovationIdeaId == ideaId
+                    && h.AssessorDepartmentId == departmentId
+                    && h.Source == AssessmentHeader.SourceSpecialized
+                    && h.IsLocked, ct);
+
+            var hasPartnerRequest = await _db.PartnerAssignments
+                .AsNoTracking()
+                .AnyAsync(p => p.InnovationIdeaId == ideaId, ct);
+
+            var canReturnNotCompetent = header.StatusCode == IdeaStatusCodes.UnderStudy
+                && !hasLockedAssessment
+                && !hasPartnerRequest;
+
             return new SpecializedDetailsDto(
                 header.Id, header.Reference, header.Title, header.Description,
                 header.ProblemStatement, header.ProposedSolution, header.ExpectedBenefits,
                 header.DomainName, header.ExpectedImpactName, header.TargetAudienceName,
                 header.ApplicantName, header.ApplicantDepartmentName,
                 header.StatusName, header.StatusColor, header.StatusCode,
-                header.SubmittedAt, header.AssignedAt, attachments, history);
+                header.SubmittedAt, header.AssignedAt, canReturnNotCompetent, attachments, history);
         }
 
         public async Task<SpecializedAssessVmDto?> GetAssessVmAsync(Guid ideaId, Guid departmentId, CancellationToken ct)
@@ -405,6 +422,19 @@ namespace Ibtikar.Repositories
                 .OrderByDescending(h => h.CreatedAt)
                 .FirstOrDefaultAsync(ct);
         }
+
+        public Task<bool> HasLockedAssessmentAsync(Guid ideaId, Guid departmentId, CancellationToken ct)
+            => _db.AssessmentHeaders
+                .AsNoTracking()
+                .AnyAsync(h => h.InnovationIdeaId == ideaId
+                    && h.AssessorDepartmentId == departmentId
+                    && h.Source == AssessmentHeader.SourceSpecialized
+                    && h.IsLocked, ct);
+
+        public Task<bool> HasPartnerAssignmentsAsync(Guid ideaId, CancellationToken ct)
+            => _db.PartnerAssignments
+                .AsNoTracking()
+                .AnyAsync(p => p.InnovationIdeaId == ideaId, ct);
 
         public async Task<IReadOnlyList<AssessmentHeader>> GetSpecializedFinalHeadersAsync(Guid ideaId, CancellationToken ct)
         {
