@@ -1,0 +1,144 @@
+@model Ibtikar.ViewModels.ReportsChallengesVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = "تقرير التحديات";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var fromStr = Model.From.ToString("yyyy-MM-dd");
+    var toStr = Model.To.ToString("yyyy-MM-dd");
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="bog-page-header">
+            <h1>
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">report_problem</span>
+                </span>
+                تقرير التحديات
+            </h1>
+            <span class="bog-page-role">
+                <span class="material-icons" aria-hidden="true">admin_panel_settings</span>
+                مدير النظام
+            </span>
+        </div>
+
+        @if (TempData["AlertError"] is string errMsg && !string.IsNullOrEmpty(errMsg))
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+                <span class="material-icons">error</span>
+                <span>@errMsg</span>
+            </div>
+        }
+
+        <div class="card bog-section mb-3">
+            <div class="card-header bg-white d-flex align-items-center gap-2">
+                <span class="material-icons text-primary">filter_alt</span>
+                <strong>تصفية التحديات</strong>
+            </div>
+            <div class="card-body">
+                <form method="get" asp-action="Challenges" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="from" class="form-label">من تاريخ</label>
+                        <input id="from" name="from" type="date" class="form-control" value="@fromStr" required />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="to" class="form-label">إلى تاريخ</label>
+                        <input id="to" name="to" type="date" class="form-control" value="@toStr" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label for="domainId" class="form-label">المجال</label>
+                        <select id="domainId" name="domainId" class="form-select" data-testid="domain-filter">
+                            <option value="">كل المجالات</option>
+                            @foreach (var d in Model.Domains)
+                            {
+                                if (Model.DomainId.HasValue && Model.DomainId.Value == d.Id)
+                                {
+                                    <option value="@d.Id" selected>@d.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@d.Id">@d.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="material-icons align-middle" style="font-size:18px">insights</span>
+                            عرض
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="alert alert-info d-flex align-items-center gap-2" role="alert">
+            <span class="material-icons">info</span>
+            <span>يتم تلقائياً استبعاد الأفكار المرفوضة من قِبل التدقيق.</span>
+        </div>
+
+        @if (!Model.Rows.Any())
+        {
+            <div class="card bog-section" data-testid="empty-challenges-card">
+                <div class="card-body text-center text-muted p-5">
+                    <span class="material-icons" style="font-size:48px;color:var(--text-muted)">inbox</span>
+                    <p class="mb-1 mt-2">لا توجد تحديات في الفترة المختارة.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card bog-section">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-primary">list_alt</span>
+                    <strong>التحديات والحلول المقترحة</strong>
+                    <span class="badge bg-secondary ms-auto">@Model.TotalCount</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="bog-card-list mb-0">
+                        <thead>
+                            <tr>
+                                <th>المرجع</th>
+                                <th>العنوان</th>
+                                <th>المجال</th>
+                                <th>المُقدِّم</th>
+                                <th>التحدي</th>
+                                <th>الحل المقترح</th>
+                                <th>الحالة</th>
+                                <th>تاريخ التقديم</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.Rows)
+                            {
+                                <tr>
+                                    <td data-label="المرجع"><code>@r.Reference</code></td>
+                                    <td data-label="العنوان">@r.Title</td>
+                                    <td data-label="المجال"><span class="badge bg-light text-dark">@r.DomainName</span></td>
+                                    <td data-label="المُقدِّم">@r.ApplicantName<br /><small class="text-muted">@r.ApplicantDepartmentName</small></td>
+                                    <td data-label="التحدي" style="max-width: 260px;">
+                                        <div style="white-space:pre-wrap; max-height: 120px; overflow:auto;">@r.ProblemStatement</div>
+                                    </td>
+                                    <td data-label="الحل المقترح" style="max-width: 260px;">
+                                        @if (!string.IsNullOrWhiteSpace(r.ProposedSolution))
+                                        {
+                                            <div style="white-space:pre-wrap; max-height: 120px; overflow:auto;">@r.ProposedSolution</div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td data-label="الحالة">
+                                        <span class="status-badge badge rounded-pill" style="background-color:@r.StatusColor">@r.StatusName</span>
+                                    </td>
+                                    <td data-label="تاريخ التقديم"><small dir="ltr">@r.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>
