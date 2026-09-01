@@ -17,5 +17,8 @@ namespace Ibtikar.Services.Admin
 
         public Task<AdminOverviewListDto> GetIdeasAsync(string? statusFilter, int take, CancellationToken ct)
             => _repo.GetIdeasAsync(statusFilter, Math.Clamp(take, 10, 500), ct);
+
+        public Task<AdminOverviewDetailsDto?> GetDetailsAsync(Guid id, CancellationToken ct)
+            => _repo.GetDetailsAsync(id, ct);
     }
 }

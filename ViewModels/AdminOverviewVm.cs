@@ -28,4 +28,64 @@ namespace Ibtikar.ViewModels
             DateTime CreatedAt,
             bool IsDraft);
     }
+
+    public class AdminOverviewDetailsVm
+    {
+        public Guid Id { get; set; }
+        public string Reference { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string? ProblemStatement { get; set; }
+        public string? ProposedSolution { get; set; }
+        public string? ExpectedBenefits { get; set; }
+        public string DomainName { get; set; } = string.Empty;
+        public string ExpectedImpactName { get; set; } = string.Empty;
+        public string TargetAudienceName { get; set; } = string.Empty;
+        public string ApplicantName { get; set; } = string.Empty;
+        public string ApplicantDepartmentName { get; set; } = string.Empty;
+        public string? AssignedDepartmentName { get; set; }
+        public string StatusName { get; set; } = string.Empty;
+        public string StatusColor { get; set; } = "#6c757d";
+        public string StatusCode { get; set; } = string.Empty;
+        public bool IsDraft { get; set; }
+        public DateTime? SubmittedAt { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public List<AdminOverviewAttachmentVm> Attachments { get; set; } = new();
+        public List<AdminOverviewAssessmentVm> Assessments { get; set; } = new();
+        public List<AdminOverviewTimelineRowVm> Timeline { get; set; } = new();
+    }
+
+    public sealed record AdminOverviewAttachmentVm(
+        Guid Id,
+        string FileName,
+        long SizeBytes,
+        DateTime UploadedAt,
+        string? UploadedByName);
+
+    public sealed record AdminOverviewAssessmentLineVm(
+        Guid CriterionId,
+        string CriterionCode,
+        string CriterionName,
+        int Score,
+        string? Comment);
+
+    public sealed record AdminOverviewAssessmentVm(
+        Guid Id,
+        string Source,
+        string SourceLabel,
+        string AssessorName,
+        string DepartmentName,
+        bool IsDraft,
+        bool IsLocked,
+        DateTime? SubmittedAt,
+        decimal? TotalScore,
+        string? Comment,
+        List<AdminOverviewAssessmentLineVm> Lines);
+
+    public sealed record AdminOverviewTimelineRowVm(
+        DateTime ChangedAt,
+        string FromStatus,
+        string ToStatus,
+        string By,
+        string? Note);
 }

@@ -1,0 +1,260 @@
+@model Ibtikar.ViewModels.AdminOverviewDetailsVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = $"تفاصيل {Model.Reference}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <h2 class="mb-0 d-flex align-items-center gap-2">
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">admin_panel_settings</span>
+                </span>
+                تفاصيل الفكرة (قراءة فقط)
+            </h2>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" asp-action="Index">
+                    <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
+                    العودة للنظرة العامة
+                </a>
+            </div>
+        </div>
+
+        <div class="card bog-section mb-3" data-testid="admin-details-header">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <code class="fs-6">@Model.Reference</code>
+                    <span class="status-badge badge rounded-pill" style="background-color:@Model.StatusColor">@Model.StatusName</span>
+                    @if (Model.IsDraft)
+                    {
+                        <span class="badge bg-warning text-dark">مسودة</span>
+                    }
+                </div>
+                <h1 class="h3 mb-0">@Model.Title</h1>
+                <div class="text-muted small mt-2">
+                    المجال: @Model.DomainName | المُقدِّم: @Model.ApplicantName (@Model.ApplicantDepartmentName)
+                    @if (!string.IsNullOrEmpty(Model.AssignedDepartmentName))
+                    {
+                        <span> | الإدارة المحالة: @Model.AssignedDepartmentName</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <div class="card bog-section mb-3">
+                    <div class="card-header bg-white">
+                        <span class="material-icons text-primary align-middle">subject</span>
+                        <strong class="ms-2">وصف الفكرة</strong>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0" style="white-space:pre-wrap">@Model.Description</p>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.ProblemStatement))
+                {
+                    <div class="card bog-section mb-3">
+                        <div class="card-header bg-white">
+                            <span class="material-icons text-warning align-middle">error_outline</span>
+                            <strong class="ms-2">التحديات الحالية</strong>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0" style="white-space:pre-wrap">@Model.ProblemStatement</p>
+                        </div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.ProposedSolution) || !string.IsNullOrWhiteSpace(Model.ExpectedBenefits))
+                {
+                    <div class="card bog-section mb-3">
+                        <div class="card-header bg-white">
+                            <span class="material-icons text-success align-middle">lightbulb</span>
+                            <strong class="ms-2">الحل المقترح والفوائد</strong>
+                        </div>
+                        <div class="card-body">
+                            @if (!string.IsNullOrWhiteSpace(Model.ProposedSolution))
+                            {
+                                <h6 class="text-muted">الحل المقترح</h6>
+                                <p style="white-space:pre-wrap">@Model.ProposedSolution</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.ExpectedBenefits))
+                            {
+                                <h6 class="text-muted">الفوائد المتوقعة</h6>
+                                <p style="white-space:pre-wrap">@Model.ExpectedBenefits</p>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="card bog-section mb-3">
+                    <div class="card-header bg-white">
+                        <span class="material-icons text-secondary align-middle">info</span>
+                        <strong class="ms-2">التصنيف</strong>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">المجال</dt>
+                            <dd class="col-sm-9">@Model.DomainName</dd>
+                            <dt class="col-sm-3">الأثر المتوقع</dt>
+                            <dd class="col-sm-9">@Model.ExpectedImpactName</dd>
+                            <dt class="col-sm-3">الفئة المستهدفة</dt>
+                            <dd class="col-sm-9">@Model.TargetAudienceName</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                @if (Model.Attachments.Any())
+                {
+                    <div class="card bog-section mb-3">
+                        <div class="card-header bg-white">
+                            <span class="material-icons text-primary align-middle">attach_file</span>
+                            <strong class="ms-2">المرفقات</strong>
+                            <span class="badge bg-secondary ms-auto">@Model.Attachments.Count</span>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            @foreach (var a in Model.Attachments)
+                            {
+                                <li class="list-group-item d-flex align-items-center gap-2">
+                                    <span class="material-icons text-muted">picture_as_pdf</span>
+                                    <span>@a.FileName</span>
+                                    <small class="text-muted ms-auto">
+                                        @((a.SizeBytes / 1024.0).ToString("0.0")) KB ·
+                                        @a.UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                                        @if (!string.IsNullOrEmpty(a.UploadedByName))
+                                        {
+                                            <span> · @a.UploadedByName</span>
+                                        }
+                                    </small>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <div class="card bog-section mb-3" data-testid="admin-assessments-card">
+                    <div class="card-header bg-white">
+                        <span class="material-icons text-success align-middle">fact_check</span>
+                        <strong class="ms-2">جميع التقييمات</strong>
+                        <span class="badge bg-secondary ms-auto">@Model.Assessments.Count</span>
+                    </div>
+                    <div class="card-body">
+                        @if (!Model.Assessments.Any())
+                        {
+                            <p class="text-muted small mb-0">لا توجد تقييمات بعد.</p>
+                        }
+                        else
+                        {
+                            @foreach (var a in Model.Assessments)
+                            {
+                                <div class="border rounded p-3 mb-3">
+                                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <span class="badge bg-info text-dark">@a.SourceLabel</span>
+                                            <strong>@a.AssessorName</strong>
+                                            <small class="text-muted">(@a.DepartmentName)</small>
+                                        </div>
+                                        <div>
+                                            @if (a.IsDraft)
+                                            {
+                                                <span class="badge bg-warning text-dark">مسودة</span>
+                                            }
+                                            else if (a.SubmittedAt.HasValue)
+                                            {
+                                                <span class="badge bg-success">مُرسلة</span>
+                                                <small class="text-muted ms-1" dir="ltr">@a.SubmittedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                                            }
+                                            @if (a.IsLocked)
+                                            {
+                                                <span class="badge bg-secondary ms-1">مقفلة</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    @if (a.TotalScore.HasValue)
+                                    {
+                                        <p class="mb-2"><strong>الإجمالي:</strong> @a.TotalScore.Value.ToString("0.00") / 25 (@((a.TotalScore.Value / 25m * 100m).ToString("0.00"))%)</p>
+                                    }
+                                    @if (a.Lines.Any())
+                                    {
+                                        <div class="table-responsive">
+                                            <table class="table table-sm mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>المعيار</th>
+                                                        <th>الدرجة</th>
+                                                        <th>التعليق</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var l in a.Lines)
+                                                    {
+                                                        <tr>
+                                                            <td>@l.CriterionName</td>
+                                                            <td><strong>@l.Score</strong> / 5</td>
+                                                            <td><small>@(string.IsNullOrWhiteSpace(l.Comment) ? "—" : l.Comment)</small></td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(a.Comment))
+                                    {
+                                        <div class="mt-2">
+                                            <strong>تعليق عام:</strong>
+                                            <p class="mb-0 small" style="white-space:pre-wrap">@a.Comment</p>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card bog-section mb-3" data-testid="admin-timeline-card">
+                    <div class="card-header bg-white">
+                        <span class="material-icons text-info align-middle">history</span>
+                        <strong class="ms-2">السجل الزمني</strong>
+                    </div>
+                    <div class="card-body">
+                        @if (!Model.Timeline.Any())
+                        {
+                            <p class="text-muted small mb-0">لا توجد تغييرات حالة بعد.</p>
+                        }
+                        else
+                        {
+                            <ul class="list-unstyled mb-0 bog-timeline">
+                                @foreach (var t in Model.Timeline)
+                                {
+                                    <li class="mb-3">
+                                        <div class="d-flex justify-content-between">
+                                            <span>@t.FromStatus → @t.ToStatus</span>
+                                            <small class="text-muted" dir="ltr">@t.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                                        </div>
+                                        <small class="text-muted">@t.By</small>
+                                        @if (!string.IsNullOrWhiteSpace(t.Note))
+                                        {
+                                            <div class="small mt-1" style="white-space:pre-wrap">@t.Note</div>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-light border mt-3 d-flex align-items-start gap-2" data-testid="admin-readonly-banner">
+            <span class="material-icons text-muted">lock</span>
+            <div class="text-muted small">
+                <strong>للقراءة فقط:</strong> هذه الصفحة لا تحوي أي نماذج إدخال. لا يمكن لمدير النظام تعديل الفكرة أو التقييمات أو التنفيذ من هنا. كل التعديلات تتم من قبل الأدوار المسؤولة.
+            </div>
+        </div>
+    </div>
+</div>

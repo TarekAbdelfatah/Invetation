@@ -6,5 +6,6 @@ namespace Ibtikar.Services.Admin
     {
         Task<AdminOverviewDto> GetSnapshotAsync(CancellationToken ct);
         Task<AdminOverviewListDto> GetIdeasAsync(string? statusFilter, int take, CancellationToken ct);
+        Task<AdminOverviewDetailsDto?> GetDetailsAsync(Guid id, CancellationToken ct);
     }
 }
