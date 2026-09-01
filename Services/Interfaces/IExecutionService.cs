@@ -1,6 +1,6 @@
 using Ibtikar.DTOs.Execution;
 
-namespace Ibtikar.Services
+namespace Ibtikar.Services.Interfaces
 {
     public interface IExecutionService
     {

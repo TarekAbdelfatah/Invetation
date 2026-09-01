@@ -1,10 +1,10 @@
-namespace Ibtikar.Services.Ideas
+namespace Ibtikar.Services.Helpers
 {
     /// <summary>
     /// Maps an idea's current status code to one of the five applicant-visible
     /// pipeline stages (submit → audit → assessment → committee → execution).
-    /// Stays in the Ideas namespace so My Requests rows can show how far the
-    /// idea has progressed without leaking staff-only status names.
+    /// Used by MyRequests views to show how far the idea has progressed without
+    /// leaking staff-only status names.
     /// </summary>
     public static class IdeaProgress
     {

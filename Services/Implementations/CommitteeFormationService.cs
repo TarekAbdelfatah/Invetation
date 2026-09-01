@@ -3,7 +3,7 @@ using Ibtikar.DTOs.Committees;
 using Ibtikar.Models;
 using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Notifications;
-using Ibtikar.Services.Security;
+using Ibtikar.Services.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Services.Implementations

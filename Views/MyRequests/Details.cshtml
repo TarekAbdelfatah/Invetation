@@ -1,5 +1,5 @@
 @using Ibtikar.Controllers
-@using Ibtikar.Services.Ideas
+@using Ibtikar.Services.Helpers
 @using Ibtikar.ViewModels
 @model MyRequestDetailsVm
 @{
@@ -8,6 +8,8 @@
     var isResubmittableForDevelopment = Model.StatusCode == IdeaStatusCodes.ReturnedForDevelopment;
     var isRejected = Model.StatusCode == IdeaStatusCodes.Rejected;
     var isClosedByTimeout = Model.StatusCode == IdeaStatusCodes.Cancelled;
+    var isDraft = string.IsNullOrEmpty(Model.Reference);
+    var showAttachmentUploader = isDraft || isResubmittable || isResubmittableForDevelopment;
 }
 
 <div class="bog-main">
@@ -203,6 +205,7 @@
                             <label class="form-label">الفوائد المتوقعة</label>
                             <textarea name="expectedBenefits" class="form-control" rows="3">@Model.ExpectedBenefits</textarea>
                         </div>
+                        @await Component.InvokeAsync("IdeaAttachmentUploader", new { ideaId = Model.Id })
                         <button type="submit" class="btn btn-primary" id="resubmitCompletionBtn">
                             <span class="material-icons align-middle" style="font-size:18px">send</span>
                             إعادة التقديم
@@ -242,6 +245,7 @@
                             <label class="form-label">الفوائد المتوقعة</label>
                             <textarea name="expectedBenefits" class="form-control" rows="3">@Model.ExpectedBenefits</textarea>
                         </div>
+                        @await Component.InvokeAsync("IdeaAttachmentUploader", new { ideaId = Model.Id })
                         <button type="submit" class="btn btn-primary" id="resubmitDevelopedBtn">
                             <span class="material-icons align-middle" style="font-size:18px">send</span>
                             إعادة التطوير

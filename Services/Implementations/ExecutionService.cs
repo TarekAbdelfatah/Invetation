@@ -2,12 +2,12 @@ using Ibtikar.Data;
 using Ibtikar.DTOs.Execution;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
-using Ibtikar.Services.Audit;
-using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Interfaces;
+using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Notifications;
 using Microsoft.EntityFrameworkCore;
 
-namespace Ibtikar.Services
+namespace Ibtikar.Services.Implementations
 {
     public sealed class ExecutionService : IExecutionService
     {

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 
-namespace Ibtikar.Services.Security
+namespace Ibtikar.Services.Helpers
 {
     public static class CookieAuthExtensions
     {

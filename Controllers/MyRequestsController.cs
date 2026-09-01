@@ -1,6 +1,6 @@
 using Ibtikar.DTOs.MyRequests;
-using Ibtikar.Services.MyRequests;
-using Ibtikar.Services.Security;
+using Ibtikar.Services.Interfaces;
+using Ibtikar.Services.Helpers;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,19 +49,6 @@ namespace Ibtikar.Controllers
                 MyRequestDeleteStatus.NotDeletable => BadRequest(result.Message),
                 _ => RedirectToAction(nameof(Index))
             };
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteAttachment(Guid attachmentId, CancellationToken ct)
-        {
-            var applicantId = ResolveApplicantId();
-            if (applicantId == Guid.Empty) return Challenge();
-
-            return UnprocessableEntity(new
-            {
-                error = "يرجى رفع الملفات الأساسية لإتمام العملية. المرفقات إلزامية ولا يمكن حذفها، تواصل مع مدير النظام للاستبدال."
-            });
         }
 
         [HttpPost]

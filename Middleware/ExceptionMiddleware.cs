@@ -1,4 +1,4 @@
-using Ibtikar.Services;
+using Ibtikar.Services.Implementations;
 
 namespace Ibtikar.Middleware
 {

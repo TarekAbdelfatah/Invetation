@@ -1,6 +1,9 @@
-using Ibtikar.Services.Attachments;
+using Ibtikar.Data;
+using Ibtikar.Models;
+using Ibtikar.Services.Implementations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Ibtikar.Controllers
@@ -10,13 +13,19 @@ namespace Ibtikar.Controllers
     public class AttachmentController : ControllerBase
     {
         private readonly AttachmentService _attachments;
+        private readonly FileStorageService _storage;
+        private readonly IbtikarDbContext _db;
         private readonly ILogger<AttachmentController> _logger;
 
         public AttachmentController(
             AttachmentService attachments,
+            FileStorageService storage,
+            IbtikarDbContext db,
             ILogger<AttachmentController> logger)
         {
             _attachments = attachments;
+            _storage = storage;
+            _db = db;
             _logger = logger;
         }
 
@@ -83,6 +92,81 @@ namespace Ibtikar.Controllers
                     a.UploadedAt
                 })
             });
+        }
+
+        [HttpPost("uploadDraft")]
+        [RequestSizeLimit(20 * 1024 * 1024)]
+        public async Task<IActionResult> UploadDraft(
+            [FromForm] Guid draftId,
+            [FromForm] IFormFile file,
+            CancellationToken ct)
+        {
+            if (draftId == Guid.Empty)
+                return BadRequest(new { error = "draftId is required." });
+            if (file is null || file.Length == 0)
+                return BadRequest(new { error = "file is required." });
+
+            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdRaw, out var userId))
+                return Challenge();
+
+            var result = _attachments.SaveDraftAsync(userId, draftId, file, ct);
+            if (!result.Success)
+                return UnprocessableEntity(new { error = result.Error });
+
+            var existingCount = _attachments.CountDraftAsync(userId, draftId);
+            return Ok(new
+            {
+                id = result.AttachmentId,
+                fileName = result.FileName,
+                sizeBytes = result.SizeBytes,
+                remaining = Math.Max(0, _attachments.MaxCount - existingCount),
+                maxBytes = _attachments.MaxBytes,
+                maxCount = _attachments.MaxCount
+            });
+        }
+
+        [HttpGet("listDraft")]
+        public IActionResult ListDraft(
+            [FromQuery] Guid draftId,
+            CancellationToken ct)
+        {
+            if (draftId == Guid.Empty) return BadRequest(new { error = "draftId required." });
+
+            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdRaw, out var userId))
+                return Challenge();
+
+            var items = _attachments.ListDraftAsync(userId, draftId);
+            return Ok(new
+            {
+                maxBytes = _attachments.MaxBytes,
+                maxCount = _attachments.MaxCount,
+                items = items.Select(a => new
+                {
+                    a.Id,
+                    a.FileName,
+                    a.SizeBytes,
+                    a.UploadedAt
+                })
+            });
+        }
+
+        [HttpPost("deleteDraft")]
+        public IActionResult DeleteDraft(
+            [FromForm] Guid draftId,
+            [FromForm] string fileName,
+            CancellationToken ct)
+        {
+            if (draftId == Guid.Empty) return BadRequest(new { error = "draftId required." });
+            if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(new { error = "fileName required." });
+
+            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdRaw, out var userId))
+                return Challenge();
+
+            var ok = _attachments.DeleteDraftFile(userId, draftId, fileName);
+            return ok ? Ok(new { ok = true }) : NotFound();
         }
     }
 }

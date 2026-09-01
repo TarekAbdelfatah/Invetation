@@ -1,7 +1,8 @@
 using Ibtikar.DTOs.AdminOverview;
 using Ibtikar.Repositories;
+using Ibtikar.Services.Interfaces;
 
-namespace Ibtikar.Services.Admin
+namespace Ibtikar.Services.Implementations
 {
     public sealed class AdminOverviewService : IAdminOverviewService
     {

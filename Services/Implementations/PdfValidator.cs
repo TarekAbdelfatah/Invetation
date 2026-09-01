@@ -1,4 +1,4 @@
-namespace Ibtikar.Services.Attachments
+namespace Ibtikar.Services.Implementations
 {
     public sealed class PdfValidator
     {

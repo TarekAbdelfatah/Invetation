@@ -1,6 +1,7 @@
 using Ibtikar.DTOs.PartnerDashboard;
 using Ibtikar.DTOs.SpecializedDashboard;
-using Ibtikar.Services.Security;
+using Ibtikar.Services.Helpers;
+using Ibtikar.Services.Interfaces;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,12 +12,12 @@ namespace Ibtikar.Controllers
     [Authorize(Roles = $"{RoleCodes.SpecializedDepartment},{RoleCodes.PartnerDepartment}")]
     public class SpecializedDashboardController : Controller
     {
-        private readonly Services.SpecializedDashboard.ISpecializedDashboardService _service;
-        private readonly Services.PartnerDashboard.IPartnerDashboardService _partnerService;
+        private readonly ISpecializedDashboardService _service;
+        private readonly IPartnerDashboardService _partnerService;
 
         public SpecializedDashboardController(
-            Services.SpecializedDashboard.ISpecializedDashboardService service,
-            Services.PartnerDashboard.IPartnerDashboardService partnerService)
+            ISpecializedDashboardService service,
+            IPartnerDashboardService partnerService)
         {
             _service = service;
             _partnerService = partnerService;

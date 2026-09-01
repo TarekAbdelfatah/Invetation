@@ -1,7 +1,7 @@
 using Ibtikar.Data;
 using Ibtikar.DTOs.PartnerDashboard;
 using Ibtikar.Models;
-using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Repositories
@@ -24,9 +24,9 @@ namespace Ibtikar.Repositories
         private static readonly TimeSpan LateThreshold = TimeSpan.FromDays(LateThresholdDays);
 
         private readonly IbtikarDbContext _db;
-        private readonly PartnerAssignmentQuery _query;
+        private readonly IPartnerAssignmentQuery _query;
 
-        public PartnerDashboardRepository(IbtikarDbContext db, PartnerAssignmentQuery query)
+        public PartnerDashboardRepository(IbtikarDbContext db, IPartnerAssignmentQuery query)
         {
             _db = db;
             _query = query;

@@ -1,6 +1,6 @@
 using Ibtikar.DTOs.PartnerDashboard;
 
-namespace Ibtikar.Services.PartnerDashboard
+namespace Ibtikar.Services.Interfaces
 {
     public interface IPartnerDashboardService
     {

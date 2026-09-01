@@ -1,18 +1,34 @@
 @model dynamic
 @{
-    var ideaRef = (string)Model.ReferenceNumber;
     var ideaId = (Guid)Model.Id;
-    var title = (string)Model.Title;
+    var ideaRef = (string)(Model.ReferenceNumber ?? string.Empty);
+    var title = (string)(Model.Title ?? string.Empty);
+    bool isDraft = ideaId == Guid.Empty || string.IsNullOrEmpty(ideaRef);
+    string uploadEndpoint = isDraft
+        ? $"/api/Attachment/uploadDraft?draftId={ideaId}"
+        : "/api/Attachment/upload";
+    string listEndpoint = isDraft
+        ? $"/api/Attachment/listDraft?draftId={ideaId}"
+        : $"/api/Attachment/list?ideaId={ideaId}";
+    string uploadField = isDraft ? "draftId" : "ideaId";
 }
 
 <form style="display:none">@Html.AntiForgeryToken()</form>
 
 <section class="py-4">
     <div class="container">
-        <div class="card bog-section" data-idea-id="@ideaId" data-idea-ref="@ideaRef">
+        <div class="card bog-section"
+             data-idea-id="@ideaId"
+             @(isDraft ? "data-draft-mode=true" : "data-real-idea=true")
+             data-upload-endpoint="@uploadEndpoint"
+             data-list-endpoint="@listEndpoint"
+             data-upload-field="@uploadField">
             <div class="card-header bg-white">
                 <strong><i class="bi bi-paperclip"></i> المرفقات (PDF فقط، حتى ملفين، 5 ميجا لكل ملف)</strong>
-                <small class="text-muted ms-2">الفكرة: @title</small>
+                @if (!string.IsNullOrEmpty(title))
+                {
+                    <small class="text-muted ms-2">الفكرة: @title</small>
+                }
             </div>
             <div class="card-body">
                 <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-attachments-toolbar="true">

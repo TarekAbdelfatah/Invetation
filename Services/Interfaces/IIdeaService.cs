@@ -1,7 +1,7 @@
 using Ibtikar.DTOs.Ideas;
 using Microsoft.AspNetCore.Http;
 
-namespace Ibtikar.Services.Ideas
+namespace Ibtikar.Services.Interfaces
 {
     public interface IIdeaService
     {
@@ -10,6 +10,7 @@ namespace Ibtikar.Services.Ideas
             Guid userId,
             Guid? departmentId,
             bool isSaveDraft,
+            Guid? draftId,
             List<IFormFile>? attachments,
             CancellationToken ct);
 

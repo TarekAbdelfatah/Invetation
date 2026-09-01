@@ -1,11 +1,12 @@
 using Ibtikar.Data;
 using Ibtikar.DTOs.Committee;
 using Ibtikar.Models;
-using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Helpers;
+using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Notifications;
 using Microsoft.EntityFrameworkCore;
 
-namespace Ibtikar.Services.Committee
+namespace Ibtikar.Services.Implementations
 {
     public sealed class CommitteeDashboardService : ICommitteeDashboardService
     {

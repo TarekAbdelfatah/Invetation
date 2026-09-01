@@ -1,4 +1,4 @@
-namespace Ibtikar.Services.Integrations
+namespace Ibtikar.Services.Implementations
 {
     public class IntegrationOptions
     {

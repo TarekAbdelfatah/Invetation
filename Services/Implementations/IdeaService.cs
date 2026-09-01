@@ -1,11 +1,11 @@
 using Ibtikar.DTOs.Ideas;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
-using Ibtikar.Services.Attachments;
-using Ibtikar.Services.Integrations;
+using Ibtikar.Services.Helpers;
+using Ibtikar.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 
-namespace Ibtikar.Services.Ideas
+namespace Ibtikar.Services.Implementations
 {
     public sealed class IdeaService : IIdeaService
     {
@@ -31,6 +31,7 @@ namespace Ibtikar.Services.Ideas
             Guid userId,
             Guid? departmentId,
             bool isSaveDraft,
+            Guid? draftId,
             List<IFormFile>? attachments,
             CancellationToken ct)
         {
@@ -66,14 +67,27 @@ namespace Ibtikar.Services.Ideas
                 return IdeaCreateOutcome.Failed("تعذّر حفظ الطلب. حاول مرة أخرى.");
             }
 
-            if (!isSaveDraft && !string.IsNullOrEmpty(idea.ReferenceNumber))
+            if (draftId is { } did && did != Guid.Empty)
+            {
+                var moved = _attachments.MoveDraftToIdea(userId, did, idea.Id, ct);
+                if (moved > 0)
+                {
+                    try { await _repo.SaveChangesAsync(ct); }
+                    catch (Exception ex) { _logger.LogWarning(ex, "Failed to persist moved draft attachments."); }
+                }
+            }
+
+            if (attachments is { Count: > 0 })
             {
                 var attachError = await SaveAttachmentsAsync(idea.Id, userId, attachments, ct);
                 if (attachError is not null)
                 {
                     return IdeaCreateOutcome.Failed(attachError);
                 }
+            }
 
+            if (!isSaveDraft && !string.IsNullOrEmpty(idea.ReferenceNumber))
+            {
                 try
                 {
                     await _procedureGateway.NotifyAsync(idea.ReferenceNumber, ct);

@@ -1,9 +1,10 @@
 using Ibtikar.DTOs.SpecializedDashboard;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
-using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Helpers;
+using Ibtikar.Services.Interfaces;
 
-namespace Ibtikar.Services.SpecializedDashboard
+namespace Ibtikar.Services.Implementations
 {
     public sealed class SpecializedDashboardService : ISpecializedDashboardService
     {

@@ -1,9 +1,9 @@
 using Ibtikar.DTOs.MyRequests;
 using Ibtikar.Repositories;
-using Ibtikar.Services.Attachments;
-using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Helpers;
+using Ibtikar.Services.Interfaces;
 
-namespace Ibtikar.Services.MyRequests
+namespace Ibtikar.Services.Implementations
 {
     public sealed class MyRequestsService : IMyRequestsService
     {

@@ -1,6 +1,6 @@
 using Ibtikar.DTOs.SpecializedDashboard;
 
-namespace Ibtikar.Services.SpecializedDashboard
+namespace Ibtikar.Services.Interfaces
 {
     public interface ISpecializedDashboardService
     {

@@ -1,4 +1,4 @@
-namespace Ibtikar.Services.Common
+namespace Ibtikar.Services.Helpers
 {
     public static class WorkingDays
     {

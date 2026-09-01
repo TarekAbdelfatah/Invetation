@@ -1,4 +1,4 @@
-namespace Ibtikar.Services.Ideas
+namespace Ibtikar.Services.Helpers
 {
     public static class IdeaStatusCodes
     {

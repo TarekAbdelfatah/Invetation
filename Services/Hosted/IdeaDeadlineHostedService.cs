@@ -1,32 +1,32 @@
 using Ibtikar.Data;
 using Ibtikar.Models;
-using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Ibtikar.Services.Committee
+namespace Ibtikar.Services.Hosted
 {
     /// <summary>
-    /// Daily hosted service that locks committee voting for ideas that have been
-    /// open for voting (referred-committee status) for more than three days.
-    /// Locked ideas transition to <c>under-assessment</c> so members can no
-    /// longer cast or change votes. Runs on a 24-hour interval using the server
-    /// clock, mirroring <see cref="Background.IdeaDeadlineHostedService"/>.
+    /// Daily hosted service that closes ideas stuck on the applicant in
+    /// <c>waiting_for_completion</c> or <c>returned_for_development</c> for more
+    /// than 14 days. Stale ideas transition to <c>cancelled</c> and an audit
+    /// row is appended to <see cref="IdeaStatusHistory"/> so the timeline stays
+    /// honest. Runs on a 24-hour interval using the server clock.
     /// </summary>
-    public sealed class VoteLockHostedService : BackgroundService
+    public sealed class IdeaDeadlineHostedService : BackgroundService
     {
         private static readonly TimeSpan SweepInterval = TimeSpan.FromHours(24);
-        private static readonly TimeSpan VoteWindow = TimeSpan.FromDays(3);
-        private const string AutoLockNote = "أُغلق باب التصويت تلقائياً بعد 3 أيام";
+        private static readonly TimeSpan StaleAfter = TimeSpan.FromDays(14);
+        private const string AutoCloseNote = "انتهت المهلة المتاحة للتعديل (14 يوم)";
 
         private readonly IServiceProvider _services;
-        private readonly ILogger<VoteLockHostedService> _logger;
+        private readonly ILogger<IdeaDeadlineHostedService> _logger;
 
-        public VoteLockHostedService(
+        public IdeaDeadlineHostedService(
             IServiceProvider services,
-            ILogger<VoteLockHostedService> logger)
+            ILogger<IdeaDeadlineHostedService> logger)
         {
             _services = services;
             _logger = logger;
@@ -38,9 +38,9 @@ namespace Ibtikar.Services.Committee
             {
                 try
                 {
-                    int locked = await LockExpiredVotesAsync(stoppingToken);
-                    if (locked > 0)
-                        _logger.LogInformation("Locked voting on {Count} ideas after 3-day window", locked);
+                    int closed = await CloseStaleIdeasAsync(stoppingToken);
+                    if (closed > 0)
+                        _logger.LogInformation("Closed {Count} stale ideas after deadline sweep", closed);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
@@ -48,7 +48,7 @@ namespace Ibtikar.Services.Committee
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Committee vote-lock sweep failed");
+                    _logger.LogError(ex, "Idea deadline sweep failed");
                 }
 
                 try
@@ -62,57 +62,58 @@ namespace Ibtikar.Services.Committee
             }
         }
 
-        private async Task<int> LockExpiredVotesAsync(CancellationToken ct)
+        private async Task<int> CloseStaleIdeasAsync(CancellationToken ct)
         {
             using var scope = _services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IbtikarDbContext>();
 
-            var assessmentStatus = await db.IdeaStatuses
+            var cancelledStatus = await db.IdeaStatuses
                 .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.Code == IdeaStatusCodes.UnderAssessment, ct);
-            if (assessmentStatus is null)
+                .FirstOrDefaultAsync(s => s.Code == IdeaStatusCodes.Cancelled, ct);
+            if (cancelledStatus is null)
             {
-                _logger.LogWarning("IdeaStatusCodes.UnderAssessment is not seeded; vote-lock sweep skipped");
+                _logger.LogWarning("IdeaStatusCodes.Cancelled is not seeded; deadline sweep skipped");
                 return 0;
             }
 
-            var cutoff = DateTime.UtcNow - VoteWindow;
+            var cutoff = DateTime.UtcNow - StaleAfter;
 
             var candidates = await db.InnovationIdeas
                 .AsNoTracking()
                 .Include(i => i.StatusHistory)
                 .Where(i => i.CurrentStatus != null
-                    && i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee)
+                    && (i.CurrentStatus.Code == IdeaStatusCodes.WaitingForCompletion
+                        || i.CurrentStatus.Code == IdeaStatusCodes.ReturnedForDevelopment))
                 .ToListAsync(ct);
 
-            var expiredIds = candidates
+            var staleIds = candidates
                 .Where(i => LastTransitionAt(i) is DateTime at && at < cutoff)
                 .Select(i => i.Id)
                 .ToList();
 
-            if (expiredIds.Count == 0) return 0;
+            if (staleIds.Count == 0) return 0;
 
-            var expiredEntities = await db.InnovationIdeas
-                .Where(i => expiredIds.Contains(i.Id))
+            var staleEntities = await db.InnovationIdeas
+                .Where(i => staleIds.Contains(i.Id))
                 .ToListAsync(ct);
 
             var now = DateTime.UtcNow;
-            foreach (var idea in expiredEntities)
+            foreach (var idea in staleEntities)
             {
                 var previousStatusId = idea.CurrentStatusId;
-                idea.CurrentStatusId = assessmentStatus.Id;
+                idea.CurrentStatusId = cancelledStatus.Id;
                 db.IdeaStatusHistories.Add(new IdeaStatusHistory
                 {
                     InnovationIdeaId = idea.Id,
                     FromStatusId = previousStatusId,
-                    ToStatusId = assessmentStatus.Id,
+                    ToStatusId = cancelledStatus.Id,
                     ChangedAt = now,
-                    Note = AutoLockNote
+                    Note = AutoCloseNote
                 });
             }
 
             await db.SaveChangesAsync(ct);
-            return expiredEntities.Count;
+            return staleEntities.Count;
         }
 
         private static DateTime? LastTransitionAt(InnovationIdea idea)

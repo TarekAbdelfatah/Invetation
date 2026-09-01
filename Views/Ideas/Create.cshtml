@@ -155,6 +155,19 @@
 
                         <hr />
 
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                <span class="material-icons align-middle" style="font-size:18px">attach_file</span>
+                                المرفقات (اختيارية في المسودة، إلزامية عند الإرسال)
+                            </label>
+                            <small class="form-text text-muted d-block mb-2">
+                                PDF فقط، حتى ملفين، 5 ميجا لكل ملف.
+                            </small>
+                            @await Component.InvokeAsync("IdeaAttachmentUploader", new { ideaId = Model.CurrentDraftId })
+                        </div>
+
+                        <hr />
+
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <button type="submit" name="action" value="SaveDraft" class="btn btn-outline-secondary">
                                 <span class="material-icons align-middle" style="font-size:18px">save</span>

@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
-namespace Ibtikar.Services
+namespace Ibtikar.Services.Implementations
 {
     public sealed class Pbkdf2PasswordHasher
     {

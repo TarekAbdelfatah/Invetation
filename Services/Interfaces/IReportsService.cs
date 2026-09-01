@@ -1,6 +1,6 @@
 using Ibtikar.DTOs.Reports;
 
-namespace Ibtikar.Services
+namespace Ibtikar.Services.Interfaces
 {
     public interface IReportsService
     {

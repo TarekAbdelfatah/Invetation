@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.DataProtection;
 
-namespace Ibtikar.Services.Attachments
+namespace Ibtikar.Services.Implementations
 {
     public class FileStorageOptions
     {
