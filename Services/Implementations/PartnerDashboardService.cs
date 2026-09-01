@@ -1,7 +1,7 @@
 using Ibtikar.DTOs.PartnerDashboard;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
-using Ibtikar.Services.Common;
+using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Notifications;
 
 namespace Ibtikar.Services.PartnerDashboard
