@@ -1,6 +1,9 @@
 (function () {
   'use strict';
 
+  let confirmResolver = null;
+  let confirmModal = null;
+
   function getAntiForgeryToken() {
     const m = document.querySelector('input[name="__RequestVerificationToken"]');
     return m ? m.value : '';
@@ -126,14 +129,17 @@
         document.body.appendChild(modal);
       }
       bindStandaloneModal(modal);
+      confirmModal = modal;
       return modal;
     }
 
     function bindStandaloneModal(modal) {
+      if (modal.__bogBound) return;
+      modal.__bogBound = true;
+
       const messageEl = modal.querySelector('[data-confirm-message]');
       const okBtn = modal.querySelector('[data-confirm-ok]');
       const cancelBtns = modal.querySelectorAll('[data-confirm-cancel]');
-      let resolver = null;
 
       window.__bogConfirm = function (msg, okLabel) {
         if (messageEl) messageEl.textContent = msg;
@@ -141,28 +147,23 @@
         modal.hidden = false;
         modal.setAttribute('data-open', 'true');
         okBtn.focus();
-        return new Promise((res) => { resolver = res; });
+        return new Promise((res) => { confirmResolver = res; });
       };
 
-      if (modal.__bogBound) return;
-      modal.__bogBound = true;
-
-      okBtn.addEventListener('click', () => {
+      function close(result) {
         modal.hidden = true;
         modal.removeAttribute('data-open');
-        if (resolver) { const r = resolver; resolver = null; r(true); }
-      });
-      cancelBtns.forEach((b) => b.addEventListener('click', () => {
-        modal.hidden = true;
-        modal.removeAttribute('data-open');
-        if (resolver) { const r = resolver; resolver = null; r(false); }
-      }));
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !modal.hidden) {
-          modal.hidden = true;
-          modal.removeAttribute('data-open');
-          if (resolver) { const r = resolver; resolver = null; r(false); }
+        if (confirmResolver) {
+          const r = confirmResolver;
+          confirmResolver = null;
+          r(result);
         }
+      }
+
+      okBtn.addEventListener('click', () => close(true));
+      cancelBtns.forEach((b) => b.addEventListener('click', () => close(false)));
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.hidden) close(false);
       });
     }
 
