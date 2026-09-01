@@ -179,8 +179,16 @@
         @if (isDraft)
         {
             <div class="card bog-section mb-3">
-                <div class="card-header bg-white"><strong>رفع مرفقات للمسودة</strong></div>
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <strong>المسودة</strong>
+                    <a class="btn btn-primary"
+                       asp-controller="Ideas" asp-action="Create" asp-route-draftId="@Model.Id">
+                        <span class="material-icons align-middle" style="font-size:18px">edit</span>
+                        متابعة وتعديل المسودة
+                    </a>
+                </div>
                 <div class="card-body">
+                    <p class="text-muted mb-2">يمكنك رفع المرفقات أو الاستمرار في تعديل بيانات المسودة قبل إرسالها.</p>
                     @await Component.InvokeAsync("IdeaAttachmentUploader", new { ideaId = Model.Id })
                 </div>
             </div>

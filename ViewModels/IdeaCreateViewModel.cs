@@ -12,6 +12,7 @@ namespace Ibtikar.ViewModels
         public const int OtherImpactMax = 200;
         public const int OtherAudienceMax = 200;
         public const int OtherTechMax = 200;
+        public const int RequiredResourcesMax = 3000;
 
         [Required(ErrorMessage = "العنوان مطلوب")]
         [StringLength(TitleMax, MinimumLength = 5, ErrorMessage = "العنوان بين 5 و 200 حرف")]
@@ -67,7 +68,14 @@ namespace Ibtikar.ViewModels
         [Display(Name = "حدد التقنية الأخرى")]
         public string? TechnologyOther { get; set; }
 
+        [StringLength(RequiredResourcesMax, ErrorMessage = "الموارد المطلوبة حتى 3000 حرف")]
+        [Display(Name = "الموارد المطلوبة")]
+        [DataType(DataType.MultilineText)]
+        public string? RequiredResources { get; set; }
+
         public Guid? CurrentDraftId { get; set; }
+
+        public bool IsResumingDraft { get; set; }
 
         /// <summary>
         /// Whether the user pressed "إرسال الفكرة" (Submit).

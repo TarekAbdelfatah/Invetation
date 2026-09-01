@@ -83,6 +83,15 @@
                             <span asp-validation-for="ExpectedBenefits" class="text-danger small"></span>
                         </div>
 
+                        <div class="mb-4">
+                            <label asp-for="RequiredResources" class="form-label fw-semibold"></label>
+                            <textarea asp-for="RequiredResources" class="form-control" rows="3"
+                                      placeholder="مثل: فريق تطوير متخصص، خوادم إضافية، ميزانية تشغيل..."
+                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.RequiredResourcesMax"></textarea>
+                            <small class="form-text text-muted d-block" data-char-counter="RequiredResources"></small>
+                            <span asp-validation-for="RequiredResources" class="text-danger small"></span>
+                        </div>
+
                         <hr />
 
                         <div class="mb-4">

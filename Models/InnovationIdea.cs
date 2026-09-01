@@ -13,6 +13,7 @@ namespace Ibtikar.Models
         public string? TargetAudienceOther { get; set; }
         public bool UsesEmergingTech { get; set; }
         public string? TechnologyOther { get; set; }
+        public string? RequiredResources { get; set; }
 
         public Guid InnovationDomainId { get; set; }
         public Guid? ExpectedImpactId { get; set; }

@@ -39,16 +39,27 @@ namespace Ibtikar.Controllers
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> Create(CancellationToken ct)
+        public async Task<IActionResult> Create(Guid? draftId, CancellationToken ct)
         {
             var model = new IdeaCreateViewModel
             {
-                CurrentDraftId = Guid.NewGuid()
+                CurrentDraftId = draftId ?? Guid.NewGuid()
             };
 
             var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (Guid.TryParse(userIdRaw, out var userId))
             {
+                if (draftId.HasValue && draftId.Value != Guid.Empty)
+                {
+                    var draft = await _ideaService.GetDraftForEditAsync(draftId.Value, userId, Array.Empty<Guid>(), ct);
+                    if (draft is null)
+                    {
+                        return RedirectToAction("Index", "MyRequests");
+                    }
+                    CopyFromDraft(model, draft);
+                    model.IsResumingDraft = true;
+                }
+
                 var currentUser = await _ideaService.GetUserSummaryAsync(userId, ct);
                 if (currentUser is not null && BeneficiaryType.IsInternal(User))
                 {
@@ -101,6 +112,8 @@ namespace Ibtikar.Controllers
                 ? depGuid
                 : (Guid?)null;
 
+            var existingDraftId = model.IsResumingDraft ? model.CurrentDraftId : null;
+
             var request = ToCreateRequest(model);
             var result = await _ideaService.CreateIdeaAsync(
                 request,
@@ -108,6 +121,7 @@ namespace Ibtikar.Controllers
                 departmentId,
                 isSaveDraft,
                 model.CurrentDraftId,
+                existingDraftId,
                 attachments,
                 ct);
 
@@ -179,7 +193,8 @@ namespace Ibtikar.Controllers
                 model.TargetAudienceOther,
                 model.UsesEmergingTech,
                 model.TechnologyIds,
-                model.TechnologyOther);
+                model.TechnologyOther,
+                model.RequiredResources);
 
         private static IdeaListItemVm ToListItemVm(IdeaSummaryDto dto)
             => new(
@@ -192,6 +207,24 @@ namespace Ibtikar.Controllers
                 dto.DepartmentName,
                 dto.SubmittedAt,
                 dto.CreatedAt);
+
+        private static void CopyFromDraft(IdeaCreateViewModel model, IdeaDetailsForEditDto draft)
+        {
+            model.Title = draft.Title;
+            model.Description = draft.Description;
+            model.ProblemStatement = draft.ProblemStatement;
+            model.ProposedSolution = draft.ProposedSolution;
+            model.ExpectedBenefits = draft.ExpectedBenefits;
+            model.RequiredResources = draft.RequiredResources;
+            model.InnovationDomainId = draft.InnovationDomainId == Guid.Empty ? null : draft.InnovationDomainId;
+            model.ExpectedImpactId = draft.ExpectedImpactId;
+            model.ExpectedImpactOther = draft.ExpectedImpactOther;
+            model.TargetAudienceId = draft.TargetAudienceId;
+            model.TargetAudienceOther = draft.TargetAudienceOther;
+            model.UsesEmergingTech = draft.UsesEmergingTech;
+            model.TechnologyIds = draft.TechnologyIds.ToList();
+            model.TechnologyOther = draft.TechnologyOther;
+        }
 
         private static IdeaSuccessVm ToSuccessVm(IdeaDetailsDto dto)
             => new(

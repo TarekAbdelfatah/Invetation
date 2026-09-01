@@ -16,6 +16,7 @@ namespace Ibtikar.Data.Configurations
             builder.Property(i => i.ProblemStatement).HasMaxLength(4000);
             builder.Property(i => i.ProposedSolution).HasMaxLength(4000);
             builder.Property(i => i.ExpectedBenefits).HasMaxLength(4000);
+            builder.Property(i => i.RequiredResources).HasMaxLength(3000);
             builder.Property(i => i.IsDraft).IsRequired();
             builder.HasIndex(i => i.ApplicantUserId).HasFilter("\"IsDeleted\" = false");
             builder.Property(i => i.IsDeleted).IsRequired();

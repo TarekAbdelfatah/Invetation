@@ -76,6 +76,23 @@ namespace Ibtikar.Repositories
             await _db.InnovationIdeas.AddAsync(idea, ct);
         }
 
+        public async Task<InnovationIdea?> GetDraftByIdAsync(Guid ideaId, Guid applicantId, CancellationToken ct)
+        {
+            return await _db.InnovationIdeas
+                .Include(i => i.Attachments)
+                .FirstOrDefaultAsync(
+                    i => i.Id == ideaId
+                        && i.ApplicantUserId == applicantId
+                        && i.IsDraft
+                        && !i.IsDeleted,
+                    ct);
+        }
+
+        public async Task<IReadOnlyList<Guid>> GetDraftTechnologyIdsAsync(Guid ideaId, CancellationToken ct)
+        {
+            return Array.Empty<Guid>();
+        }
+
         public async Task SaveChangesAsync(CancellationToken ct)
         {
             await _db.SaveChangesAsync(ct);
