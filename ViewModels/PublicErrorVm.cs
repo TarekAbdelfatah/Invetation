@@ -10,6 +10,8 @@ namespace Ibtikar.ViewModels
         public string? RequestId { get; init; }
         public bool ShowRequestId => !string.IsNullOrWhiteSpace(RequestId);
         public bool ShowException { get; init; }
+        public string? ExceptionType { get; init; }
         public string? ExceptionMessage { get; init; }
+        public string? ExceptionStackTrace { get; init; }
     }
 }

@@ -59,6 +59,7 @@ namespace Ibtikar
             builder.Services.AddHostedService<VoteLockHostedService>();
             builder.Services.AddHostedService<IdeaDeadlineHostedService>();
             builder.Services.Configure<IntegrationOptions>(builder.Configuration.GetSection("Integrations"));
+            builder.Services.Configure<ErrorOptions>(builder.Configuration.GetSection("Errors"));
             builder.Services.AddHttpClient<ProcedureGatewayService>();
             builder.Services.AddHttpClient<INotificationClient, NotificationService>();
             builder.Services.AddOptions<FileStorageOptions>()
@@ -97,7 +98,7 @@ namespace Ibtikar
 
             if (!app.Environment.IsDevelopment())
             {
-                app.UseExceptionHandler("/Home/Error");
+                app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
 

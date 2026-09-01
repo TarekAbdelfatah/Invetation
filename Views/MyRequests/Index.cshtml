@@ -1,6 +1,7 @@
 @using Ibtikar.Controllers
 @using Ibtikar.Services.Helpers
 @using Ibtikar.ViewModels
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
 @using static Ibtikar.Services.Helpers.KsaTime
 @model MyRequestsVm
 @{
@@ -180,7 +181,13 @@
             </div>
         </div>
 
-        @await Html.PartialAsync("_Pagination", Model)
+        @await Html.PartialAsync("_Pagination", null,
+    new ViewDataDictionary(ViewData)
+    {
+        { "Page", Model.Page },
+        { "PageSize", Model.PageSize },
+        { "TotalCount", Model.TotalCount }
+    })
     </div>
 </div>
 

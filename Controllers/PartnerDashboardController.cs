@@ -42,7 +42,7 @@ namespace Ibtikar.Controllers
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Partner dashboard details fallback for {Assignment}: {Message}", assignmentId, ex.Message);
-                return View("Error", new ErrorViewModel { RequestId = HttpContext.TraceIdentifier });
+                return Redirect("/Error/500?traceId=" + HttpContext.TraceIdentifier);
             }
         }
 

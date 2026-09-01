@@ -14,10 +14,7 @@ namespace Ibtikar.Data
             db.Database.ExecuteSqlRaw(
                 "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"AssignedDepartmentId\" uuid NULL; " +
                 "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"AuditEmployeeId\" uuid NULL; " +
-                "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"AuditAssignedAt\" timestamp with time zone NULL; " +
-                "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"IsDeleted\" boolean NOT NULL DEFAULT FALSE; " +
-                "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"DeletedAt\" timestamp with time zone NULL; " +
-                "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"RequiredResources\" text NULL;");
+                "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"AuditAssignedAt\" timestamp with time zone NULL;");
 
             db.Database.ExecuteSqlRaw(
                 "CREATE TABLE IF NOT EXISTS \"AuditActionItems\" (" +
@@ -33,6 +30,13 @@ namespace Ibtikar.Data
 
             db.Database.ExecuteSqlRaw(
                 "CREATE INDEX IF NOT EXISTS \"IX_AuditActionItems_IdeaId\" ON \"AuditActionItems\" (\"IdeaId\");");
+
+            // Defensive: Add soft-delete columns if migration hasn't been applied yet (e.g. legacy DBs).
+            // These lines are idempotent and safe to run repeatedly.
+            db.Database.ExecuteSqlRaw(
+                "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"IsDeleted\" boolean NOT NULL DEFAULT FALSE;\n" +
+                "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"DeletedAt\" timestamp with time zone NULL;\n" +
+                "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"RequiredResources\" text NULL;");
         }
     }
 }

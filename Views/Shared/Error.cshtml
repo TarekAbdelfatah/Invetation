@@ -32,13 +32,27 @@
 
                     @if (Model.ShowRequestId)
                     {
-                        <details class="bog-error-details mt-4">
+                        <details class="bog-error-details mt-4" open>
                             <summary>تفاصيل تقنية</summary>
                             <div class="bog-error-details-body">
                                 <div><strong>Request ID:</strong> <code dir="ltr">@Model.RequestId</code></div>
-                                @if (Model.ShowException && !string.IsNullOrEmpty(Model.ExceptionMessage))
+                                @if (Model.ShowException)
                                 {
-                                    <div class="mt-2"><strong>رسالة الخطأ:</strong> <code dir="ltr">@Model.ExceptionMessage</code></div>
+                                    @if (!string.IsNullOrWhiteSpace(Model.ExceptionType))
+                                    {
+                                        <div class="mt-2"><strong>نوع الخطأ:</strong> <code dir="ltr">@Model.ExceptionType</code></div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(Model.ExceptionMessage))
+                                    {
+                                        <div class="mt-2"><strong>الرسالة:</strong> <code dir="ltr">@Model.ExceptionMessage</code></div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(Model.ExceptionStackTrace))
+                                    {
+                                        <details class="mt-2">
+                                            <summary class="text-muted">Stack Trace</summary>
+                                            <pre dir="ltr" class="bg-white border rounded p-2 mt-1" style="max-height:240px;overflow:auto;font-size:12px;white-space:pre-wrap;">@Model.ExceptionStackTrace</pre>
+                                        </details>
+                                    }
                                 }
                                 <p class="text-muted small mt-3 mb-0">
                                     يُرجى ذكر رقم الطلب عند التواصل مع مدير النظام.
