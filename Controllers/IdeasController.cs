@@ -112,7 +112,7 @@ namespace Ibtikar.Controllers
                 ? depGuid
                 : (Guid?)null;
 
-            var existingDraftId = model.IsResumingDraft ? model.CurrentDraftId : null;
+            var existingDraftId = await ResolveExistingDraftIdAsync(model, userId, ct);
 
             var request = ToCreateRequest(model);
             var result = await _ideaService.CreateIdeaAsync(
@@ -207,6 +207,16 @@ namespace Ibtikar.Controllers
                 dto.DepartmentName,
                 dto.SubmittedAt,
                 dto.CreatedAt);
+
+        private async Task<Guid?> ResolveExistingDraftIdAsync(IdeaCreateViewModel model, Guid userId, CancellationToken ct)
+        {
+            if (model.IsResumingDraft && model.CurrentDraftId.HasValue && model.CurrentDraftId.Value != Guid.Empty)
+            {
+                var existing = await _ideaService.GetDraftForEditAsync(model.CurrentDraftId.Value, userId, Array.Empty<Guid>(), ct);
+                if (existing is not null) return model.CurrentDraftId.Value;
+            }
+            return null;
+        }
 
         private static void CopyFromDraft(IdeaCreateViewModel model, IdeaDetailsForEditDto draft)
         {
