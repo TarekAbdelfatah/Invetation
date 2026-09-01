@@ -40,6 +40,40 @@ namespace Ibtikar.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ExecutionProgresses",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    InnovationIdeaId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ExecutionStageId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Note = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    ChangedByUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ChangedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ExecutionProgresses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ExecutionProgresses_ExecutionStages_ExecutionStageId",
+                        column: x => x.ExecutionStageId,
+                        principalTable: "ExecutionStages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ExecutionProgresses_InnovationIdeas_InnovationIdeaId",
+                        column: x => x.InnovationIdeaId,
+                        principalTable: "InnovationIdeas",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ExecutionProgresses_Users_ChangedByUserId",
+                        column: x => x.ChangedByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "InnovationCommittees",
                 columns: table => new
                 {
@@ -171,6 +205,26 @@ namespace Ibtikar.Migrations
                 column: "MemberUserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ExecutionProgresses_ChangedByUserId",
+                table: "ExecutionProgresses",
+                column: "ChangedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExecutionProgresses_ExecutionStageId",
+                table: "ExecutionProgresses",
+                column: "ExecutionStageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExecutionProgresses_InnovationIdeaId",
+                table: "ExecutionProgresses",
+                column: "InnovationIdeaId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExecutionProgresses_InnovationIdeaId_ChangedAt",
+                table: "ExecutionProgresses",
+                columns: new[] { "InnovationIdeaId", "ChangedAt" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_InnovationCommittees_CreatedByUserId",
                 table: "InnovationCommittees",
                 column: "CreatedByUserId");
@@ -192,6 +246,9 @@ namespace Ibtikar.Migrations
 
             migrationBuilder.DropTable(
                 name: "CommitteeVotes");
+
+            migrationBuilder.DropTable(
+                name: "ExecutionProgresses");
 
             migrationBuilder.DropTable(
                 name: "InnovationCommittees");
