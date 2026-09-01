@@ -1,4 +1,4 @@
-namespace Ibtikar.Services.Security
+namespace Ibtikar.Services.Helpers
 {
     public static class RoleCodes
     {

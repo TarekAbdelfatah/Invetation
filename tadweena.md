@@ -24,8 +24,8 @@ sessions:
     started_at: 2026-09-01T00:00:00Z
   MiniMax-M3:
     model: minimax-coding-plan/MiniMax-M3
-    session_id: 9ac2b6da-afc3-4070-a2b8-a802100823f5
-    started_at: 2026-09-01T06:28:54Z
+    session_id: 884be6e3-ed2f-4ec0-befc-3a5a594a350a
+    started_at: 2026-09-01T08:30:00Z
   build:
     model: minimax-coding-plan/MiniMax-M3
     session_id: 2ad2a13a-b180-403f-9777-d6d612662675
