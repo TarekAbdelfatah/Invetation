@@ -6,14 +6,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Ibtikar.Services.Committee
+namespace Ibtikar.Services.Hosted
 {
     /// <summary>
     /// Daily hosted service that locks committee voting for ideas that have been
     /// open for voting (referred-committee status) for more than three days.
     /// Locked ideas transition to <c>under-assessment</c> so members can no
     /// longer cast or change votes. Runs on a 24-hour interval using the server
-    /// clock, mirroring <see cref="Background.IdeaDeadlineHostedService"/>.
+    /// clock, mirroring <see cref="IdeaDeadlineHostedService"/>.
     /// </summary>
     public sealed class VoteLockHostedService : BackgroundService
     {

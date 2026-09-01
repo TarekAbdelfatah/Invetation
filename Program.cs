@@ -61,7 +61,7 @@ namespace Ibtikar
             builder.Services.AddScoped<Ibtikar.Services.IReportsService, Ibtikar.Services.ReportsService>();
             builder.Services.AddScoped<Ibtikar.Services.Committee.IDelegationService, Ibtikar.Services.Committee.DelegationService>();
             builder.Services.AddScoped<Ibtikar.Services.Committee.ICommitteeDashboardService, Ibtikar.Services.Committee.CommitteeDashboardService>();
-            builder.Services.AddHostedService<Ibtikar.Services.Committee.VoteLockHostedService>();
+            builder.Services.AddHostedService<VoteLockHostedService>();
             builder.Services.AddHostedService<IdeaDeadlineHostedService>();
             builder.Services.Configure<IntegrationOptions>(builder.Configuration.GetSection("Integrations"));
             builder.Services.AddHttpClient<ProcedureGatewayService>();
