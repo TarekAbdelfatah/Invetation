@@ -158,8 +158,7 @@
                                 </a>
                                 <button type="button"
                                         class="btn btn-outline-danger"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#returnNotCompetentModal">
+                                        data-open-not-competent>
                                     <span class="material-icons align-middle" style="font-size:16px">block</span>
                                     رفض لعدم الاختصاص
                                 </button>
@@ -209,42 +208,38 @@
 
 @if (canAssess)
 {
-    <div class="modal fade" id="returnNotCompetentModal" tabindex="-1"
-         aria-labelledby="returnNotCompetentTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
+    <div id="returnNotCompetentModal" class="bog-modal" hidden role="dialog" aria-modal="true"
+         aria-labelledby="returnNotCompetentTitle">
+        <div class="bog-modal-backdrop" data-close-not-competent></div>
+        <div class="bog-modal-dialog bog-modal-dialog-centered" role="document">
+            <div class="bog-modal-content">
                 <form method="post" asp-action="ReturnNotCompetent" id="returnNotCompetentForm" autocomplete="off">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="ideaId" value="@Model.Id" />
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="returnNotCompetentTitle">
-                            <span class="material-icons align-middle text-danger">block</span>
-                            رفض لعدم الاختصاص
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                    <h5 id="returnNotCompetentTitle" class="bog-modal-title">
+                        <span class="material-icons align-middle text-danger">block</span>
+                        رفض لعدم الاختصاص
+                    </h5>
+                    <p class="bog-modal-body">
+                        سيتم إرجاع الفكرة إلى المدقق (<strong>@Model.Reference</strong>) مع تسجيل سبب الرفض.
+                        يمكنك بعدها إعادة إحالتها إلى إدارة أخرى من داخل صندوق التدقيق.
+                    </p>
+                    <label for="notCompetentReason" class="form-label">
+                        سبب عدم الاختصاص <span class="text-danger">*</span>
+                    </label>
+                    <textarea id="notCompetentReason"
+                              name="reason"
+                              class="form-control mb-3"
+                              rows="4"
+                              required
+                              minlength="10"
+                              maxlength="1000"
+                              placeholder="اشرح بإيجاز سبب أن الفكرة خارج نطاق اختصاص إدارتك (10 أحرف على الأقل)"></textarea>
+                    <div class="form-text mb-3">
+                        سيتم تسجيل هذا السبب في سجل الحالات وإظاره للمدقق ليتسنى له إعادة التوجيه.
                     </div>
-                    <div class="modal-body">
-                        <p class="text-muted small mb-3">
-                            سيتم إرجاع الفكرة إلى المدقق (<strong>@Model.Reference</strong>) مع تسجيل سبب الرفض.
-                            يمكنك بعدها إعادة إحالتها إلى إدارة أخرى من داخل صندوق التدقيق.
-                        </p>
-                        <label for="notCompetentReason" class="form-label">
-                            سبب عدم الاختصاص <span class="text-danger">*</span>
-                        </label>
-                        <textarea id="notCompetentReason"
-                                  name="reason"
-                                  class="form-control"
-                                  rows="4"
-                                  required
-                                  minlength="10"
-                                  maxlength="1000"
-                                  placeholder="اشرح بإيجاز سبب أن الفكرة خارج نطاق اختصاص إدارتك (10 أحرف على الأقل)"></textarea>
-                        <div class="form-text">
-                            سيتم تسجيل هذا السبب في سجل الحالات وإظاره للمدقق ليتسنى له إعادة التوجيه.
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <div class="bog-modal-actions">
+                        <button type="button" class="btn btn-outline-secondary" data-close-not-competent>إلغاء</button>
                         <button type="submit"
                                 class="btn btn-danger"
                                 id="returnNotCompetentSubmit">
@@ -261,16 +256,41 @@
 @section Scripts {
     <script>
         (function () {
-            const form = document.getElementById('returnNotCompetentForm');
-            if (!form) return;
+            var modal = document.getElementById('returnNotCompetentModal');
+            if (!modal) return;
 
-            const submitBtn = document.getElementById('returnNotCompetentSubmit');
-            const reasonInput = document.getElementById('notCompetentReason');
-            const modalEl = document.getElementById('returnNotCompetentModal');
+            var submitBtn = document.getElementById('returnNotCompetentSubmit');
+            var reasonInput = document.getElementById('notCompetentReason');
+
+            function open() {
+                modal.hidden = false;
+                modal.setAttribute('data-open', 'true');
+                if (reasonInput) setTimeout(function () { reasonInput.focus(); }, 50);
+            }
+
+            function close() {
+                modal.hidden = true;
+                modal.removeAttribute('data-open');
+                if (reasonInput) {
+                    reasonInput.value = '';
+                    reasonInput.setCustomValidity('');
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<span class="material-icons align-middle" style="font-size:16px">undo</span> تأكيد الإرجاع للمدقق';
+                }
+            }
+
+            var openTrigger = document.querySelector('[data-open-not-competent]');
+            if (openTrigger) openTrigger.addEventListener('click', open);
+
+            modal.querySelectorAll('[data-close-not-competent]').forEach(function (el) {
+                el.addEventListener('click', close);
+            });
 
             function validate() {
                 if (!reasonInput) return true;
-                const v = (reasonInput.value || '').trim();
+                var v = (reasonInput.value || '').trim();
                 if (v.length < 10) {
                     reasonInput.setCustomValidity('يجب أن يكون السبب 10 أحرف على الأقل.');
                     return false;
@@ -283,30 +303,24 @@
                 reasonInput.addEventListener('input', validate);
             }
 
-            form.addEventListener('submit', function (e) {
-                if (!validate()) {
-                    e.preventDefault();
-                    if (reasonInput) reasonInput.reportValidity();
-                    return;
-                }
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm align-middle"></span> جاري الإرسال...';
-                }
-            });
-
-            if (modalEl) {
-                modalEl.addEventListener('hidden.bs.modal', function () {
-                    if (reasonInput) {
-                        reasonInput.value = '';
-                        reasonInput.setCustomValidity('');
+            var form = document.getElementById('returnNotCompetentForm');
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    if (!validate()) {
+                        e.preventDefault();
+                        if (reasonInput) reasonInput.reportValidity();
+                        return;
                     }
                     if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<span class="material-icons align-middle" style="font-size:16px">undo</span> تأكيد الإرجاع للمدقق';
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm align-middle"></span> جاري الإرسال...';
                     }
                 });
             }
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && !modal.hidden) close();
+            });
         })();
     </script>
 }

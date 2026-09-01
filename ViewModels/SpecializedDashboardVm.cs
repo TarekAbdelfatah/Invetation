@@ -58,6 +58,7 @@ namespace Ibtikar.ViewModels
         public string StatusCode { get; set; } = string.Empty;
         public DateTime? SubmittedAt { get; set; }
         public DateTime? AssignedAt { get; set; }
+        public bool CanReturnNotCompetent { get; set; }
         public List<SpecializedAttachmentVm> Attachments { get; set; } = new();
         public List<SpecializedHistoryRowVm> History { get; set; } = new();
     }

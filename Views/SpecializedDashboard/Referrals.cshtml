@@ -84,7 +84,7 @@
                                     </td>
                                     <td data-label="المُقدِّم">@(i.ApplicantName ?? "—")</td>
                                     <td data-label="منذ التحويل">
-                                        <small dir="ltr">@i.StayDays.ToString("0.0") يوم</small>
+                                        <small dir="ltr">@Math.Ceiling(i.StayDays).ToString("0") يوم</small>
                                         @if (i.IsOverdue)
                                         {
                                             <span class="badge bg-danger ms-1">متأخر</span>

@@ -308,16 +308,24 @@ namespace Ibtikar.Repositories
             {
                 var daysOpen = (now - p.SentAt).TotalDays;
                 var isLate = p.Status == PartnerAssignment.StatusPending && (now - p.SentAt) > LateThreshold;
-                var badge = p.Status switch
+                var effectiveStatus = isLate && p.Status == PartnerAssignment.StatusPending
+                    ? PartnerAssignment.StatusLate
+                    : p.Status;
+                var badge = effectiveStatus switch
                 {
                     PartnerAssignment.StatusSubmitted => "bg-success",
                     PartnerAssignment.StatusReturned => "bg-secondary",
                     PartnerAssignment.StatusLate => "bg-danger",
                     _ => "bg-warning text-dark"
                 };
-                var label = isLate && p.Status == PartnerAssignment.StatusPending
-                    ? PartnerAssignment.StatusLate
-                    : p.Status;
+                var label = effectiveStatus switch
+                {
+                    PartnerAssignment.StatusPending => "قيد المراجعة",
+                    PartnerAssignment.StatusSubmitted => "تم الرد",
+                    PartnerAssignment.StatusReturned => "مرتجَع",
+                    PartnerAssignment.StatusLate => "متأخر",
+                    _ => effectiveStatus
+                };
 
                 AssessmentHeader? assessment = null;
                 if (assessmentByDept.TryGetValue(p.PartnerDepartmentId, out var a))

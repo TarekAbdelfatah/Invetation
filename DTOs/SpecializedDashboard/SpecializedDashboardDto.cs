@@ -24,6 +24,7 @@ namespace Ibtikar.DTOs.SpecializedDashboard
         string StatusCode,
         DateTime? SubmittedAt,
         DateTime? AssignedAt,
+        bool CanReturnNotCompetent,
         IReadOnlyList<SpecializedAttachmentDto> Attachments,
         IReadOnlyList<SpecializedHistoryRowDto> History);
 
