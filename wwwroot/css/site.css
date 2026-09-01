@@ -347,6 +347,58 @@ body {
   text-align: center;
 }
 
+.bog-login-demo {
+  margin-top: var(--spacing-6);
+  border-top: 1px dashed var(--border);
+  padding-top: var(--spacing-5);
+}
+
+.bog-login-demo-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-3);
+}
+
+.bog-login-demo-title .material-icons {
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.bog-login-demo-table {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.bog-login-demo-table thead th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-tertiary);
+  border-bottom-width: 1px;
+  padding: var(--spacing-2) var(--spacing-2);
+}
+
+.bog-login-demo-table tbody td {
+  padding: var(--spacing-2);
+  border-color: var(--border-light);
+  vertical-align: middle;
+}
+
+.bog-login-demo-code {
+  background: var(--gray-25);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 0.15em 0.5em;
+  font-weight: 600;
+  color: var(--primary);
+  direction: ltr;
+  display: inline-block;
+}
+
+
 /* ---------- Sections / cards ---------- */
 .bog-section {
   border: 1px solid var(--border-light);

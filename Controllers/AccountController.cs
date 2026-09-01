@@ -1,29 +1,46 @@
 using System.Security.Claims;
+using Ibtikar.Data;
+using Ibtikar.Models;
 using Ibtikar.Services.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Controllers
 {
     public class AccountController : Controller
     {
         private readonly AuthService _auth;
+        private readonly IbtikarDbContext _db;
         private readonly ILogger<AccountController> _logger;
 
-        public AccountController(AuthService auth, ILogger<AccountController> logger)
+        public AccountController(AuthService auth, IbtikarDbContext db, ILogger<AccountController> logger)
         {
             _auth = auth;
+            _db = db;
             _logger = logger;
         }
 
+        public readonly record struct DemoUser(string Username, string FullName, string RoleName);
+
         [HttpGet]
-        public IActionResult Login(string? returnUrl = null)
+        public async Task<IActionResult> Login(string? returnUrl = null)
         {
             if (User.Identity?.IsAuthenticated == true)
             {
                 var home = RoleRedirect.ResolveHomeFor(User);
                 if (!string.IsNullOrEmpty(home)) return Redirect(home);
             }
+
+            var demoUsers = await _db.Users
+                .AsNoTracking()
+                .Where(u => u.IsActive)
+                .SelectMany(u => u.UserRoles, (u, ur) => new { u.Username, u.FullName, RoleName = ur.Role!.Name })
+                .OrderBy(x => x.Username)
+                .Select(x => new DemoUser(x.Username, x.FullName, x.RoleName))
+                .ToListAsync(HttpContext.RequestAborted);
+
+            ViewData["DemoUsers"] = demoUsers;
             ViewData["ReturnUrl"] = returnUrl;
             return View();
         }

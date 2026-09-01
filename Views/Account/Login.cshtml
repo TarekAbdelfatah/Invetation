@@ -2,6 +2,7 @@
     ViewData["Title"] = "تسجيل الدخول";
     var returnUrl = ViewData["ReturnUrl"] as string;
     var error = ViewData["Error"] as string;
+    var demoUsers = ViewData["DemoUsers"] as List<Ibtikar.Controllers.AccountController.DemoUser>;
 }
 <div class="bog-login-page">
     <div class="bog-login-card">
@@ -38,5 +39,32 @@
         <div class="bog-login-hint">
             <small class="text-muted">كلمة المرور الافتراضية للمستخدمين التجريبيين: Ibtikar@2026</small>
         </div>
+
+        @if (demoUsers is { Count: > 0 })
+        {
+            <div class="bog-login-demo">
+                <div class="bog-login-demo-title">
+                    <span class="material-icons" aria-hidden="true">group</span>
+                    <span>المستخدمون التجريبيون وصلاحياتهم</span>
+                </div>
+                <table class="table bog-login-demo-table">
+                    <thead>
+                        <tr>
+                            <th>اسم المستخدم</th>
+                            <th>الصلاحية</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var u in demoUsers)
+                        {
+                            <tr>
+                                <td><code class="bog-login-demo-code">@u.Username</code></td>
+                                <td>@u.RoleName</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>
