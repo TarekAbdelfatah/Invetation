@@ -51,10 +51,13 @@
             @if (isAuth)
             {
                 <button class="bog-header-toggle" type="button"
-                        aria-controls="mainNav" aria-expanded="false" aria-label="تبديل التنقل"
-                        onclick="var n=document.getElementById('mainNav');var o=n.classList.toggle('is-open');this.setAttribute('aria-expanded',String(o));">
-                    <span class="material-icons">menu</span>
+                        id="bogHeaderToggle"
+                        aria-controls="mainNav" aria-expanded="false" aria-label="تبديل التنقل">
+                    <span class="material-icons" data-icon-menu>menu</span>
+                    <span class="material-icons" data-icon-close style="display:none">close</span>
                 </button>
+
+                <div class="bog-header-overlay" id="bogHeaderOverlay" data-overlay></div>
 
                 <div class="bog-header-collapse" id="mainNav">
                     <nav class="bog-nav" aria-label="التنقل الرئيسي">

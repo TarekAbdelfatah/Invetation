@@ -1,0 +1,321 @@
+/* ==============================================================
+   Mobile-First Layer for Ibtikar portal
+   ============================================================== */
+
+/* ---------- Mobile cards (used by MyRequests Index for <md) ---------- */
+.bog-mobile-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+
+.bog-idea-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-light, #e5e7eb);
+  border-radius: 14px;
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 160ms ease, transform 160ms ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.bog-idea-card:hover,
+.bog-idea-card:focus-visible {
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.1);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.bog-idea-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bog-idea-card__ref {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--primary, #079455);
+  background: var(--brand-50, #F3FCF6);
+  border-radius: 8px;
+  padding: 4px 8px;
+  word-break: break-all;
+}
+
+.bog-idea-card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--chip-bg, var(--text-tertiary, #6c757d));
+}
+
+.bog-idea-card__status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.bog-idea-card__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+  line-height: 1.45;
+}
+
+.bog-idea-card__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-tertiary, #6b7280);
+}
+
+.bog-idea-card__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bog-idea-card__progress-track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bog-idea-card__progress-step {
+  flex: 1 1 0;
+  height: 6px;
+  background: #eef0f3;
+  border-radius: 4px;
+}
+
+.bog-idea-card__progress-step.--done {
+  background: linear-gradient(90deg, var(--primary, #079455), var(--gold-500, #c69963));
+}
+
+.bog-idea-card__progress-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-tertiary, #6b7280);
+}
+
+.bog-idea-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-light, #e5e7eb);
+}
+
+.bog-idea-card__date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-tertiary, #6b7280);
+  font-size: 13px;
+}
+
+.bog-idea-card__chevron {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary, #079455);
+}
+
+/* ---------- Detail (MyRequests/Details / Submitted / Ideas/Create on mobile) ---------- */
+.bog-section {
+  background: #fff;
+  border: 1px solid var(--border-light, #e5e7eb);
+  border-radius: 14px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.bog-section .card-header {
+  background: #fff;
+  padding: 12px 16px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-light, #e5e7eb);
+}
+
+.bog-section .card-body {
+  padding: 16px;
+}
+
+/* ---------- Header overlay (mobile drawer) ---------- */
+.bog-header-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 1040;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+
+.bog-header-overlay.is-open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Mobile: collapse-as-drawer slide-down on small screens */
+@media (max-width: 991.98px) {
+  .bog-header-row {
+    position: relative;
+    flex-wrap: wrap;
+  }
+  .bog-header-collapse {
+    display: none;
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    background: #fff;
+    border: 1px solid var(--border-light, #e5e7eb);
+    border-radius: 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+    margin-top: 10px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+    z-index: 1050;
+  }
+  .bog-header-collapse.is-open {
+    display: flex;
+  }
+}
+
+/* ---------- Action bottom sheet on mobile ---------- */
+@media (max-width: 575.98px) {
+  .bog-error-card { padding: 28px 18px; }
+  .bog-error-title { font-size: 22px; }
+  .bog-error-code { font-size: 28px; }
+}
+
+/* ---------- Form tweaks for mobile ---------- */
+@media (max-width: 575.98px) {
+  .bog-form-actions-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+  .bog-form-actions-mobile .btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+  }
+  .bog-form-input-mobile {
+    font-size: 16px !important;
+    padding: 12px 14px !important;
+  }
+  .bog-form-label-mobile {
+    font-size: 14px;
+  }
+}
+
+/* ---------- Uploader tweaks on mobile ---------- */
+@media (max-width: 575.98px) {
+  .bog-attachments-card .card-body {
+    padding: 14px;
+  }
+  .bog-attachments-card [data-attachments-toolbar="true"] {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .bog-attachments-card [data-attachments-toolbar="true"] input[type="file"] {
+    max-width: none;
+    width: 100%;
+  }
+  .bog-attachments-card [data-attachments-toolbar="true"] button {
+    width: 100%;
+  }
+  .bog-attachments-card .list-group-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .bog-attachments-card .list-group-item > span:last-child {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* ---------- Page header responsive ---------- */
+@media (max-width: 575.98px) {
+  .bog-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .bog-page-header .btn {
+    align-self: stretch;
+  }
+  .bog-page-header h1 {
+    font-size: 1.4rem;
+  }
+}
+
+/* ---------- Card list (table) mobile ---------- */
+@media (max-width: 767.98px) {
+  .bog-card-list thead { display: none; }
+  .bog-card-list tbody tr {
+    display: block;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-light, #e5e7eb);
+  }
+  .bog-card-list tbody tr td {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border: 0;
+  }
+  .bog-card-list tbody tr td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--text-tertiary, #6b7280);
+    font-size: 13px;
+    margin-inline-end: 12px;
+  }
+}
+
+/* ---------- Container spacing on mobile ---------- */
+@media (max-width: 575.98px) {
+  .bog-main .container { padding-inline: 14px; }
+  .bog-page-icon { font-size: 36px !important; }
+  .bog-loading-card { padding: 24px 18px !important; }
+  .bog-cube { width: 72px !important; height: 72px !important; }
+  .bog-cube i { width: 20px !important; height: 20px !important; }
+  .bog-loading-text { font-size: 15px !important; }
+}
+
+/* ---------- Buttons spacing ---------- */
+@media (max-width: 575.98px) {
+  .btn { padding-inline: 12px; }
+  .btn-lg { padding-block: 12px; }
+}
+
+/* ---------- Header content sizing on mobile ---------- */
+@media (max-width: 575.98px) {
+  .bog-user-chip {
+    font-size: 12px;
+    padding: 6px 10px;
+    max-width: 100%;
+  }
+}

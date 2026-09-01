@@ -42,16 +42,16 @@
                         }
 
                         <div class="mb-4">
-                            <label asp-for="Title" class="form-label fw-semibold"></label>
+                            <label asp-for="Title" class="form-label fw-semibold bog-form-label-mobile"></label>
                             <span class="text-danger">*</span>
-                            <input asp-for="Title" class="form-control" maxlength="200" data-required-on-submit="true" />
+                            <input asp-for="Title" class="form-control bog-form-input-mobile" maxlength="200" data-required-on-submit="true" />
                             <span asp-validation-for="Title" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4">
-                            <label asp-for="Description" class="form-label fw-semibold"></label>
+                            <label asp-for="Description" class="form-label fw-semibold bog-form-label-mobile"></label>
                             <span class="text-danger">*</span>
-                            <textarea asp-for="Description" class="form-control" rows="4"
+                            <textarea asp-for="Description" class="form-control bog-form-input-mobile" rows="4"
                                       data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.DescriptionMax"
                                       data-required-on-submit="true"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="Description"></small>
@@ -59,9 +59,9 @@
                         </div>
 
                         <div class="mb-4">
-                            <label asp-for="ProblemStatement" class="form-label fw-semibold"></label>
+                            <label asp-for="ProblemStatement" class="form-label fw-semibold bog-form-label-mobile"></label>
                             <span class="text-danger">*</span>
-                            <textarea asp-for="ProblemStatement" class="form-control" rows="4"
+                            <textarea asp-for="ProblemStatement" class="form-control bog-form-input-mobile" rows="4"
                                       data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.ProblemMax"
                                       data-required-on-submit="true"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="ProblemStatement"></small>
@@ -69,9 +69,9 @@
                         </div>
 
                         <div class="mb-4">
-                            <label asp-for="ProposedSolution" class="form-label fw-semibold"></label>
+                            <label asp-for="ProposedSolution" class="form-label fw-semibold bog-form-label-mobile"></label>
                             <span class="text-danger">*</span>
-                            <textarea asp-for="ProposedSolution" class="form-control" rows="3"
+                            <textarea asp-for="ProposedSolution" class="form-control bog-form-input-mobile" rows="3"
                                       data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.SolutionMax"
                                       data-required-on-submit="true"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="ProposedSolution"></small>
@@ -79,9 +79,9 @@
                         </div>
 
                         <div class="mb-4">
-                            <label asp-for="ExpectedBenefits" class="form-label fw-semibold"></label>
+                            <label asp-for="ExpectedBenefits" class="form-label fw-semibold bog-form-label-mobile"></label>
                             <span class="text-danger">*</span>
-                            <textarea asp-for="ExpectedBenefits" class="form-control" rows="3"
+                            <textarea asp-for="ExpectedBenefits" class="form-control bog-form-input-mobile" rows="3"
                                       data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.BenefitsMax"
                                       data-required-on-submit="true"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="ExpectedBenefits"></small>
@@ -89,9 +89,9 @@
                         </div>
 
                         <div class="mb-4">
-                            <label asp-for="RequiredResources" class="form-label fw-semibold"></label>
+                            <label asp-for="RequiredResources" class="form-label fw-semibold bog-form-label-mobile"></label>
                             <span class="text-danger">*</span>
-                            <textarea asp-for="RequiredResources" class="form-control" rows="3"
+                            <textarea asp-for="RequiredResources" class="form-control bog-form-input-mobile" rows="3"
                                       placeholder="مثل: فريق تطوير متخصص، خوادم إضافية، ميزانية تشغيل..."
                                       data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.RequiredResourcesMax"
                                       data-required-on-submit="true"></textarea>
@@ -102,45 +102,45 @@
                         <hr />
 
                         <div class="mb-4">
-                            <label asp-for="InnovationDomainId" class="form-label fw-semibold"></label>
+                            <label asp-for="InnovationDomainId" class="form-label fw-semibold bog-form-label-mobile"></label>
                             <span class="text-danger">*</span>
                             <select asp-for="InnovationDomainId" asp-items="@(ViewBag.InnovationDomains as IEnumerable<SelectListItem>)"
-                                    class="form-select" data-required-on-submit="true">
+                                    class="form-select bog-form-input-mobile" data-required-on-submit="true">
                                 <option value="">-- اختر مجال الابتكار --</option>
                             </select>
                             <span asp-validation-for="InnovationDomainId" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4">
-                            <label asp-for="ExpectedImpactId" class="form-label fw-semibold"></label>
+                            <label asp-for="ExpectedImpactId" class="form-label fw-semibold bog-form-label-mobile"></label>
                             <span class="text-danger">*</span>
                             <select asp-for="ExpectedImpactId" asp-items="@(ViewBag.ExpectedImpacts as IEnumerable<SelectListItem>)"
-                                    class="form-select" data-other="ExpectedImpactOther" data-required-on-submit="true">
+                                    class="form-select bog-form-input-mobile" data-other="ExpectedImpactOther" data-required-on-submit="true">
                                 <option value="">-- اختر الأثر المتوقع --</option>
                             </select>
                             <span asp-validation-for="ExpectedImpactId" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4 d-none" data-other-field="ExpectedImpactOther">
-                            <label asp-for="ExpectedImpactOther" class="form-label fw-semibold"></label>
-                            <input asp-for="ExpectedImpactOther" class="form-control" maxlength="200" />
+                            <label asp-for="ExpectedImpactOther" class="form-label fw-semibold bog-form-label-mobile"></label>
+                            <input asp-for="ExpectedImpactOther" class="form-control bog-form-input-mobile" maxlength="200" />
                             <span asp-validation-for="ExpectedImpactOther" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4">
-                            <label asp-for="TargetAudienceId" class="form-label fw-semibold"></label>
+                            <label asp-for="TargetAudienceId" class="form-label fw-semibold bog-form-label-mobile"></label>
                             <span class="text-danger">*</span>
                             <select asp-for="TargetAudienceId" asp-items="@(ViewBag.TargetAudiences as IEnumerable<SelectListItem>)"
-                                    class="form-select" data-other="TargetAudienceOther" data-required-on-submit="true">
+                                    class="form-select bog-form-input-mobile" data-other="TargetAudienceOther" data-required-on-submit="true">
                                 <option value="">-- اختر الفئة المستهدفة --</option>
                             </select>
                             <span asp-validation-for="TargetAudienceId" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4 d-none" data-other-field="TargetAudienceOther">
-                            <label asp-for="TargetAudienceOther" class="form-label fw-semibold"></label>
-                            <input asp-for="TargetAudienceOther" class="form-control" maxlength="200" />
-                            <span asp-validation-for="TargetAudienceOther" class="text-danger small"></span>
+                            <label asp-for="TargetAudienceOther" class="form-label fw-semibold bog-form-label-mobile"></label>
+                            <input asp-for="TargetAudienceOther" class="form-control bog-form-input-mobile" maxlength="200" />
+                            <span asp-validation-for="TargetAudienceOther" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4">
@@ -169,9 +169,9 @@
                             </div>
 
                             <div class="mb-4 mt-3 d-none" data-other-field="TechnologyOther">
-                                <label asp-for="TechnologyOther" class="form-label fw-semibold"></label>
-                                <input asp-for="TechnologyOther" class="form-control" maxlength="200" />
-                                <span asp-validation-for="TechnologyOther" class="text-danger small"></span>
+                                <label asp-for="TechnologyOther" class="form-label fw-semibold bog-form-label-mobile"></label>
+                                <input asp-for="TechnologyOther" class="form-control bog-form-input-mobile" maxlength="200" />
+                                <span asp-validation-for="TechnologyOther" class="text-danger small invalid-feedback-shim"></span>
                             </div>
                         </div>
 
@@ -190,7 +190,7 @@
 
                         <hr />
 
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end bog-form-actions-mobile">
                             <button type="submit" name="action" value="SaveDraft" class="btn btn-outline-secondary"
                                     data-loading="true" data-loading-text="جارٍ حفظ المسودة...">
                                 <span class="material-icons align-middle" style="font-size:18px">save</span>
