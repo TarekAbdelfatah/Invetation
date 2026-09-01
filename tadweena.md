@@ -26,6 +26,10 @@ sessions:
     model: minimax-coding-plan/MiniMax-M3
     session_id: 9ac2b6da-afc3-4070-a2b8-a802100823f5
     started_at: 2026-09-01T06:28:54Z
+  build:
+    model: minimax-coding-plan/MiniMax-M3
+    session_id: 2ad2a13a-b180-403f-9777-d6d612662675
+    started_at: 2026-09-01T07:30:00Z
   opencode3:
     model: opencode/big-pickle
     session_id: 2b588732-679e-480f-8909-b22c4f6c5b94
