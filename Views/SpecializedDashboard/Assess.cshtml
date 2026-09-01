@@ -36,7 +36,7 @@
                 <span class="status-badge badge rounded-pill" style="background-color:@Model.StatusColor">@Model.StatusName</span>
                 <h1 class="h5 mb-0 ms-2">@Model.Title</h1>
                 <span class="ms-auto badge @(Model.IsLocked ? "bg-secondary" : "bg-info")">
-                    @(Model.IsLocked ? "مقفول" : Model.IsDraftSaved ? "مسودة محفوظة" : "تقييم جديد")
+                    @(Model.IsLocked ? "مقفول" : Model.IsDraftSaved ? "مسودة محفوظة" : Model.DraftHeaderId.HasValue ? "تم التقييم سابقاً — قابل للتعديل" : "تقييم جديد")
                 </span>
             </div>
         </div>

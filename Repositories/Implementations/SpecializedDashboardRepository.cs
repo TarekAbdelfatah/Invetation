@@ -16,6 +16,9 @@ namespace Ibtikar.Repositories
         Task<IReadOnlyList<SpecializedPartnerOptionDto>> GetAlreadyAssignedPartnersAsync(Guid ideaId, CancellationToken ct);
         Task<SpecializedPartnerOpinionDto?> GetPartnerOpinionAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
         Task<SpecializedSendToCommitteeDto?> GetSendToCommitteeSummaryAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
+        Task<Guid?> GetStatusIdByCodeAsync(string code, CancellationToken ct);
+        Task<AssessmentHeader?> GetAssessmentHeaderByIdAsync(Guid headerId, CancellationToken ct);
+        Task<AssessmentHeader?> GetLatestAssessmentHeaderAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
         Task<AssessmentHeader?> GetDraftHeaderAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
         Task<IReadOnlyList<AssessmentHeader>> GetSpecializedFinalHeadersAsync(Guid ideaId, CancellationToken ct);
         Task<InnovationIdea?> GetIdeaForDepartmentAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
@@ -189,7 +192,8 @@ namespace Ibtikar.Repositories
                     i.ReferenceNumber,
                     i.Title,
                     StatusName = i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
-                    StatusColor = i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d"
+                    StatusColor = i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d",
+                    StatusCode = i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty
                 })
                 .FirstOrDefaultAsync(ct);
 
@@ -202,7 +206,7 @@ namespace Ibtikar.Repositories
                 .Select(c => new SpecializedCriterionDto(c.Id, c.Code, c.Name, c.Description, c.DisplayOrder))
                 .ToListAsync(ct);
 
-            var draft = await _db.AssessmentHeaders
+            var latest = await _db.AssessmentHeaders
                 .AsNoTracking()
                 .Include(h => h.Details)
                 .Where(h => h.InnovationIdeaId == ideaId
@@ -211,9 +215,11 @@ namespace Ibtikar.Repositories
                 .OrderByDescending(h => h.CreatedAt)
                 .FirstOrDefaultAsync(ct);
 
-            var draftIsLatest = draft is { IsDraft: true, IsLocked: false };
-            var lineMap = draftIsLatest && draft is not null
-                ? draft.Details.ToDictionary(d => d.CriterionId, d => (d.Score, d.Comment))
+            var isDraftSaved = latest is { IsDraft: true, IsLocked: false };
+            var canEdit = header.StatusCode == IdeaStatusCodes.UnderStudy;
+
+            var lineMap = latest is not null
+                ? latest.Details.ToDictionary(d => d.CriterionId, d => (d.Score, d.Comment))
                 : new Dictionary<Guid, (int, string?)>();
 
             var lines = criteria.Select(c => lineMap.TryGetValue(c.Id, out var v)
@@ -224,10 +230,10 @@ namespace Ibtikar.Repositories
             return new SpecializedAssessVmDto(
                 header.Id, header.ReferenceNumber, header.Title,
                 header.StatusName, header.StatusColor,
-                draftIsLatest, draft?.IsLocked ?? false,
-                draft?.Id, draft?.CreatedAt,
+                isDraftSaved, !canEdit,
+                latest?.Id, latest?.CreatedAt,
                 criteria, lines,
-                draft?.TotalScore, draft?.Comment);
+                latest?.TotalScore, latest?.Comment);
         }
 
         public async Task<IReadOnlyList<SpecializedPartnerOptionDto>> GetAvailablePartnersAsync(Guid excludeDepartmentId, IReadOnlyCollection<Guid> alreadyAssignedIds, CancellationToken ct)
@@ -409,6 +415,28 @@ namespace Ibtikar.Repositories
                 criteriaCount, completedCriteria, unreplied,
                 canSend, warning);
         }
+
+        public Task<Guid?> GetStatusIdByCodeAsync(string code, CancellationToken ct)
+            => _db.IdeaStatuses.AsNoTracking()
+                .Where(s => s.Code == code)
+                .Select(s => (Guid?)s.Id)
+                .FirstOrDefaultAsync(ct);
+
+        public async Task<AssessmentHeader?> GetAssessmentHeaderByIdAsync(Guid headerId, CancellationToken ct)
+            => await _db.AssessmentHeaders
+                .AsNoTracking()
+                .Include(h => h.Details)
+                .FirstOrDefaultAsync(h => h.Id == headerId, ct);
+
+        public async Task<AssessmentHeader?> GetLatestAssessmentHeaderAsync(Guid ideaId, Guid departmentId, CancellationToken ct)
+            => await _db.AssessmentHeaders
+                .AsNoTracking()
+                .Include(h => h.Details)
+                .Where(h => h.InnovationIdeaId == ideaId
+                    && h.AssessorDepartmentId == departmentId
+                    && h.Source == AssessmentHeader.SourceSpecialized)
+                .OrderByDescending(h => h.CreatedAt)
+                .FirstOrDefaultAsync(ct);
 
         public async Task<AssessmentHeader?> GetDraftHeaderAsync(Guid ideaId, Guid departmentId, CancellationToken ct)
         {

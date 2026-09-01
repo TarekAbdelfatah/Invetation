@@ -94,8 +94,18 @@ namespace Ibtikar.Services.Implementations
             }
 
             var header = submission.HeaderId.HasValue
-                ? await _repo.GetDraftHeaderAsync(submission.IdeaId, departmentId.Value, ct)
+                ? await _repo.GetAssessmentHeaderByIdAsync(submission.HeaderId.Value, ct)
                 : null;
+
+            if (header is not null
+                && (header.InnovationIdeaId != submission.IdeaId
+                    || header.AssessorDepartmentId != departmentId.Value
+                    || header.Source != AssessmentHeader.SourceSpecialized))
+            {
+                header = null;
+            }
+
+            header ??= await _repo.GetLatestAssessmentHeaderAsync(submission.IdeaId, departmentId.Value, ct);
 
             var newHeader = header ?? new AssessmentHeader
             {
@@ -109,7 +119,10 @@ namespace Ibtikar.Services.Implementations
             };
 
             newHeader.IsDraft = submission.IsDraft;
+            newHeader.IsLocked = !submission.IsDraft;
             newHeader.Comment = submission.Comment;
+            newHeader.SubmittedAt = submission.IsDraft ? null : DateTime.UtcNow;
+            newHeader.LockedAt = submission.IsDraft ? null : DateTime.UtcNow;
             newHeader.Details = submission.Scores.Select(s => new AssessmentDetail
             {
                 Id = Guid.NewGuid(),
@@ -118,21 +131,8 @@ namespace Ibtikar.Services.Implementations
                 Comment = s.Comment
             }).ToList();
 
-            var activeCriteria = await GetActiveCriteriaPercentAsync(ct);
-            decimal total = 0;
-            foreach (var s in submission.Scores)
-            {
-                var pct = activeCriteria.TryGetValue(s.CriterionId, out var p) ? p : 0;
-                total += s.Score * pct;
-            }
+            var total = submission.Scores.Sum(s => s.Score);
             newHeader.TotalScore = total;
-
-            if (!submission.IsDraft)
-            {
-                newHeader.IsLocked = true;
-                newHeader.LockedAt = DateTime.UtcNow;
-                newHeader.SubmittedAt = DateTime.UtcNow;
-            }
 
             await _repo.AddOrUpdateAssessmentHeaderAsync(newHeader, ct);
             await _repo.SaveChangesAsync(ct);
@@ -359,17 +359,7 @@ namespace Ibtikar.Services.Implementations
             }
         }
 
-        private async Task<Dictionary<Guid, decimal>> GetActiveCriteriaPercentAsync(CancellationToken ct)
-        {
-            var scores = await Task.FromResult(new Dictionary<Guid, decimal>());
-            return scores;
-        }
-
         private async Task<Guid?> GetStatusIdByCodeAsync(string code, CancellationToken ct)
-        {
-            return await _repo.GetDraftHeaderAsync(Guid.Empty, Guid.Empty, ct) is null
-                ? null
-                : null;
-        }
+            => await _repo.GetStatusIdByCodeAsync(code, ct);
     }
 }
