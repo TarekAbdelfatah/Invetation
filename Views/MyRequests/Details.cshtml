@@ -9,7 +9,6 @@
     var isRejected = Model.StatusCode == IdeaStatusCodes.Rejected;
     var isClosedByTimeout = Model.StatusCode == IdeaStatusCodes.Cancelled;
     var isDraft = string.IsNullOrEmpty(Model.Reference);
-    var showAttachmentUploader = isDraft || isResubmittable || isResubmittableForDevelopment;
 }
 
 <div class="bog-main">
@@ -174,6 +173,16 @@
                 }
             </div>
         </div>
+
+        @if (isDraft)
+        {
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white"><strong>رفع مرفقات للمسودة</strong></div>
+                <div class="card-body">
+                    @await Component.InvokeAsync("IdeaAttachmentUploader", new { ideaId = Model.Id })
+                </div>
+            </div>
+        }
 
         @if (isResubmittable)
         {

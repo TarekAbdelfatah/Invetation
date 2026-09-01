@@ -10,9 +10,8 @@
 
     var isAuth = User.Identity?.IsAuthenticated == true;
     var fullName = isAuth ? User.FindFirst(RoleCodes.FullNameClaim)?.Value : null;
-    var roles = isAuth
-        ? User.FindAll(RoleCodes.ClaimType).Select(c => c.Value).ToList()
-        : new List<string>();
+    var departmentName = isAuth ? User.FindFirst(RoleCodes.DepartmentNameClaim)?.Value : null;
+    var isInternal = isAuth && !string.IsNullOrEmpty(User.FindFirst(RoleCodes.DepartmentIdClaim)?.Value);
     var homeController = isAuth ? "AdminOverview" : "Home";
     var homeAction = "Index";
 }
@@ -57,11 +56,14 @@
                     </nav>
 
                     <div class="bog-auth">
-                        <span class="bog-user-chip" title="@string.Join("، ", roles)">
+                        <span class="bog-user-chip" title="@(isInternal ? departmentName : fullName)">
                             <span class="material-icons" aria-hidden="true">account_circle</span>
                             <span class="bog-user-meta">
                                 <span class="bog-user-name">@fullName</span>
-                                <small class="bog-user-role">@string.Join("، ", roles)</small>
+                                @if (isInternal && !string.IsNullOrWhiteSpace(departmentName))
+                                {
+                                    <small class="bog-user-role">@departmentName</small>
+                                }
                             </span>
                         </span>
                         <form method="post" asp-controller="Account" asp-action="Logout" class="bog-logout-form">
