@@ -19,7 +19,7 @@ namespace Ibtikar.ViewModels
 
     public static class PagedRequest
     {
-        public const int DefaultPageSize = 20;
+        public const int DefaultPageSize = 10;
 
         public static (int Page, int PageSize) Normalize(int? page, int? pageSize)
         {
