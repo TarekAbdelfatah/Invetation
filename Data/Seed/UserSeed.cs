@@ -11,7 +11,7 @@ namespace Ibtikar.Data.Seed
 
         public static void SeedTestUsers(IbtikarDbContext db, Pbkdf2PasswordHasher hasher)
         {
-            EnsureUserForRole(db, hasher, "audit", "audit", "موظف تدقيق", "audit-employee", "internal");
+            EnsureUserForRole(db, hasher, "audit", "audit", "موظف تدقيق", "audit-employee", "internal", "judicial");
             EnsureUserForRole(db, hasher, "specialized", "specialized", "الإدارة المختصة", "specialized-department", "internal", "judicial");
             EnsureUserForRole(db, hasher, "partner", "partner", "الإدارة الشريكة", "partner-department", "internal", "tech");
             EnsureUserForRole(db, hasher, "committee", "committee", "عضو لجنة", "innovation-committee-member", "internal");
@@ -43,9 +43,6 @@ namespace Ibtikar.Data.Seed
             var role = db.Roles.FirstOrDefault(r => r.Code == roleCode);
             if (role == null) return;
 
-            var userType = db.UserTypes.FirstOrDefault(t => t.Code == userTypeCode);
-            if (userType == null) return;
-
             Guid? departmentId = null;
             if (!string.IsNullOrWhiteSpace(departmentCode))
             {
@@ -63,7 +60,6 @@ namespace Ibtikar.Data.Seed
                 Email = $"{emailLocal}@ibtikar.local",
                 PasswordHash = hashResult.Hash,
                 PasswordSalt = hashResult.Salt,
-                UserTypeId = userType.Id,
                 DepartmentId = departmentId,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow

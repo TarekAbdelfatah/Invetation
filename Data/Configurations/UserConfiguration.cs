@@ -18,11 +18,6 @@ namespace Ibtikar.Data.Configurations
             builder.Property(u => u.IsActive).IsRequired();
             builder.Property(u => u.CreatedAt).IsRequired();
 
-            builder.HasOne(u => u.UserType)
-                .WithMany()
-                .HasForeignKey(u => u.UserTypeId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             builder.HasOne(u => u.Department)
                 .WithMany()
                 .HasForeignKey(u => u.DepartmentId)

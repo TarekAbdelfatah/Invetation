@@ -10,6 +10,7 @@ namespace Ibtikar.Services.Interfaces
             Guid userId,
             Guid? departmentId,
             bool isSaveDraft,
+            Guid? draftId,
             List<IFormFile>? attachments,
             CancellationToken ct);
 

@@ -1,48 +1,59 @@
-# قواعد المشروع — Project Rules
+# قواعد تطبيق ابتكار
 
-> ملف مرجعي للقواعد التي يلتزم بها كل من يعمل على المشروع (مطور بشري أو وكيل ذكاء اصطناعي).
-> أي استثناء يجب توثيقه في `DECISIONS.md` مع المبررات والمخاطر البديلة.
+## ١. تحديد المستفيد الداخلي / الخارجي
 
----
+- **المصدر الوحيد**: `User.DepartmentId` (وما يعادله على مستوى الـ Claims: `ibtikar_department_id`).
+  - `DepartmentId != null` ⇒ داخلي.
+  - `DepartmentId == null` ⇒ خارجي.
+- **ممنوع** التفرع على:
+  - اسم الدور (`internal-beneficiary` / `external-beneficiary`).
+  - `InnovationIdea.ApplicantDepartmentId` لتحديد نوع المستخدم في كود الـ runtime — هذا الحقل يخزن نتيجة الفرع، لا يُستخدم لتحديده.
+- **الدور** يُستخدم فقط لـ:
+  - `[Authorize(Roles = ...)]`.
+  - `RoleCodes.HomeRedirects` لتحديد الصفحة الرئيسية بعد الدخول.
+- **الكود المعتمد للتفريع**:
+  ```csharp
+  if (BeneficiaryType.IsInternal(User)) { /* ... */ }
+  ```
+  مع `using Ibtikar.Services.Helpers;`.
 
-## R-001 — حظر المكتبات الخارجية بدون إذن صريح
+### سيناريوهات البيانات
 
-**القاعدة:** يُمنع إضافة أي مكتبة أو سكربت أو خطّ أو صورة من شبكة CDN عامة (مثل jsDelivr، unpkg، Google Fonts، cdnjs، Cloudflare CDN، وما شابه) إلى أي صفحة أو ملف في المشروع.
+| نوع المستخدم | `DepartmentId` | الدور | `Idea.ApplicantDepartmentId` |
+|---|---|---|---|
+| داخلي | قيمة حقيقية (`judicial`, `tech`, ...) | `internal-beneficiary` | نفس قيمة `User.DepartmentId` |
+| خارجي | `null` | `external-beneficiary` | `null` |
 
-**الاستثناء الوحيد:**
-- الخطوط الأساسية من `fonts.googleapis.com` مسموح بها فقط إذا:
-  1. وُجد المبرر التقني الواضح.
-  2. لم يكن هناك بديل محلي قابل للتضمين.
-  3. تم توثيق الاستثناء في `DECISIONS.md`.
+### إزالة UserTypeLookup
 
-**ما يجب فعله بدلًا من CDN:**
-- تنزيل الملف (CSS/JS/الخط) إلى داخل `wwwroot/` أو `node_modules/` ثم الإشارة إليه بمسار محلي.
-- استخدام المكتبات المثبّتة عبر NuGet (مشروع C#) أو npm (مشروع Node) في `package.json` مع تثبيت فعلي في المستودع أو قفل الإصدار.
+- جدول `UserTypes` وعمود `Users.UserTypeId` و الـ navigation `User.UserType` **غير موجودين**.
+- الـ migration `RemoveUserTypeLookup` يحذفها نهائياً.
+- لا تضف منطقاً يعتمد على UserTypeLookup.Code أو UserTypeId — الكود سيكسر.
 
-**المبررات:**
-- الاستقلالية: المشروع يعمل أوفلاين بالكامل.
-- الأمان: تقليل سطح الهجوم ومنع استغلال ثغرات المكتبات الخارجية.
-- الاستقرار: لا تتعطّل الواجهة عند انقطاع الخدمة أو تغيير الإصدار على الـ CDN.
-- الامتثال: بعض جهات النشر تمنع الاتصال الخارجي من بيئة الإنتاج.
+## ٢. المرفقات (Attachments)
 
-**متى يُسمح بالـ CDN:**
-- بعد موافقة صريحة من المالك/المطور في المحادثة، ثم توثيق القرار في `DECISIONS.md` مع:
-  - اسم المورد
-  - الرابط الكامل
-  - البديل المحلي الذي رُفِض ولماذا
-  - المخاطر المتبقية
-  - تاريخ المنح والمُنهي المتوقع
+- **النوع المسموح**: PDF فقط (`%PDF` magic bytes validated).
+- **الحجم الأقصى**: 5 ميجا لكل ملف (`AttachmentMaxBytes`).
+- **العدد الأقصى**: ملفان لكل فكرة (`AttachmentMaxCount`).
+- **التخزين**:
+  - الفكرة الفعلية: `App_Data/attachments/{ideaId-N}/{fileGuid}.pdf`.
+  - المسودة (قبل اعتماد الفكرة): `App_Data/attachments/_drafts/{userId-N}/{draftId-N}/{fileGuid}.pdf`.
+- **الحذف**:
+  - **ممنوع نهائياً** على الأفكار في حالات: `Approved`, `Rejected`, `InExecution`, `Completed`, `Cancelled`, `UnderStudy`, `UnderReview`, `UnderAssessment`, `ReferredCommittee`, `Deferred`, `Resubmitted`.
+  - **مسموح** على: المسودات (`IsDraft = true`) + `WaitingForCompletion` + `ReturnedForDevelopment` فقط.
+  - التحقق في `AttachmentService.DeleteForApplicantAsync`.
 
----
+## ٣. مسارات الرفع (Upload Endpoints)
 
-## R-002 — عدم تعديل ملفات الشعار والهوية الحكومية
+- `POST /api/Attachment/upload` — للأفكار الموجودة (يحتاج `ideaId`).
+- `POST /api/Attachment/uploadDraft?draftId={id}` — للمسودات (قبل اعتماد الفكرة).
+- `GET  /api/Attachment/list?ideaId={id}` — قائمة مرفقات فكرة.
+- `GET  /api/Attachment/listDraft?draftId={id}` — قائمة مرفقات مسودة.
+- `POST /api/Attachment/deleteDraft` — حذف ملف من مجلد المسودة (المسودة فقط).
+- `AttachmentController` يفحص ملكية الـ idea/draft عبر `UserOwnsIdeaAsync` أو `userId == draftOwner`.
 
-**القاعدة:** ملفات شعار بوابة ديوان المظالم (`wwwroot/img/BOG_Logo.svg`، `BOG_Logo_Shape.svg`، `favicon.png`) أصول محمّلة من الموقع الرسمي لأغراض المحاكاة والتعلّم فقط. يُمنع تعديلها أو استخدامها لتمثيل جهة أخرى.
+## ٤. حالات إعادة التقديم (Resubmit)
 
----
-
-## R-003 — اللغة العربية ولاتجاه RTL
-
-**القاعدة:** جميع واجهات المشروع بالعربية الفصحى (`ar-SA`) ولاتجاه RTL ما لم يُذكر خلاف ذلك. لا تُستخدم لغات أخرى في الواجهة الأمامية دون قرار موثّق.
-
----
+- `ResubmitCompletion` — مسموح فقط عندما `StatusCode == WaitingForCompletion`.
+- `ResubmitDeveloped` — مسموح فقط عندما `StatusCode == ReturnedForDevelopment`.
+- كلتا الحالتين تسمحان برفع مرفقات جديدة (نفس widget) إلى جانب النص المُعدَّل.

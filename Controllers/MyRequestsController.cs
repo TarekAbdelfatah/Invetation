@@ -53,19 +53,6 @@ namespace Ibtikar.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteAttachment(Guid attachmentId, CancellationToken ct)
-        {
-            var applicantId = ResolveApplicantId();
-            if (applicantId == Guid.Empty) return Challenge();
-
-            return UnprocessableEntity(new
-            {
-                error = "يرجى رفع الملفات الأساسية لإتمام العملية. المرفقات إلزامية ولا يمكن حذفها، تواصل مع مدير النظام للاستبدال."
-            });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResubmitCompletion(
             Guid id,
             string description,

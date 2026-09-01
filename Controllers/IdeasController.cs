@@ -41,13 +41,16 @@ namespace Ibtikar.Controllers
         [HttpGet]
         public async Task<IActionResult> Create(CancellationToken ct)
         {
-            var model = new IdeaCreateViewModel();
+            var model = new IdeaCreateViewModel
+            {
+                CurrentDraftId = Guid.NewGuid()
+            };
 
             var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (Guid.TryParse(userIdRaw, out var userId))
             {
                 var currentUser = await _ideaService.GetUserSummaryAsync(userId, ct);
-                if (currentUser is not null && !User.IsInRole(RoleCodes.ExternalBeneficiary))
+                if (currentUser is not null && BeneficiaryType.IsInternal(User))
                 {
                     model.IsInternalApplicant = true;
                     model.ApplicantFullName = currentUser.FullName;
@@ -98,6 +101,7 @@ namespace Ibtikar.Controllers
                 userId,
                 departmentId,
                 isSaveDraft,
+                model.CurrentDraftId,
                 attachments,
                 ct);
 

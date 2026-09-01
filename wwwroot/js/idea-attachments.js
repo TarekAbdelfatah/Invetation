@@ -11,6 +11,9 @@
     const card = scope.querySelector('[data-idea-id]');
     if (!card) return;
     const ideaId = card.dataset.ideaId;
+    const uploadEndpoint = card.dataset.uploadEndpoint || '/api/Attachment/upload';
+    const listEndpoint = card.dataset.listEndpoint || `/api/Attachment/list?ideaId=${encodeURIComponent(ideaId)}`;
+    const uploadField = card.dataset.uploadField || 'ideaId';
     const fileInput = card.querySelector('[data-attachments-input]');
     const uploadBtn = card.querySelector('[data-attachments-upload]');
     const list = card.querySelector('[data-attachments-list]');
@@ -45,7 +48,7 @@
 
     async function refresh() {
       try {
-        const res = await fetch(`/api/Attachment/list?ideaId=${encodeURIComponent(ideaId)}`, {
+        const res = await fetch(listEndpoint, {
           credentials: 'include',
           headers: { 'Accept': 'application/json' }
         });
@@ -64,11 +67,11 @@
       const file = fileInput.files && fileInput.files[0];
       if (!file) { setStatus('اختر ملفاً أولاً.', true); return; }
       const fd = new FormData();
-      fd.append('ideaId', ideaId);
+      fd.append(uploadField, ideaId);
       fd.append('file', file);
 
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/Attachment/upload');
+      xhr.open('POST', uploadEndpoint);
       xhr.withCredentials = true;
       const token = getAntiForgeryToken();
       if (token) xhr.setRequestHeader('RequestVerificationToken', token);

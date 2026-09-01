@@ -31,6 +31,7 @@ namespace Ibtikar.Services.Implementations
             Guid userId,
             Guid? departmentId,
             bool isSaveDraft,
+            Guid? draftId,
             List<IFormFile>? attachments,
             CancellationToken ct)
         {
@@ -66,14 +67,27 @@ namespace Ibtikar.Services.Implementations
                 return IdeaCreateOutcome.Failed("تعذّر حفظ الطلب. حاول مرة أخرى.");
             }
 
-            if (!isSaveDraft && !string.IsNullOrEmpty(idea.ReferenceNumber))
+            if (draftId is { } did && did != Guid.Empty)
+            {
+                var moved = _attachments.MoveDraftToIdea(userId, did, idea.Id, ct);
+                if (moved > 0)
+                {
+                    try { await _repo.SaveChangesAsync(ct); }
+                    catch (Exception ex) { _logger.LogWarning(ex, "Failed to persist moved draft attachments."); }
+                }
+            }
+
+            if (attachments is { Count: > 0 })
             {
                 var attachError = await SaveAttachmentsAsync(idea.Id, userId, attachments, ct);
                 if (attachError is not null)
                 {
                     return IdeaCreateOutcome.Failed(attachError);
                 }
+            }
 
+            if (!isSaveDraft && !string.IsNullOrEmpty(idea.ReferenceNumber))
+            {
                 try
                 {
                     await _procedureGateway.NotifyAsync(idea.ReferenceNumber, ct);

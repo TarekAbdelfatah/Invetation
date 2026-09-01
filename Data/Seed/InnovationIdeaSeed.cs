@@ -189,9 +189,6 @@ namespace Ibtikar.Data.Seed
             var existing = db.Users.FirstOrDefault(u => u.Username == "system-applicant");
             if (existing != null) return existing.Id;
 
-            var externalUserType = db.UserTypes.FirstOrDefault(t => t.Code == "external");
-            var userTypeId = externalUserType?.Id ?? db.UserTypes.First().Id;
-
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -200,7 +197,6 @@ namespace Ibtikar.Data.Seed
                 Email = "system-applicant@ibtikar.local",
                 PasswordHash = "placeholder-not-usable",
                 PasswordSalt = "placeholder",
-                UserTypeId = userTypeId,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };

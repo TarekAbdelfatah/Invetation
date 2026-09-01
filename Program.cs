@@ -156,7 +156,6 @@ namespace Ibtikar
         {
             IdeaStatusSeed.SeedIdeaStatuses(db);
             InnovationDomainSeed.SeedInnovationDomains(db);
-            UserTypeSeed.SeedUserTypes(db);
             DepartmentSeed.SeedDepartments(db);
             RoleSeed.SeedRoles(db);
             AssessmentCriterionSeed.SeedCriteria(db);
