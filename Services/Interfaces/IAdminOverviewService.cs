@@ -5,5 +5,6 @@ namespace Ibtikar.Services.Admin
     public interface IAdminOverviewService
     {
         Task<AdminOverviewDto> GetSnapshotAsync(CancellationToken ct);
+        Task<AdminOverviewListDto> GetIdeasAsync(string? statusFilter, int take, CancellationToken ct);
     }
 }

@@ -3,6 +3,7 @@
 @model AdminOverviewVm
 @{
     ViewData["Title"] = "نظرة عامة على النظام";
+    var currentStatus = Model.StatusFilter ?? string.Empty;
 }
 
 <div class="bog-main">
@@ -18,11 +19,21 @@
                 <span class="material-icons" aria-hidden="true">person</span>
                 مدير النظام
             </span>
+            <div class="ms-auto d-flex gap-2">
+                <a class="btn btn-outline-info btn-sm" asp-controller="Reports" asp-action="Index">
+                    <span class="material-icons align-middle" style="font-size:18px">insights</span>
+                    التقارير الزمنية
+                </a>
+                <a class="btn btn-outline-info btn-sm" asp-controller="Reports" asp-action="Challenges">
+                    <span class="material-icons align-middle" style="font-size:18px">report_problem</span>
+                    تقرير التحديات
+                </a>
+            </div>
         </div>
 
         <div class="row g-3 mb-4">
             <div class="col-md-3 col-sm-6">
-                <div class="card h-100 bog-kpi-card">
+                <div class="card h-100 bog-kpi-card" data-testid="kpi-total">
                     <div class="card-body">
                         <div class="bog-kpi-label">إجمالي الأفكار</div>
                         <div class="bog-kpi-value">@Model.TotalIdeas</div>
@@ -31,7 +42,7 @@
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
-                <div class="card h-100 bog-kpi-card">
+                <div class="card h-100 bog-kpi-card" data-testid="kpi-drafts">
                     <div class="card-body">
                         <div class="bog-kpi-label">المسودات</div>
                         <div class="bog-kpi-value text-warning">@Model.Drafts</div>
@@ -40,7 +51,7 @@
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
-                <div class="card h-100 bog-kpi-card">
+                <div class="card h-100 bog-kpi-card" data-testid="kpi-submitted">
                     <div class="card-body">
                         <div class="bog-kpi-label">المُرسلة</div>
                         <div class="bog-kpi-value text-success">@Model.Submitted</div>
@@ -49,7 +60,7 @@
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
-                <div class="card h-100 bog-kpi-card">
+                <div class="card h-100 bog-kpi-card" data-testid="kpi-users">
                     <div class="card-body">
                         <div class="bog-kpi-label">المستخدمون النشطون</div>
                         <div class="bog-kpi-value">@Model.TotalUsers</div>
@@ -59,12 +70,13 @@
             </div>
         </div>
 
-        <div class="row g-3">
+        <div class="row g-3 mb-4">
             <div class="col-lg-7">
                 <div class="card bog-section">
                     <div class="card-header bg-white d-flex align-items-center gap-2">
                         <span class="material-icons text-primary">history</span>
                         <strong>أحدث الأفكار</strong>
+                        <span class="badge bg-secondary ms-auto">@Model.Recent.Count</span>
                     </div>
                     <div class="card-body p-0">
                         @if (Model.Recent.Any())
@@ -150,11 +162,115 @@
             </div>
         </div>
 
-        <div class="alert alert-light border mt-4 d-flex align-items-start gap-2">
+        <div class="card bog-section mb-3">
+            <div class="card-header bg-white d-flex align-items-center gap-2 flex-wrap">
+                <span class="material-icons text-primary align-middle">list_alt</span>
+                <strong>سجل الأفكار الكامل</strong>
+                <span class="badge bg-secondary">@Model.IdeasTotalCount</span>
+                <form method="get" asp-action="Index" class="ms-auto d-flex gap-2 align-items-center" id="adminStatusFilterForm">
+                    <label for="status" class="form-label small mb-0">تصفية بالحالة</label>
+                    <select id="status" name="status" class="form-select form-select-sm" data-testid="admin-status-filter" onchange="this.form.submit()">
+                        <option value="" selected="@(string.IsNullOrEmpty(currentStatus))">كل الحالات</option>
+                        @foreach (var s in Model.ByStatus)
+                        {
+                            <option value="@s.Code" selected="@(currentStatus == s.Code)">@s.Name</option>
+                        }
+                    </select>
+                    @if (!string.IsNullOrEmpty(currentStatus))
+                    {
+                        <a class="btn btn-sm btn-outline-secondary" asp-action="Index">
+                            <span class="material-icons align-middle" style="font-size:14px">restart_alt</span>
+                            إعادة ضبط
+                        </a>
+                    }
+                </form>
+            </div>
+            <div class="card-body p-0">
+                @if (!Model.Ideas.Any())
+                {
+                    <div class="text-center text-muted p-5">
+                        <span class="material-icons" style="font-size:48px;color:var(--text-muted)">inbox</span>
+                        <p class="mb-1 mt-2">لا توجد أفكار بهذه التصفية.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="bog-mobile-cards d-md-none">
+                        @foreach (var i in Model.Ideas)
+                        {
+                            <div class="bog-idea-card" data-testid="admin-idea-card">
+                                <div class="bog-idea-card__head">
+                                    <span class="bog-idea-card__ref"><code>@i.Reference</code></span>
+                                    <span class="bog-idea-card__status" style="--chip-bg:@i.StatusColor">
+                                        <span class="bog-idea-card__status-dot" style="background-color:@i.StatusColor"></span>
+                                        @i.StatusName
+                                    </span>
+                                </div>
+                                <h3 class="bog-idea-card__title">@i.Title</h3>
+                                <div class="bog-idea-card__foot">
+                                    <small class="bog-idea-card__date">
+                                        <span class="material-icons" style="font-size:14px">person</span>
+                                        @i.ApplicantName
+                                    </small>
+                                    <small class="bog-idea-card__date">
+                                        <span class="material-icons" style="font-size:14px">apartment</span>
+                                        @i.ApplicantDepartmentName
+                                    </small>
+                                </div>
+                                <div class="mt-2">
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@i.Id">
+                                        <span class="material-icons align-middle" style="font-size:14px">visibility</span>
+                                        تفاصيل
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="table-responsive d-none d-md-block">
+                        <table class="bog-card-list mb-0" data-testid="admin-ideas-table">
+                            <thead>
+                                <tr>
+                                    <th>المرجع</th>
+                                    <th>العنوان</th>
+                                    <th>المجال</th>
+                                    <th>المُقدِّم</th>
+                                    <th>الإدارة المحالة</th>
+                                    <th>الحالة</th>
+                                    <th>التاريخ</th>
+                                    <th class="text-end">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var i in Model.Ideas)
+                                {
+                                    <tr>
+                                        <td data-label="المرجع"><code>@i.Reference</code></td>
+                                        <td data-label="العنوان">@i.Title</td>
+                                        <td data-label="المجال"><small>@i.DomainName</small></td>
+                                        <td data-label="المُقدِّم"><small>@i.ApplicantName<br />@i.ApplicantDepartmentName</small></td>
+                                        <td data-label="الإدارة المحالة"><small>@(i.AssignedDepartmentName ?? "—")</small></td>
+                                        <td data-label="الحالة"><span class="badge rounded-pill" style="background-color:@i.StatusColor">@i.StatusName</span></td>
+                                        <td data-label="التاريخ"><small>@i.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
+                                        <td class="bog-card-list__actions" data-label="">
+                                            <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@i.Id">
+                                                <span class="material-icons align-middle" style="font-size:14px">visibility</span>
+                                                تفاصيل
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="alert alert-light border mt-3 d-flex align-items-start gap-2">
             <span class="material-icons text-muted">info</span>
             <div class="text-muted small">
                 <strong>ملاحظة:</strong> لوحة مدير النظام للقراءة فقط. لا توجد إجراءات تعديل من هذه الصفحة.
-                للوصول إلى الإحصاءات التفصيلية، راجع التقارير عند توفّرها.
+                للوصول إلى الإحصاءات التفصيلية، استخدم التقارير في الأعلى.
             </div>
         </div>
     </div>
