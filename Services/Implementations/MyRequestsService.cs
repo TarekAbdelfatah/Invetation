@@ -44,7 +44,7 @@ namespace Ibtikar.Services.Implementations
             Guid id,
             MyRequestContentUpdateDto content,
             CancellationToken ct)
-            => ResubmitAsync(applicantId, id, content, IdeaStatusCodes.WaitingForCompletion, IdeaStatusCodes.UnderStudy, ct);
+            => ResubmitAsync(applicantId, id, content, IdeaStatusCodes.WaitingForCompletion, IdeaStatusCodes.Resubmitted, ct);
 
         public Task<MyRequestResubmitResult> ResubmitDevelopedAsync(
             Guid applicantId,
