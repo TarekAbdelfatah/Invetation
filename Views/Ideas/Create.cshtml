@@ -58,6 +58,7 @@
 
                         <div class="mb-4">
                             <label asp-for="ProblemStatement" class="form-label fw-semibold"></label>
+                            <span class="text-danger">*</span>
                             <textarea asp-for="ProblemStatement" class="form-control" rows="4"
                                       data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.ProblemMax"
                                       data-required-on-submit="true"></textarea>
@@ -67,6 +68,7 @@
 
                         <div class="mb-4">
                             <label asp-for="ProposedSolution" class="form-label fw-semibold"></label>
+                            <span class="text-danger">*</span>
                             <textarea asp-for="ProposedSolution" class="form-control" rows="3"
                                       data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.SolutionMax"
                                       data-required-on-submit="true"></textarea>
@@ -76,6 +78,7 @@
 
                         <div class="mb-4">
                             <label asp-for="ExpectedBenefits" class="form-label fw-semibold"></label>
+                            <span class="text-danger">*</span>
                             <textarea asp-for="ExpectedBenefits" class="form-control" rows="3"
                                       data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.BenefitsMax"
                                       data-required-on-submit="true"></textarea>
@@ -106,6 +109,7 @@
 
                         <div class="mb-4">
                             <label asp-for="ExpectedImpactId" class="form-label fw-semibold"></label>
+                            <span class="text-danger">*</span>
                             <select asp-for="ExpectedImpactId" asp-items="@(ViewBag.ExpectedImpacts as IEnumerable<SelectListItem>)"
                                     class="form-select" data-other="ExpectedImpactOther" data-required-on-submit="true">
                                 <option value="">-- اختر الأثر المتوقع --</option>
@@ -121,6 +125,7 @@
 
                         <div class="mb-4">
                             <label asp-for="TargetAudienceId" class="form-label fw-semibold"></label>
+                            <span class="text-danger">*</span>
                             <select asp-for="TargetAudienceId" asp-items="@(ViewBag.TargetAudiences as IEnumerable<SelectListItem>)"
                                     class="form-select" data-other="TargetAudienceOther" data-required-on-submit="true">
                                 <option value="">-- اختر الفئة المستهدفة --</option>
@@ -171,7 +176,7 @@
                         <div class="mb-4">
                             <label class="form-label fw-semibold">
                                 <span class="material-icons align-middle" style="font-size:18px">attach_file</span>
-                                المرفقات (اختيارية في المسودة، إلزامية عند الإرسال)
+                                المرفقات (اختيارية)
                             </label>
                             <small class="form-text text-muted d-block mb-2">
                                 PDF فقط، حتى ملفين، 5 ميجا لكل ملف.

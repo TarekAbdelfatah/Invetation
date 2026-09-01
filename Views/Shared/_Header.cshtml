@@ -12,7 +12,28 @@
     var fullName = isAuth ? User.FindFirst(RoleCodes.FullNameClaim)?.Value : null;
     var departmentName = isAuth ? User.FindFirst(RoleCodes.DepartmentNameClaim)?.Value : null;
     var isInternal = isAuth && !string.IsNullOrEmpty(User.FindFirst(RoleCodes.DepartmentIdClaim)?.Value);
-    var homeController = isAuth ? "AdminOverview" : "Home";
+    var roleClaims = isAuth
+                     ? User.FindAll(RoleCodes.ClaimType).Select(c => c.Value).ToHashSet(StringComparer.OrdinalIgnoreCase)
+                     : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    var hasAnyRoleClaim = roleClaims.Count > 0;
+    var showAdmin = isAuth && roleClaims.Contains(RoleCodes.SystemAdmin);
+    var showIdeasIndex = isAuth && roleClaims.Contains(RoleCodes.SystemAdmin);
+    var showMyRequests = isAuth
+                         && (roleClaims.Contains(RoleCodes.ExternalBeneficiary)
+                             || roleClaims.Contains(RoleCodes.InternalBeneficiary)
+                             || !hasAnyRoleClaim);
+    var showAudit = isAuth && roleClaims.Contains(RoleCodes.AuditEmployee);
+
+    string HomeController()
+    {
+        if (!isAuth) return "Home";
+        if (roleClaims.Contains(RoleCodes.SystemAdmin)) return "AdminOverview";
+        if (roleClaims.Contains(RoleCodes.AuditEmployee)) return "Audit";
+        if (roleClaims.Contains(RoleCodes.SpecializedDepartment) || roleClaims.Contains(RoleCodes.PartnerDepartment)) return "SpecializedDashboard";
+        if (roleClaims.Contains(RoleCodes.InnovationCommitteeMember)) return "Committee";
+        return "MyRequests";
+    }
+    var homeController = HomeController();
     var homeAction = "Index";
 }
 
@@ -37,22 +58,34 @@
 
                 <div class="bog-header-collapse" id="mainNav">
                     <nav class="bog-nav" aria-label="التنقل الرئيسي">
-                        <a class="bog-nav-link @IsActive("AdminOverview")" asp-controller="AdminOverview" asp-action="Index">
-                            <span class="material-icons" aria-hidden="true">dashboard</span>
-                            نظرة عامة
-                        </a>
-                        <a class="bog-nav-link @IsActive("Ideas")" asp-controller="Ideas" asp-action="Index">
-                            <span class="material-icons" aria-hidden="true">lightbulb</span>
-                            سجل الأفكار
-                        </a>
-                        <a class="bog-nav-link @IsActive("MyRequests")" asp-controller="MyRequests" asp-action="Index">
-                            <span class="material-icons" aria-hidden="true">folder</span>
-                            طلباتي
-                        </a>
-                        <a class="bog-nav-link @IsActive("Audit")" asp-controller="Audit" asp-action="Inbox">
-                            <span class="material-icons" aria-hidden="true">fact_check</span>
-                            صندوق التدقيق
-                        </a>
+                        @if (showAdmin)
+                        {
+                            <a class="bog-nav-link @IsActive("AdminOverview")" asp-controller="AdminOverview" asp-action="Index">
+                                <span class="material-icons" aria-hidden="true">dashboard</span>
+                                نظرة عامة
+                            </a>
+                        }
+                        @if (showIdeasIndex)
+                        {
+                            <a class="bog-nav-link @IsActive("Ideas")" asp-controller="Ideas" asp-action="Index">
+                                <span class="material-icons" aria-hidden="true">lightbulb</span>
+                                سجل الأفكار
+                            </a>
+                        }
+                        @if (showMyRequests)
+                        {
+                            <a class="bog-nav-link @IsActive("MyRequests")" asp-controller="MyRequests" asp-action="Index">
+                                <span class="material-icons" aria-hidden="true">folder</span>
+                                طلباتي
+                            </a>
+                        }
+                        @if (showAudit)
+                        {
+                            <a class="bog-nav-link @IsActive("Audit")" asp-controller="Audit" asp-action="Inbox">
+                                <span class="material-icons" aria-hidden="true">fact_check</span>
+                                صندوق التدقيق
+                            </a>
+                        }
                     </nav>
 
                     <div class="bog-auth">

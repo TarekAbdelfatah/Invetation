@@ -20,7 +20,7 @@ namespace Ibtikar.ViewComponents
         /// the database; the widget still renders and uploads go through the
         /// draft-specific endpoints, then move to the idea on submission.
         /// </summary>
-        public async Task<IViewComponentResult> InvokeAsync(string? referenceNumber = null, Guid? ideaId = null)
+        public async Task<IViewComponentResult> InvokeAsync(string? referenceNumber = null, Guid? ideaId = null, bool readOnly = false)
         {
             Guid resolvedId = Guid.Empty;
             string resolvedRef = string.Empty;
@@ -65,11 +65,13 @@ namespace Ibtikar.ViewComponents
             }
 
             ViewBag.ExistsInDb = existsInDb;
+            ViewBag.ReadOnly = readOnly;
             return View("Default", new
             {
                 Id = resolvedId,
                 ReferenceNumber = resolvedRef,
-                Title = resolvedTitle
+                Title = resolvedTitle,
+                ReadOnly = readOnly
             });
         }
     }

@@ -53,5 +53,13 @@
 
 @if (!string.IsNullOrEmpty(Model.ReferenceNumber))
 {
-    @await Component.InvokeAsync("IdeaAttachmentUploader", new { referenceNumber = Model.ReferenceNumber })
+    <div class="container pb-5">
+        <div class="card bog-section">
+            <div class="card-header bg-white"><strong>مرفقات الفكرة</strong></div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">يمكنك تحميل المرفقات المرفقة مع فكرتك لمراجعتها لاحقاً.</p>
+                @await Component.InvokeAsync("IdeaAttachmentUploader", new { referenceNumber = Model.ReferenceNumber, readOnly = true })
+            </div>
+        </div>
+    </div>
 }

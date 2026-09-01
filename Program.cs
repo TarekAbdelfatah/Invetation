@@ -92,6 +92,9 @@ namespace Ibtikar
 
             app.UseMiddleware<SecurityHeadersMiddleware>();
             app.UseMiddleware<ExceptionMiddleware>();
+
+            app.UseStatusCodePagesWithReExecute("/Error/{0}");
+
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");

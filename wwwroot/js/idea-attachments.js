@@ -14,13 +14,18 @@
     const uploadEndpoint = card.dataset.uploadEndpoint || '/api/Attachment/upload';
     const listEndpoint = card.dataset.listEndpoint || `/api/Attachment/list?ideaId=${encodeURIComponent(ideaId)}`;
     const uploadField = card.dataset.uploadField || 'ideaId';
+    const isDraft = String(card.dataset.draftMode || '').toLowerCase() === 'true';
+    const isReadOnly = String(card.dataset.readOnly || '').toLowerCase() === 'true';
     const fileInput = card.querySelector('[data-attachments-input]');
     const uploadBtn = card.querySelector('[data-attachments-upload]');
     const list = card.querySelector('[data-attachments-list]');
     const status = card.querySelector('[data-attachments-status]');
     const progress = card.querySelector('[data-attachments-progress]');
     const bar = progress ? progress.querySelector('.progress-bar') : null;
-    if (!fileInput || !uploadBtn || !list) return;
+    if (!list) return;
+    if (isReadOnly && fileInput) { fileInput.disabled = true; }
+    if (isReadOnly && uploadBtn) { uploadBtn.disabled = true; uploadBtn.classList.add('d-none'); }
+    if (isReadOnly && status) { status.classList.add('d-none'); }
 
     function setStatus(msg, isError) {
       if (!status) return;
@@ -29,19 +34,54 @@
       status.classList.toggle('text-muted', !isError);
     }
 
+    function downloadUrlFor(a) {
+      if (isDraft) {
+        return `/api/Attachment/downloadDraft?draftId=${encodeURIComponent(ideaId)}&fileName=${encodeURIComponent(a.fileName)}`;
+      }
+      return `/api/Attachment/download/${encodeURIComponent(a.id)}`;
+    }
+
     function renderList(items) {
       list.innerHTML = '';
+      if (!items || items.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'list-group-item text-muted text-center small py-3';
+        li.textContent = 'لا توجد مرفقات.';
+        list.appendChild(li);
+        return;
+      }
       items.forEach(a => {
         const li = document.createElement('li');
-        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+        li.className = 'list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2';
+
         const left = document.createElement('span');
-        const sizeKb = Math.round((a.sizeBytes || 0) / 1024);
-        left.textContent = `${a.fileName} (${sizeKb} ك.ب)`;
+        left.className = 'd-inline-flex align-items-center gap-2';
+        const icon = document.createElement('span');
+        icon.className = 'material-icons text-danger';
+        icon.style.fontSize = '18px';
+        icon.textContent = 'picture_as_pdf';
+        left.appendChild(icon);
+        const name = document.createTextNode(`${a.fileName} (${Math.round((a.sizeBytes || 0) / 1024)} ك.ب)`);
+        left.appendChild(name);
+        li.appendChild(left);
+
+        const right = document.createElement('span');
+        right.className = 'd-inline-flex align-items-center gap-2';
         const small = document.createElement('small');
         small.className = 'text-muted';
-        small.textContent = new Date(a.uploadedAt).toLocaleString('ar-SA');
-        li.appendChild(left);
-        li.appendChild(small);
+        small.textContent = a.uploadedAt ? new Date(a.uploadedAt).toLocaleString('ar-SA') : '';
+        right.appendChild(small);
+
+        const download = document.createElement('a');
+        download.className = 'btn btn-sm btn-outline-primary';
+        download.href = downloadUrlFor(a);
+        download.setAttribute('download', a.fileName);
+        download.setAttribute('target', '_blank');
+        download.rel = 'noopener noreferrer';
+        download.innerHTML = '<span class="material-icons align-middle" style="font-size:16px">download</span> تحميل';
+        right.appendChild(download);
+        li.appendChild(right);
+
         list.appendChild(li);
       });
     }
@@ -56,14 +96,17 @@
         const data = await res.json();
         renderList(data.items || []);
         const remaining = (data.maxCount || 2) - (data.items || []).length;
-        setStatus(remaining > 0 ? `متبقي ${remaining} ملف.` : 'تم بلوغ الحد الأقصى.', false);
-        fileInput.disabled = remaining <= 0;
+        if (!isReadOnly) {
+          setStatus(remaining > 0 ? `متبقي ${remaining} ملف.` : 'تم بلوغ الحد الأقصى.', false);
+          if (fileInput) fileInput.disabled = remaining <= 0;
+        }
       } catch (e) {
         setStatus('تعذّر الاتصال بالخادم.', true);
       }
     }
 
     function upload() {
+      if (isReadOnly) { setStatus('القراءة فقط — لا يمكن إضافة مرفقات هنا.', true); return; }
       const file = fileInput.files && fileInput.files[0];
       if (!file) { setStatus('اختر ملفاً أولاً.', true); return; }
       const fd = new FormData();
@@ -105,7 +148,9 @@
       xhr.send(fd);
     }
 
-    uploadBtn.addEventListener('click', upload);
+    if (uploadBtn && !isReadOnly) {
+      uploadBtn.addEventListener('click', upload);
+    }
     refresh();
   }
 

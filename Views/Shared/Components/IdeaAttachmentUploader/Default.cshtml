@@ -4,6 +4,7 @@
     var ideaRef = (string)(Model.ReferenceNumber ?? string.Empty);
     var title = (string)(Model.Title ?? string.Empty);
     bool isDraft = ideaId == Guid.Empty || string.IsNullOrEmpty(ideaRef);
+    bool isReadOnly = (bool)(Model.ReadOnly ?? false);
     string uploadEndpoint = isDraft
         ? $"/api/Attachment/uploadDraft?draftId={ideaId}"
         : "/api/Attachment/upload";
@@ -22,26 +23,32 @@
              @(isDraft ? "data-draft-mode=true" : "data-real-idea=true")
              data-upload-endpoint="@uploadEndpoint"
              data-list-endpoint="@listEndpoint"
-             data-upload-field="@uploadField">
+             data-upload-field="@uploadField"
+             data-read-only="@(isReadOnly.ToString().ToLowerInvariant())">
             <div class="card-header bg-white">
-                <strong><i class="bi bi-paperclip"></i> المرفقات (PDF فقط، حتى ملفين، 5 ميجا لكل ملف)</strong>
+                <strong><i class="bi bi-paperclip"></i>
+                    @(isReadOnly ? "المرفقات" : "المرفقات (PDF فقط، حتى ملفين، 5 ميجا لكل ملف)")
+                </strong>
                 @if (!string.IsNullOrEmpty(title))
                 {
                     <small class="text-muted ms-2">الفكرة: @title</small>
                 }
             </div>
             <div class="card-body">
-                <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-attachments-toolbar="true">
-                    <input type="file" class="form-control form-control-sm" style="max-width:320px"
-                           accept="application/pdf" data-attachments-input="true" />
-                    <button type="button" class="btn btn-primary btn-sm" data-attachments-upload="true">
-                        <i class="bi bi-cloud-upload"></i> رفع الملف
-                    </button>
-                    <small class="text-muted" data-attachments-status="true">لم يتم اختيار ملف.</small>
-                </div>
-                <div class="progress d-none" data-attachments-progress="true" style="height:6px;">
-                    <div class="progress-bar" role="progressbar" style="width:0%"></div>
-                </div>
+                @if (!isReadOnly)
+                {
+                    <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-attachments-toolbar="true">
+                        <input type="file" class="form-control form-control-sm" style="max-width:320px"
+                               accept="application/pdf" data-attachments-input="true" />
+                        <button type="button" class="btn btn-primary btn-sm" data-attachments-upload="true">
+                            <i class="bi bi-cloud-upload"></i> رفع الملف
+                        </button>
+                        <small class="text-muted" data-attachments-status="true">لم يتم اختيار ملف.</small>
+                    </div>
+                    <div class="progress d-none" data-attachments-progress="true" style="height:6px;">
+                        <div class="progress-bar" role="progressbar" style="width:0%"></div>
+                    </div>
+                }
                 <ul class="list-group mt-3" data-attachments-list="true"></ul>
             </div>
         </div>

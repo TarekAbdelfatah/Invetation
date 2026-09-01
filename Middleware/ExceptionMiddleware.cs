@@ -44,8 +44,8 @@ namespace Ibtikar.Middleware
             if (context.Response.HasStarted) return Task.CompletedTask;
             context.Response.Clear();
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            context.Response.ContentType = "text/plain; charset=utf-8";
-            return context.Response.WriteAsync("حدث خطأ في الخادم. الرجاء المحاولة لاحقاً.", context.RequestAborted);
+            context.Response.Redirect("/Error");
+            return Task.CompletedTask;
         }
     }
 }

@@ -168,5 +168,46 @@ namespace Ibtikar.Controllers
             var ok = _attachments.DeleteDraftFile(userId, draftId, fileName);
             return ok ? Ok(new { ok = true }) : NotFound();
         }
+
+        [HttpGet("download/{attachmentId:guid}")]
+        public async Task<IActionResult> Download(Guid attachmentId, CancellationToken ct)
+        {
+            var attachment = await _db.IdeaAttachments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == attachmentId, ct);
+            if (attachment is null) return NotFound();
+
+            if (!await _attachments.UserOwnsIdeaAsync(attachment.InnovationIdeaId, ResolveUserId(), ct))
+                return Forbid();
+
+            if (!System.IO.File.Exists(attachment.StoragePath))
+                return NotFound(new { error = "file not found on disk." });
+
+            var stream = System.IO.File.OpenRead(attachment.StoragePath);
+            return File(stream, attachment.ContentType ?? "application/pdf", attachment.FileName);
+        }
+
+        [HttpGet("downloadDraft")]
+        public IActionResult DownloadDraft(
+            [FromQuery] Guid draftId,
+            [FromQuery] string fileName,
+            CancellationToken ct)
+        {
+            if (draftId == Guid.Empty) return BadRequest(new { error = "draftId required." });
+            if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(new { error = "fileName required." });
+
+            var userId = ResolveUserId();
+            var folder = Path.Combine(_storage.Root, "_drafts", userId.ToString("N"), draftId.ToString("N"));
+            var path = Path.Combine(folder, fileName);
+            if (!System.IO.File.Exists(path)) return NotFound();
+            var stream = System.IO.File.OpenRead(path);
+            return File(stream, "application/pdf", fileName);
+        }
+
+        private Guid ResolveUserId()
+        {
+            var raw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
+        }
     }
 }
