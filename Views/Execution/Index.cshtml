@@ -1,0 +1,109 @@
+@model Ibtikar.ViewModels.ExecutionListVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = "تنفيذ الأفكار";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var deptLabel = string.IsNullOrWhiteSpace(Model.DepartmentName) ? "الإدارة" : Model.DepartmentName;
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="bog-page-header">
+            <h1>
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">build_circle</span>
+                </span>
+                تنفيذ الأفكار في @deptLabel
+            </h1>
+            <span class="bog-page-role">
+                <span class="material-icons" aria-hidden="true">apartment</span>
+                @deptLabel
+            </span>
+        </div>
+
+        @if (TempData["AlertMessage"] is string okMsg && !string.IsNullOrEmpty(okMsg))
+        {
+            <div class="alert alert-success d-flex align-items-center gap-2" role="alert">
+                <span class="material-icons">check_circle</span>
+                <span>@okMsg</span>
+            </div>
+        }
+        @if (TempData["AlertError"] is string errMsg && !string.IsNullOrEmpty(errMsg))
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+                <span class="material-icons">error</span>
+                <span>@errMsg</span>
+            </div>
+        }
+
+        @if (!Model.Items.Any())
+        {
+            <div class="card bog-section">
+                <div class="card-body text-center text-muted p-5">
+                    <span class="material-icons" style="font-size:48px;color:var(--text-muted)">inbox</span>
+                    <p class="mb-1 mt-2">لا توجد أفكار بحاجة إلى تنفيذ في الوقت الحالي.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card bog-section">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-primary">engineering</span>
+                    <strong>قائمة التنفيذ</strong>
+                    <span class="badge bg-secondary ms-auto">@Model.Items.Count</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="bog-card-list mb-0">
+                        <thead>
+                            <tr>
+                                <th>المرجع</th>
+                                <th>العنوان</th>
+                                <th>المُقدِّم</th>
+                                <th>المرحلة الحالية</th>
+                                <th>الحالة</th>
+                                <th class="text-end">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var i in Model.Items)
+                            {
+                                <tr>
+                                    <td data-label="المرجع"><code>@i.Reference</code></td>
+                                    <td data-label="العنوان">@i.Title</td>
+                                    <td data-label="المُقدِّم">@i.ApplicantName</td>
+                                    <td data-label="المرحلة الحالية">
+                                        @if (!string.IsNullOrEmpty(i.CurrentStageName))
+                                        {
+                                            <span class="badge bg-info text-dark">@i.CurrentStageName</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">لم تبدأ بعد</span>
+                                        }
+                                    </td>
+                                    <td data-label="الحالة">
+                                        <span class="status-badge badge rounded-pill" style="background-color:@i.StatusColor">@i.StatusName</span>
+                                    </td>
+                                    <td class="bog-card-list__actions" data-label="">
+                                        @if (i.CanUpdate)
+                                        {
+                                            <a class="btn btn-sm btn-primary" asp-action="Update" asp-route-id="@i.IdeaId">
+                                                <span class="material-icons align-middle" style="font-size:16px">edit_note</span>
+                                                تحديث المرحلة
+                                            </a>
+                                        }
+                                        <a class="btn btn-sm btn-outline-secondary" asp-action="Timeline" asp-route-id="@i.IdeaId">
+                                            <span class="material-icons align-middle" style="font-size:16px">timeline</span>
+                                            السجل الزمني
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>
