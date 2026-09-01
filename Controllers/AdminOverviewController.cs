@@ -22,6 +22,49 @@ namespace Ibtikar.Controllers
             return View(ToVm(snapshot, ideas));
         }
 
+        public async Task<IActionResult> Details(Guid id, CancellationToken ct)
+        {
+            var dto = await _service.GetDetailsAsync(id, ct);
+            if (dto is null) return NotFound();
+
+            var vm = new AdminOverviewDetailsVm
+            {
+                Id = dto.Id,
+                Reference = dto.Reference,
+                Title = dto.Title,
+                Description = dto.Description,
+                ProblemStatement = dto.ProblemStatement,
+                ProposedSolution = dto.ProposedSolution,
+                ExpectedBenefits = dto.ExpectedBenefits,
+                DomainName = dto.DomainName,
+                ExpectedImpactName = dto.ExpectedImpactName,
+                TargetAudienceName = dto.TargetAudienceName,
+                ApplicantName = dto.ApplicantName,
+                ApplicantDepartmentName = dto.ApplicantDepartmentName,
+                AssignedDepartmentName = dto.AssignedDepartmentName,
+                StatusName = dto.StatusName,
+                StatusColor = dto.StatusColor,
+                StatusCode = dto.StatusCode,
+                IsDraft = dto.IsDraft,
+                SubmittedAt = dto.SubmittedAt,
+                CreatedAt = dto.CreatedAt,
+                Attachments = dto.Attachments
+                    .Select(a => new AdminOverviewAttachmentVm(a.Id, a.FileName, a.SizeBytes, a.UploadedAt, a.UploadedByName))
+                    .ToList(),
+                Assessments = dto.Assessments
+                    .Select(a => new AdminOverviewAssessmentVm(
+                        a.Id, a.Source, a.SourceLabel, a.AssessorName, a.DepartmentName,
+                        a.IsDraft, a.IsLocked, a.SubmittedAt, a.TotalScore, a.Comment,
+                        a.Lines.Select(l => new AdminOverviewAssessmentLineVm(
+                            l.CriterionId, l.CriterionCode, l.CriterionName, l.Score, l.Comment)).ToList()))
+                    .ToList(),
+                Timeline = dto.Timeline
+                    .Select(t => new AdminOverviewTimelineRowVm(t.ChangedAt, t.FromStatus, t.ToStatus, t.By, t.Note))
+                    .ToList()
+            };
+            return View(vm);
+        }
+
         private static AdminOverviewVm ToVm(AdminOverviewDto dto, AdminOverviewListDto ideas)
             => new()
             {

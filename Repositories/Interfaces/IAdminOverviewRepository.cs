@@ -6,5 +6,6 @@ namespace Ibtikar.Repositories
     {
         Task<AdminOverviewDto> GetSnapshotAsync(int recentTake, CancellationToken ct);
         Task<AdminOverviewListDto> GetIdeasAsync(string? statusFilter, int take, CancellationToken ct);
+        Task<AdminOverviewDetailsDto?> GetDetailsAsync(Guid id, CancellationToken ct);
     }
 }
