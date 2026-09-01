@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Ibtikar.ViewModels
 {
     public class SpecializedDashboardVm
@@ -86,6 +88,20 @@ namespace Ibtikar.ViewModels
         public string Title { get; set; } = string.Empty;
         public List<SpecializedPartnerOptionVm> AvailablePartners { get; set; } = new();
         public List<SpecializedPartnerOptionVm> AlreadyAssigned { get; set; } = new();
+        public List<Guid> SelectedPartnerIds { get; set; } = new();
+        public List<Guid> PartnerIds { get; set; } = new();
+        public string? Note { get; set; }
+    }
+
+    public sealed class SpecializedRequestSubmitVm
+    {
+        public Guid IdeaId { get; set; }
+
+        [MinLength(1, ErrorMessage = "يرجى اختيار جهة واحدة على الأقل لطلب الرأي.")]
+        public List<Guid> PartnerIds { get; set; } = new();
+
+        [MaxLength(2000, ErrorMessage = "الملاحظة يجب ألا تتجاوز 2000 حرف.")]
+        public string? Note { get; set; }
     }
 
     public sealed record SpecializedPartnerOptionVm(Guid Id, string Name, string? Code);

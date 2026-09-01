@@ -35,27 +35,26 @@
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label" for="Name">اسم اللجنة <span class="text-danger">*</span></label>
-                        <input type="text" id="Name" name="Name" class="form-control" value="@Model.Name" required />
+                        <label class="form-label" asp-for="Name">اسم اللجنة <span class="text-danger">*</span></label>
+                        <input asp-for="Name" class="form-control" />
                         <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label" for="Description">الوصف</label>
-                        <textarea id="Description" name="Description" class="form-control" rows="3">@Model.Description</textarea>
+                        <label class="form-label" asp-for="Description">الوصف</label>
+                        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label" for="HeadUserId">رئيس اللجنة <span class="text-danger">*</span></label>
-                        <select id="HeadUserId" name="HeadUserId" class="form-select" required>
+                        <label class="form-label" asp-for="HeadUserId">رئيس اللجنة <span class="text-danger">*</span></label>
+                        <select asp-for="HeadUserId" class="form-select">
                             <option value="">— اختر رئيس اللجنة —</option>
                             @foreach (var h in Model.HeadCandidates)
                             {
-                                <option value="@h.UserId" selected="@(Model.HeadUserId == h.UserId)">
-                                    @h.FullName (@h.Username)
-                                </option>
+                                <option value="@h.UserId">@h.FullName (@h.Username)</option>
                             }
                         </select>
+                        <span asp-validation-for="HeadUserId" class="text-danger"></span>
                         <div class="form-text">يجب اختيار رئيس واحد فقط، وسيتم احتسابه ضمن الأعضاء.</div>
                     </div>
 
@@ -66,17 +65,17 @@
                             {
                                 <div class="form-check">
                                     <input class="form-check-input member-check"
+                                           asp-for="MemberUserIds"
                                            type="checkbox"
                                            id="member_@m.UserId"
-                                           name="MemberUserIds"
-                                           value="@m.UserId"
-                                           checked="@(Model.MemberUserIds.Contains(m.UserId))" />
+                                           value="@m.UserId" />
                                     <label class="form-check-label" for="member_@m.UserId">
                                         @m.FullName (@m.Username)
                                     </label>
                                 </div>
                             }
                         </div>
+                        <span asp-validation-for="MemberUserIds" class="text-danger"></span>
                         <div class="form-text">يجب إضافة عضو واحد على الأقل. الرئيس محسوب ضمن الأعضاء.</div>
                     </div>
                 </div>

@@ -91,11 +91,12 @@
                 <div class="card-body">
                     <form method="post" asp-action="Update" asp-route-id="@Model.IdeaId" class="row g-3">
                         @Html.AntiForgeryToken()
-                        <input type="hidden" name="executionStageId" value="@nextStage.Id" />
+                        <input type="hidden" asp-for="ExecutionStageId" value="@(Model.ExecutionStageId ?? nextStage!.Id)" />
                         <div class="col-md-12">
-                            <label for="note" class="form-label">العبارة المقترحة (مطلوبة)</label>
-                            <textarea id="note" name="note" class="form-control" rows="3" minlength="5" required
+                            <label asp-for="Note" class="form-label">العبارة المقترحة (مطلوبة)</label>
+                            <textarea asp-for="Note" class="form-control" rows="3"
                                       placeholder="يرجى إدخال عبارة موجزة تصف الإنجاز الحالي قبل الحفظ."></textarea>
+                            <span asp-validation-for="Note" class="text-danger"></span>
                             <div class="form-text">سيتم تسجيل العبارة مع اسم المستخدم والإدارة والطابع الزمني على الخادم.</div>
                         </div>
                         <div class="col-12 d-flex justify-content-end gap-2">
@@ -132,15 +133,16 @@
                     <div class="card-body">
                         <form method="post" asp-action="Complete" asp-route-id="@Model.IdeaId" enctype="multipart/form-data" class="row g-3" id="completeForm">
                             @Html.AntiForgeryToken()
-                            <input type="hidden" name="completionStageId" value="@nextStage!.Id" />
+                            <input type="hidden" asp-for="CompletionStageId" value="@(Model.CompletionStageId ?? nextStage!.Id)" />
                             <div class="col-md-12">
-                                <label for="completeNote" class="form-label">ملخص ما تم تنفيذه (مطلوب)</label>
-                                <textarea id="completeNote" name="note" class="form-control" rows="3" minlength="5" required
+                                <label asp-for="CompleteNote" class="form-label">ملخص ما تم تنفيذه (مطلوب)</label>
+                                <textarea asp-for="CompleteNote" class="form-control" rows="3"
                                           placeholder="صف بإيجاز ما تم إنجازه وما تم تسليمه."></textarea>
+                                <span asp-validation-for="CompleteNote" class="text-danger"></span>
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label">ملفا PDF لإثبات الإغلاق (مطلوب: ملفان)</label>
-                                <input type="file" name="files" class="form-control" accept="application/pdf" id="pdfFile" required />
+                                <input type="file" name="files" class="form-control" accept="application/pdf" id="pdfFile" />
                                 <div class="form-text">سيتم رفع الملفين وربطهما تلقائياً بنفس الفكرة.</div>
                             </div>
                             <div class="col-md-12 d-flex justify-content-end gap-2">

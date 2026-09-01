@@ -3,8 +3,8 @@ using Ibtikar.Data;
 using Ibtikar.Models;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Implementations;
+using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Controllers
@@ -25,7 +25,7 @@ namespace Ibtikar.Controllers
         public readonly record struct DemoUser(string Username, string FullName, string RoleName);
 
         [HttpGet]
-        public async Task<IActionResult> Login(string? returnUrl = null)
+        public async Task<IActionResult> Login(LoginVm? vm = null, string? returnUrl = null)
         {
             if (User.Identity?.IsAuthenticated == true)
             {
@@ -33,43 +33,56 @@ namespace Ibtikar.Controllers
                 if (!string.IsNullOrEmpty(home)) return Redirect(home);
             }
 
-            var demoUsers = await _db.Users
+            var model = vm ?? new LoginVm { ReturnUrl = returnUrl };
+            if (vm is null) ViewData["ReturnUrl"] = returnUrl;
+            PopulateDemoUsers();
+            return View(model);
+        }
+
+        private void PopulateDemoUsers()
+        {
+            if (ViewData.ContainsKey("DemoUsers")) return;
+            var demoUsers = _db.Users
                 .AsNoTracking()
                 .Where(u => u.IsActive)
                 .SelectMany(u => u.UserRoles, (u, ur) => new { u.Username, u.FullName, RoleName = ur.Role!.Name })
                 .OrderBy(x => x.Username)
                 .Select(x => new DemoUser(x.Username, x.FullName, x.RoleName))
-                .ToListAsync(HttpContext.RequestAborted);
-
+                .ToList();
             ViewData["DemoUsers"] = demoUsers;
-            ViewData["ReturnUrl"] = returnUrl;
-            return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [EnableRateLimiting("login")]
-        public async Task<IActionResult> Login(string username, string password, string? returnUrl = null)
+        public async Task<IActionResult> Login(LoginVm vm)
         {
-            ViewData["ReturnUrl"] = returnUrl;
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            ViewData["ReturnUrl"] = vm.ReturnUrl;
+            if (!ModelState.IsValid)
             {
-                ViewData["Error"] = "أدخل اسم المستخدم وكلمة المرور.";
-                return View();
+                var viewVm = new LoginVm
+                {
+                    Username = vm.Username,
+                    Password = vm.Password,
+                    ReturnUrl = vm.ReturnUrl
+                };
+                PopulateDemoUsers();
+                return View(viewVm);
             }
 
             try
             {
-                var result = await _auth.LoginAsync(username, password, HttpContext.RequestAborted);
+                var result = await _auth.LoginAsync(vm.Username, vm.Password, HttpContext.RequestAborted);
                 if (!result.IsSuccess || result.User is null)
                 {
-                    _logger.LogWarning("Login failed for {Username}", username);
+                    _logger.LogWarning("Login failed for {Username}", vm.Username);
                     ViewData["Error"] = result.ErrorMessage;
-                    return View();
+                    PopulateDemoUsers();
+                    return View(vm);
                 }
 
                 await _auth.SignInAsync(HttpContext, result.User, HttpContext.RequestAborted);
 
+                var returnUrl = vm.ReturnUrl;
                 var home = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
                     ? returnUrl
                     : (RoleRedirect.ResolveHomeFor(result.User.UserRoles.Select(ur => ur.Role!.Code).ToList()) ?? "/Ideas");
@@ -80,7 +93,8 @@ namespace Ibtikar.Controllers
             {
                 _logger.LogError(ex, "Login error");
                 ViewData["Error"] = "حدث خطأ أثناء تسجيل الدخول. حاول مرة أخرى.";
-                return View();
+                PopulateDemoUsers();
+                return View(vm);
             }
         }
 

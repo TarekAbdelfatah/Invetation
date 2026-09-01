@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Ibtikar.ViewModels
 {
     public class PartnerDashboardVm
@@ -50,6 +52,7 @@ public class PartnerDetailsVm
         public bool IsNotCompetentReturn { get; set; }
         public string? NotCompetentReason { get; set; }
         public bool CanReturnNotCompetent { get; set; }
+        public bool ShowNotCompetentModal { get; set; }
         public PartnerSpecializedAssessmentVm SpecializedAssessment { get; set; } = new(
             HasAssessment: false,
             AssessorDepartmentName: string.Empty,
@@ -57,6 +60,15 @@ public class PartnerDetailsVm
             Comment: null,
             SubmittedAt: null,
             Scores: new List<PartnerSpecializedScoreVm>());
+    }
+
+    public sealed class PartnerReturnNotCompetentVm
+    {
+        public Guid AssignmentId { get; set; }
+
+        [Required(ErrorMessage = "سبب الإعادة مطلوب.")]
+        [MaxLength(2000, ErrorMessage = "سبب الإعادة يجب ألا يتجاوز 2000 حرف.")]
+        public string? NotCompetentReason { get; set; }
     }
 
     public sealed record PartnerSpecializedScoreVm(

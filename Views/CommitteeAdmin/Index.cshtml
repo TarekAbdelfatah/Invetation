@@ -81,10 +81,10 @@
                                 <td>
                                     @if (!c.IsActive)
                                     {
-                                        <form asp-action="Activate" asp-route-id="@c.Id" method="post" class="d-inline"
-                                              onsubmit="return confirm('هل تريد تفعيل هذه اللجنة وإشعار جميع أعضائها؟');">
+                                        <form asp-action="Activate" asp-route-id="@c.Id" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                            <button type="submit" class="btn btn-sm btn-outline-success"
+                                                    data-confirm-trigger data-confirm-message="هل تريد تفعيل هذه اللجنة وإشعار جميع أعضائها؟">
                                                 تفعيل
                                             </button>
                                         </form>

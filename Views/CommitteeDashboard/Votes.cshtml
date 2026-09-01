@@ -71,19 +71,22 @@
                                 }
                                 else
                                 {
-                                    <form asp-action="SubmitVote" method="post" class="d-flex gap-2 flex-wrap"
-                                          onsubmit="return confirm('هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.');">
+                                    <form asp-action="SubmitVote" method="post" class="d-flex gap-2 flex-wrap">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="ideaId" value="@i.IdeaId" />
-                                        <button type="submit" name="decision" value="Agree" class="btn btn-success btn-sm">
+                                        <button type="submit" name="decision" value="Agree" class="btn btn-success btn-sm"
+                                                data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
                                             أوافق
                                         </button>
-                                        <button type="submit" name="decision" value="NeedsDevelopment" class="btn btn-warning btn-sm">
+                                        <button type="submit" name="decision" value="NeedsDevelopment" class="btn btn-warning btn-sm"
+                                                data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
                                             تحتاج تطوير
                                         </button>
-                                        <button type="submit" name="decision" value="Disagree" class="btn btn-danger btn-sm">
+                                        <button type="submit" name="decision" value="Disagree" class="btn btn-danger btn-sm"
+                                                data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
                                             لا أوافق
                                         </button>
+                                        <input type="hidden" name="decision" value="" />
                                     </form>
                                 }
                             </div>

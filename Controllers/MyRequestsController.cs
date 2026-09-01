@@ -55,18 +55,12 @@ namespace Ibtikar.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResubmitCompletion(
             Guid id,
-            string description,
-            string? problemStatement,
-            string? proposedSolution,
-            string? expectedBenefits,
+            MyRequestResubmitVm vm,
             CancellationToken ct)
         {
             return await ResubmitInternalAsync(
                 id,
-                description,
-                problemStatement,
-                proposedSolution,
-                expectedBenefits,
+                vm,
                 (svc, aid, ideaId, content, c) => svc.ResubmitCompletionAsync(aid, ideaId, content, c),
                 ct);
         }
@@ -75,35 +69,37 @@ namespace Ibtikar.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResubmitDeveloped(
             Guid id,
-            string description,
-            string? problemStatement,
-            string? proposedSolution,
-            string? expectedBenefits,
+            MyRequestResubmitVm vm,
             CancellationToken ct)
         {
             return await ResubmitInternalAsync(
                 id,
-                description,
-                problemStatement,
-                proposedSolution,
-                expectedBenefits,
+                vm,
                 (svc, aid, ideaId, content, c) => svc.ResubmitDevelopedAsync(aid, ideaId, content, c),
                 ct);
         }
 
         private async Task<IActionResult> ResubmitInternalAsync(
             Guid id,
-            string description,
-            string? problemStatement,
-            string? proposedSolution,
-            string? expectedBenefits,
+            MyRequestResubmitVm vm,
             Func<IMyRequestsService, Guid, Guid, MyRequestContentUpdateDto, CancellationToken, Task<MyRequestResubmitResult>> invoke,
             CancellationToken ct)
         {
             var applicantId = ResolveApplicantId();
             if (applicantId == Guid.Empty) return Challenge();
 
-            var content = new MyRequestContentUpdateDto(description, problemStatement, proposedSolution, expectedBenefits);
+            if (!ModelState.IsValid)
+            {
+                var dto = await _service.GetDetailsAsync(applicantId, id, ct);
+                if (dto is null) return NotFound();
+                return View(nameof(Details), ToDetailsVm(dto));
+            }
+
+            var content = new MyRequestContentUpdateDto(
+                vm.Description ?? string.Empty,
+                vm.ProblemStatement,
+                vm.ProposedSolution,
+                vm.ExpectedBenefits);
             var result = await invoke(_service, applicantId, id, content, ct);
 
             return result.Status switch

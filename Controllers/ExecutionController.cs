@@ -34,10 +34,64 @@ namespace Ibtikar.Controllers
         [HttpGet("Execution/Update/{id:guid}")]
         public async Task<IActionResult> Update(Guid id, CancellationToken ct)
         {
-            var dto = await _service.GetHeaderAsync(id, ResolveDepartmentId(), ct);
-            if (dto is null) return Forbid();
+            var vm = await BuildHeaderVmAsync(id, ct);
+            if (vm is null) return Forbid();
+            return View(vm);
+        }
 
-            var vm = new ExecutionHeaderVm
+        [HttpPost("Execution/Update/{id:guid}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Update(Guid id, ExecutionStageUpdateVm vm, CancellationToken ct)
+        {
+            if (!ModelState.IsValid)
+            {
+                var headerVm = await BuildHeaderVmAsync(id, ct);
+                if (headerVm is null) return Forbid();
+                headerVm.Note = vm.Note;
+                headerVm.ExecutionStageId = vm.ExecutionStageId;
+                return View(headerVm);
+            }
+
+            var dto = new ExecutionUpdateDto(id, vm.ExecutionStageId, vm.Note ?? string.Empty);
+            var result = await _service.UpdateStageAsync(dto, ResolveUserId(), ResolveDepartmentId(), ct);
+
+            TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
+            TempData["AlertType"] = result.Success ? "success" : "danger";
+            return RedirectToAction(nameof(Update), new { id });
+        }
+
+        [HttpPost("Execution/Complete/{id:guid}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Complete(Guid id, ExecutionCompleteVm vm, IFormCollection form, CancellationToken ct)
+        {
+            if (!ModelState.IsValid)
+            {
+                var headerVm = await BuildHeaderVmAsync(id, ct);
+                if (headerVm is null) return Forbid();
+                headerVm.CompleteNote = vm.CompleteNote;
+                headerVm.CompletionStageId = vm.CompletionStageId;
+                return View(headerVm);
+            }
+
+            var ids = form["attachmentId"]
+                .Where(v => Guid.TryParse(v, out _))
+                .Select(v => Guid.Parse(v!))
+                .Distinct()
+                .ToList();
+            var dto = new ExecutionCompleteDto(id, vm.CompletionStageId, vm.CompleteNote ?? string.Empty, ids);
+            var result = await _service.CompleteAsync(dto, ResolveUserId(), ResolveDepartmentId(), ct);
+
+            TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
+            TempData["AlertType"] = result.Success ? "success" : "danger";
+            return RedirectToAction(nameof(Update), new { id });
+        }
+
+        private async Task<ExecutionHeaderVm?> BuildHeaderVmAsync(Guid id, CancellationToken ct)
+        {
+            var dto = await _service.GetHeaderAsync(id, ResolveDepartmentId(), ct);
+            if (dto is null) return null;
+
+            return new ExecutionHeaderVm
             {
                 IdeaId = dto.IdeaId,
                 Reference = dto.Reference,
@@ -55,36 +109,6 @@ namespace Ibtikar.Controllers
                 CanUpdate = dto.CanUpdate,
                 CanComplete = dto.CanComplete
             };
-            return View(vm);
-        }
-
-        [HttpPost("Execution/Update/{id:guid}")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Update(Guid id, Guid executionStageId, string? note, CancellationToken ct)
-        {
-            var dto = new ExecutionUpdateDto(id, executionStageId, note ?? string.Empty);
-            var result = await _service.UpdateStageAsync(dto, ResolveUserId(), ResolveDepartmentId(), ct);
-
-            TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
-            TempData["AlertType"] = result.Success ? "success" : "danger";
-            return RedirectToAction(nameof(Update), new { id });
-        }
-
-        [HttpPost("Execution/Complete/{id:guid}")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Complete(Guid id, Guid completionStageId, string? note, IFormCollection form, CancellationToken ct)
-        {
-            var ids = form["attachmentId"]
-                .Where(v => Guid.TryParse(v, out _))
-                .Select(v => Guid.Parse(v!))
-                .Distinct()
-                .ToList();
-            var dto = new ExecutionCompleteDto(id, completionStageId, note ?? string.Empty, ids);
-            var result = await _service.CompleteAsync(dto, ResolveUserId(), ResolveDepartmentId(), ct);
-
-            TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
-            TempData["AlertType"] = result.Success ? "success" : "danger";
-            return RedirectToAction(nameof(Update), new { id });
         }
 
         [HttpPost("Execution/UploadCompletion")]

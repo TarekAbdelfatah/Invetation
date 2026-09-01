@@ -1,6 +1,6 @@
+@model Ibtikar.ViewModels.LoginVm
 @{
     ViewData["Title"] = "تسجيل الدخول";
-    var returnUrl = ViewData["ReturnUrl"] as string;
     var error = ViewData["Error"] as string;
     var demoUsers = ViewData["DemoUsers"] as List<Ibtikar.Controllers.AccountController.DemoUser>;
 }
@@ -20,15 +20,17 @@
             </div>
         }
 
-        <form method="post" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@returnUrl" class="bog-login-form">
+        <form method="post" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Model.ReturnUrl" class="bog-login-form">
             @Html.AntiForgeryToken()
             <div class="mb-3">
-                <label for="username" class="form-label">اسم المستخدم</label>
-                <input type="text" id="username" name="username" class="form-control" required autocomplete="username" autofocus />
+                <label asp-for="Username" class="form-label">اسم المستخدم</label>
+                <input asp-for="Username" class="form-control" autocomplete="username" autofocus />
+                <span asp-validation-for="Username" class="text-danger"></span>
             </div>
             <div class="mb-3">
-                <label for="password" class="form-label">كلمة المرور</label>
-                <input type="password" id="password" name="password" class="form-control" required autocomplete="current-password" />
+                <label asp-for="Password" class="form-label">كلمة المرور</label>
+                <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
             </div>
             <button type="submit" class="btn btn-primary w-100">
                 <span class="material-icons" aria-hidden="true">login</span>

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Ibtikar.ViewModels
 {
     public class CommitteeDashboardVm
@@ -75,6 +77,17 @@ namespace Ibtikar.ViewModels
         public int? CombinedAverage { get; set; }
         public bool CanAccept { get; set; }
         public string? ExtraConfirmWarning { get; set; }
+        public string? Reason { get; set; }
+        public bool ShowRejectBox { get; set; }
+    }
+
+    public sealed class CommitteeRejectVm
+    {
+        public Guid IdeaId { get; set; }
+
+        [Required(ErrorMessage = "سبب الرفض مطلوب.")]
+        [MinLength(10, ErrorMessage = "سبب الرفض يجب ألا يقل عن 10 أحرف.")]
+        public string? Reason { get; set; }
     }
 
     public class CommitteeDelegationsVm
@@ -85,6 +98,21 @@ namespace Ibtikar.ViewModels
         public DateTime? ActiveTo { get; set; }
         public List<DelegationMemberOptionVm> Candidates { get; set; } = new();
         public List<DelegationRowVm> Rows { get; set; } = new();
+        public Guid? DelegateMemberUserId { get; set; }
+        public DateTime? StartAt { get; set; }
+        public DateTime? EndAt { get; set; }
+    }
+
+    public sealed class CommitteeDelegationCreateVm
+    {
+        [Required(ErrorMessage = "يرجى اختيار العضو المفوَّض له.")]
+        public Guid? DelegateMemberUserId { get; set; }
+
+        [Required(ErrorMessage = "يرجى تحديد تاريخ بداية التفويض.")]
+        public DateTime? StartAt { get; set; }
+
+        [Required(ErrorMessage = "يرجى تحديد تاريخ نهاية التفويض.")]
+        public DateTime? EndAt { get; set; }
     }
 
     public sealed record DelegationMemberOptionVm(Guid UserId, string FullName, string Username);

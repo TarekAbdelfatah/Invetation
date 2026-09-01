@@ -34,6 +34,10 @@ sessions:
     model: opencode/big-pickle
     session_id: 2b588732-679e-480f-8909-b22c4f6c5b94
     started_at: 2026-09-01T00:00:00Z
+  opencode4:
+    model: opencode/big-pickle
+    session_id: 5d67a304-8c21-465f-9b1f-473ef6c2ca9d
+    started_at: 2026-09-01T12:14:02Z
 ---
 
 # Graph note (requires)

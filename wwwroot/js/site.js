@@ -46,6 +46,11 @@
             pendingForm = formSelector ? document.querySelector(formSelector)
                 : trigger.closest('form');
 
+            if (pendingForm && trigger.name) {
+                var hidden = pendingForm.querySelector('input[type="hidden"][name="' + trigger.name + '"]');
+                if (hidden) hidden.value = trigger.value || '';
+            }
+
             modal.hidden = false;
             modal.setAttribute('data-open', 'true');
             okBtn.focus();

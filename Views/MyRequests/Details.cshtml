@@ -42,9 +42,10 @@
                     <span class="badge rounded-pill" style="background-color:@Model.StatusColor">@Model.StatusName</span>
                     @if (Model.StatusCode == IdeaStatusCodes.New && !string.IsNullOrEmpty(Model.Reference))
                     {
-                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا الطلب نهائياً؟');">
+                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" class="d-inline">
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    data-confirm-trigger data-confirm-message="هل أنت متأكد من حذف هذا الطلب نهائياً؟">
                                 <span class="material-icons align-middle" style="font-size:16px">delete</span>
                                 حذف الطلب
                             </button>
@@ -199,20 +200,21 @@
                     <form method="post" asp-action="ResubmitCompletion" asp-route-id="@Model.Id" id="resubmitCompletionForm">
                         @Html.AntiForgeryToken()
                         <div class="mb-3">
-                            <label class="form-label">وصف الفكرة</label>
-                            <textarea name="description" class="form-control" rows="4" required>@Model.Description</textarea>
+                            <label class="form-label" asp-for="Description">وصف الفكرة</label>
+                            <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">المشكلة</label>
-                            <textarea name="problemStatement" class="form-control" rows="3">@Model.ProblemStatement</textarea>
+                            <label class="form-label" asp-for="ProblemStatement">المشكلة</label>
+                            <textarea asp-for="ProblemStatement" class="form-control" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">الحل المقترح</label>
-                            <textarea name="proposedSolution" class="form-control" rows="3">@Model.ProposedSolution</textarea>
+                            <label class="form-label" asp-for="ProposedSolution">الحل المقترح</label>
+                            <textarea asp-for="ProposedSolution" class="form-control" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">الفوائد المتوقعة</label>
-                            <textarea name="expectedBenefits" class="form-control" rows="3">@Model.ExpectedBenefits</textarea>
+                            <label class="form-label" asp-for="ExpectedBenefits">الفوائد المتوقعة</label>
+                            <textarea asp-for="ExpectedBenefits" class="form-control" rows="3"></textarea>
                         </div>
                         @await Component.InvokeAsync("IdeaAttachmentUploader", new { ideaId = Model.Id })
                         <button type="submit" class="btn btn-primary" id="resubmitCompletionBtn">
@@ -239,20 +241,21 @@
                     <form method="post" asp-action="ResubmitDeveloped" asp-route-id="@Model.Id" id="resubmitDevelopedForm">
                         @Html.AntiForgeryToken()
                         <div class="mb-3">
-                            <label class="form-label">وصف الفكرة</label>
-                            <textarea name="description" class="form-control" rows="4" required>@Model.Description</textarea>
+                            <label class="form-label" asp-for="Description">وصف الفكرة</label>
+                            <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">المشكلة</label>
-                            <textarea name="problemStatement" class="form-control" rows="3">@Model.ProblemStatement</textarea>
+                            <label class="form-label" asp-for="ProblemStatement">المشكلة</label>
+                            <textarea asp-for="ProblemStatement" class="form-control" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">الحل المقترح</label>
-                            <textarea name="proposedSolution" class="form-control" rows="3">@Model.ProposedSolution</textarea>
+                            <label class="form-label" asp-for="ProposedSolution">الحل المقترح</label>
+                            <textarea asp-for="ProposedSolution" class="form-control" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">الفوائد المتوقعة</label>
-                            <textarea name="expectedBenefits" class="form-control" rows="3">@Model.ExpectedBenefits</textarea>
+                            <label class="form-label" asp-for="ExpectedBenefits">الفوائد المتوقعة</label>
+                            <textarea asp-for="ExpectedBenefits" class="form-control" rows="3"></textarea>
                         </div>
                         @await Component.InvokeAsync("IdeaAttachmentUploader", new { ideaId = Model.Id })
                         <button type="submit" class="btn btn-primary" id="resubmitDevelopedBtn">

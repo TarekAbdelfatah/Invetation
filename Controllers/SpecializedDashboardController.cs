@@ -203,10 +203,39 @@ namespace Ibtikar.Controllers
         [HttpGet("SpecializedDashboard/Request/{id:guid}")]
         public new async Task<IActionResult> Request(Guid id, CancellationToken ct)
         {
-            var dto = await _service.GetRequestVmAsync(ResolveDepartmentId(), id, ct);
-            if (dto is null) return Forbid();
+            var vm = await BuildRequestVmAsync(id, ct);
+            if (vm is null) return Forbid();
+            return View(vm);
+        }
 
-            var vm = new SpecializedRequestVm
+        [HttpPost("SpecializedDashboard/Request")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmRequest(SpecializedRequestSubmitVm vm, CancellationToken ct)
+        {
+            if (!ModelState.IsValid)
+            {
+                var requestVm = await BuildRequestVmAsync(vm.IdeaId, ct);
+                if (requestVm is null) return Forbid();
+                requestVm.PartnerIds = vm.PartnerIds;
+                requestVm.SelectedPartnerIds = vm.PartnerIds;
+                requestVm.Note = vm.Note;
+                return View("Request", requestVm);
+            }
+
+            var submission = new SpecializedRequestSubmissionDto(vm.IdeaId, vm.PartnerIds, vm.Note);
+            var result = await _service.RequestPartnerOpinionsAsync(ResolveDepartmentId(), ResolveUserId(), submission, ct);
+
+            TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
+            TempData["AlertType"] = result.Success ? "success" : "danger";
+            return RedirectToAction(nameof(PartnerOpinion), new { id = vm.IdeaId });
+        }
+
+        private async Task<SpecializedRequestVm?> BuildRequestVmAsync(Guid id, CancellationToken ct)
+        {
+            var dto = await _service.GetRequestVmAsync(ResolveDepartmentId(), id, ct);
+            if (dto is null) return null;
+
+            return new SpecializedRequestVm
             {
                 IdeaId = dto.IdeaId,
                 Reference = dto.Reference,
@@ -214,25 +243,6 @@ namespace Ibtikar.Controllers
                 AvailablePartners = dto.AvailablePartners.Select(p => new SpecializedPartnerOptionVm(p.Id, p.Name, p.Code)).ToList(),
                 AlreadyAssigned = dto.AlreadyAssigned.Select(p => new SpecializedPartnerOptionVm(p.Id, p.Name, p.Code)).ToList()
             };
-            return View(vm);
-        }
-
-        [HttpPost("SpecializedDashboard/Request")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmRequest(Guid ideaId, IFormCollection form, CancellationToken ct)
-        {
-            var ids = form["partnerIds"]
-                .Where(v => Guid.TryParse(v, out _))
-                .Select(v => Guid.Parse(v!))
-                .Distinct()
-                .ToList();
-
-            var submission = new SpecializedRequestSubmissionDto(ideaId, ids, form["note"].ToString());
-            var result = await _service.RequestPartnerOpinionsAsync(ResolveDepartmentId(), ResolveUserId(), submission, ct);
-
-            TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
-            TempData["AlertType"] = result.Success ? "success" : "danger";
-            return RedirectToAction(nameof(PartnerOpinion), new { id = ideaId });
         }
 
         [HttpGet("SpecializedDashboard/Partners/{id:guid}")]

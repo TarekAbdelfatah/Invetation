@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Ibtikar.ViewModels
 {
     public record MyRequestVm(
@@ -43,4 +45,14 @@ namespace Ibtikar.ViewModels
         List<MyRequestAttachmentVm> Attachments);
 
     public record MyRequestAttachmentVm(Guid Id, string FileName, long SizeBytes, DateTime UploadedAt);
+
+    public sealed class MyRequestResubmitVm
+    {
+        [Required(ErrorMessage = "وصف الفكرة مطلوب عند إعادة التقديم.")]
+        public string? Description { get; set; }
+
+        public string? ProblemStatement { get; set; }
+        public string? ProposedSolution { get; set; }
+        public string? ExpectedBenefits { get; set; }
+    }
 }

@@ -40,22 +40,25 @@
                     <form asp-action="AddDelegation" method="post" class="row g-3">
                         @Html.AntiForgeryToken()
                         <div class="col-md-4">
-                            <label class="form-label" for="delegateMemberUserId">العضو المفوَّض له</label>
-                            <select id="delegateMemberUserId" name="delegateMemberUserId" class="form-select" required>
+                            <label class="form-label" asp-for="DelegateMemberUserId">العضو المفوَّض له</label>
+                            <select asp-for="DelegateMemberUserId" class="form-select">
                                 <option value="">— اختر العضو —</option>
                                 @foreach (var c in Model.Candidates)
                                 {
                                     <option value="@c.UserId">@c.FullName (@c.Username)</option>
                                 }
                             </select>
+                            <span asp-validation-for="DelegateMemberUserId" class="text-danger"></span>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label" for="startAt">من تاريخ</label>
-                            <input type="datetime-local" id="startAt" name="startAt" class="form-control" required />
+                            <label class="form-label" asp-for="StartAt">من تاريخ</label>
+                            <input asp-for="StartAt" type="datetime-local" class="form-control" />
+                            <span asp-validation-for="StartAt" class="text-danger"></span>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label" for="endAt">إلى تاريخ</label>
-                            <input type="datetime-local" id="endAt" name="endAt" class="form-control" required />
+                            <label class="form-label" asp-for="EndAt">إلى تاريخ</label>
+                            <input asp-for="EndAt" type="datetime-local" class="form-control" />
+                            <span asp-validation-for="EndAt" class="text-danger"></span>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary w-100">إنشاء</button>
@@ -131,11 +134,11 @@
                                 @if (Model.IsHead)
                                 {
                                     <td class="text-end">
-                                        <form asp-action="CancelDelegation" method="post" class="d-inline"
-                                              onsubmit="return confirm('هل تريد إلغاء هذا التفويض؟');">
+                                        <form asp-action="CancelDelegation" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="delegationId" value="@d.Id" />
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">إلغاء</button>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                    data-confirm-trigger data-confirm-message="هل تريد إلغاء هذا التفويض؟">إلغاء</button>
                                         </form>
                                     </td>
                                 }

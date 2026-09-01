@@ -61,18 +61,28 @@ namespace Ibtikar.Controllers
 
         [HttpPost("PartnerDashboard/ReturnNotCompetent")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ReturnNotCompetent(Guid assignmentId, string? reason, CancellationToken ct)
+        public async Task<IActionResult> ReturnNotCompetent(PartnerReturnNotCompetentVm vm, CancellationToken ct)
         {
+            if (!ModelState.IsValid)
+            {
+                var dto = await _service.GetDetailsAsync(ResolveDepartmentId(), vm.AssignmentId, ct);
+                if (dto is null) return Forbid();
+                var detailsVm = ToDetailsVm(dto);
+                detailsVm.NotCompetentReason = vm.NotCompetentReason;
+                detailsVm.ShowNotCompetentModal = true;
+                return View(nameof(Details), detailsVm);
+            }
+
             var result = await _service.ReturnNotCompetentAsync(
                 ResolveDepartmentId(),
                 ResolveUserId(),
-                assignmentId,
-                reason ?? string.Empty,
+                vm.AssignmentId,
+                vm.NotCompetentReason ?? string.Empty,
                 ct);
 
             TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
             TempData["AlertType"] = result.Success ? "success" : "danger";
-            return RedirectToAction(nameof(Details), new { assignmentId });
+            return RedirectToAction(nameof(Details), new { assignmentId = vm.AssignmentId });
         }
 
         private static List<PartnerScoreInputDto> ParseScores(IFormCollection form)

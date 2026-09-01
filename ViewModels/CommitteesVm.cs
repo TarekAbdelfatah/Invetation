@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Ibtikar.ViewModels
 {
     public sealed class CommitteeSummaryVm
@@ -26,9 +28,17 @@ namespace Ibtikar.ViewModels
 
     public sealed class CommitteesCreateVm
     {
+        [Required(ErrorMessage = "اسم اللجنة مطلوب.")]
+        [StringLength(150, ErrorMessage = "اسم اللجنة يجب ألا يتجاوز 150 حرفاً.")]
         public string Name { get; set; } = string.Empty;
+
+        [StringLength(1000, ErrorMessage = "الوصف يجب ألا يتجاوز 1000 حرف.")]
         public string? Description { get; set; }
+
+        [Required(ErrorMessage = "يرجى اختيار رئيس اللجنة.")]
         public Guid? HeadUserId { get; set; }
+
+        [MinLength(1, ErrorMessage = "يرجى إضافة عضو واحد على الأقل.")]
         public List<Guid> MemberUserIds { get; set; } = new();
         public List<CommitteeMemberOptionVm> MemberCandidates { get; set; } = new();
         public List<CommitteeMemberOptionVm> HeadCandidates { get; set; } = new();

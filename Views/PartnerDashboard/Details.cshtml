@@ -274,20 +274,21 @@
 
     @if (Model.CanReturnNotCompetent)
     {
-        <div id="notCompetentModal" class="bog-modal" hidden role="dialog" aria-modal="true"
+        <div id="notCompetentModal" class="bog-modal" @(Model.ShowNotCompetentModal ? null : "hidden") role="dialog" aria-modal="true"
              aria-labelledby="notCompetentModalTitle">
             <div class="bog-modal-backdrop" data-close-not-competent></div>
             <div class="bog-modal-dialog bog-modal-dialog-centered" role="document">
                 <div class="bog-modal-content">
                     <form method="post" asp-action="ReturnNotCompetent" autocomplete="off">
                         @Html.AntiForgeryToken()
-                        <input type="hidden" name="assignmentId" value="@Model.AssignmentId" />
+                        <input type="hidden" asp-for="AssignmentId" />
                         <h5 id="notCompetentModalTitle" class="bog-modal-title">إرجاع الطلب لعدم الاختصاص</h5>
                         <p class="bog-modal-body">
                             مسموح فقط خلال ثلاثة أيام عمل من تاريخ الإسناد. سيظهر للإدارة صاحبة الفكرة شارة حمراء مع سبب الإعادة.
                         </p>
-                        <label for="notCompetentReason" class="form-label">سبب الإعادة (إلزامي)</label>
-                        <textarea id="notCompetentReason" name="reason" class="form-control mb-3" rows="3" maxlength="2000" required></textarea>
+                        <label asp-for="NotCompetentReason" class="form-label">سبب الإعادة (إلزامي)</label>
+                        <textarea asp-for="NotCompetentReason" class="form-control mb-3" rows="3" maxlength="2000"></textarea>
+                        <span asp-validation-for="NotCompetentReason" class="text-danger"></span>
                         <div class="bog-modal-actions">
                             <button type="button" class="btn btn-outline-secondary" data-close-not-competent>إلغاء</button>
                             <button type="submit" class="btn btn-danger">تأكيد الإعادة</button>
@@ -337,7 +338,7 @@
 
             function open() {
                 modal.hidden = false;
-                var reason = modal.querySelector('#notCompetentReason');
+                var reason = modal.querySelector('#NotCompetentReason');
                 if (reason) setTimeout(function () { reason.focus(); }, 50);
             }
 
@@ -347,6 +348,10 @@
 
             var openTrigger = document.querySelector('[data-open-not-competent]');
             if (openTrigger) openTrigger.addEventListener('click', open);
+
+            if (@(Model.ShowNotCompetentModal ? "true" : "false")) {
+                open();
+            }
 
             modal.querySelectorAll('[data-close-not-competent]').forEach(function (el) {
                 el.addEventListener('click', close);
