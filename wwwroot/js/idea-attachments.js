@@ -78,6 +78,17 @@
         small.textContent = a.uploadedAt ? new Date(a.uploadedAt).toLocaleString('ar-SA') : '';
         right.appendChild(small);
 
+        if (!isReadOnly) {
+          const del = document.createElement('button');
+          del.type = 'button';
+          del.className = 'btn btn-sm btn-outline-danger';
+          del.setAttribute('data-attachment-id', a.id);
+          del.setAttribute('data-attachment-name', a.fileName);
+          del.innerHTML = '<span class="material-icons align-middle" style="font-size:16px">delete</span> حذف';
+          del.addEventListener('click', function () { deleteAttachment(a, li); });
+          right.appendChild(del);
+        }
+
         const download = document.createElement('a');
         download.className = 'btn btn-sm btn-outline-primary';
         download.href = downloadUrlFor(a);
@@ -90,6 +101,31 @@
 
         list.appendChild(li);
       });
+    }
+
+    async function deleteAttachment(item, li) {
+      if (isReadOnly) return;
+      const confirmed = window.confirm(`هل تريد حذف "${item.fileName}" نهائياً؟`);
+      if (!confirmed) return;
+      const token = getAntiForgeryToken();
+      try {
+        const res = await fetch(`/api/Attachment/delete/${encodeURIComponent(item.id)}`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: token ? { 'RequestVerificationToken': token } : {}
+        });
+        if (!res.ok) {
+          let msg = 'فشل الحذف.';
+          try { msg = (await res.json()).error || msg; } catch (_) {}
+          alert(msg);
+          return;
+        }
+        li.remove();
+        // Refresh to update counts in the status row.
+        refresh();
+      } catch (e) {
+        alert('فشل الاتصال بالخادم.');
+      }
     }
 
     async function refresh() {

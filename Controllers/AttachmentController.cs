@@ -169,6 +169,25 @@ namespace Ibtikar.Controllers
             return ok ? Ok(new { ok = true }) : NotFound();
         }
 
+        [HttpPost("delete/{attachmentId:guid}")]
+        public async Task<IActionResult> DeleteById(Guid attachmentId, CancellationToken ct)
+        {
+            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdRaw, out var userId))
+                return Challenge();
+
+            var attachment = await _db.IdeaAttachments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == attachmentId, ct);
+            if (attachment is null) return NotFound();
+
+            if (!await _attachments.UserOwnsIdeaAsync(attachment.InnovationIdeaId, userId, ct))
+                return Forbid();
+
+            var ok = await _attachments.DeleteForApplicantAsync(attachment.InnovationIdeaId, attachmentId, userId, ct);
+            return ok ? Ok(new { ok = true }) : BadRequest(new { error = "cannot delete attachment in current idea state." });
+        }
+
         [HttpGet("download/{attachmentId:guid}")]
         public async Task<IActionResult> Download(Guid attachmentId, CancellationToken ct)
         {
