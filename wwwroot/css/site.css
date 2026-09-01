@@ -493,11 +493,24 @@ body {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.bog-page-header .bog-page-title {
+  white-space: nowrap;
 }
 
 .bog-page-header .bog-page-icon {
   width: 44px;
   height: 44px;
+}
+
+.bog-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
 }
 
 .bog-page-header .bog-page-role {
