@@ -131,13 +131,8 @@ namespace Ibtikar.Repositories
             var fromUtc = from.Kind == DateTimeKind.Utc ? from : DateTime.SpecifyKind(from.ToUniversalTime(), DateTimeKind.Utc);
             fromUtc = new DateTime(fromUtc.Year, fromUtc.Month, fromUtc.Day, 0, 0, 0, DateTimeKind.Utc);
 
-            var toUtc = to.Kind == DateTimeKind.Utc ? to : DateTime.SpecifyKind(to.ToUniversalTime(), DateTimeKind.Utc);
-            toUtc = new DateTime(toUtc.Year, toUtc.Month, toUtc.Day, 0, 0, 0, DateTimeKind.Utc).AddDays(1);
-
-            if (fromUtc >= toUtc)
-            {
-                (fromUtc, toUtc) = (toUtc.AddDays(-1), toUtc);
-            }
+            var toRaw = to.Kind == DateTimeKind.Utc ? to : DateTime.SpecifyKind(to.ToUniversalTime(), DateTimeKind.Utc);
+            var toUtc = new DateTime(toRaw.Year, toRaw.Month, toRaw.Day, 0, 0, 0, DateTimeKind.Utc).AddDays(1);
 
             return (fromUtc, toUtc);
         }
