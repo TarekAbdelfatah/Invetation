@@ -7,6 +7,10 @@ namespace Ibtikar.DTOs.Audit
         string Domain,
         string ApplicantName,
         string Department,
+        string? AssignedDepartment,
+        string StatusCode,
+        string StatusName,
+        string StatusColor,
         DateTime SubmittedAt,
         bool IsOverdue);
 
@@ -53,6 +57,7 @@ namespace Ibtikar.DTOs.Audit
         string ApplicantName,
         string ApplicantDepartment,
         string? AssignedDepartment,
+        string StatusCode,
         string StatusName,
         string StatusColor,
         DateTime SubmittedAt,

@@ -50,6 +50,10 @@ namespace Ibtikar.Repositories
                     i.InnovationDomain != null ? i.InnovationDomain.Name : "—",
                     i.ApplicantUser != null ? i.ApplicantUser.FullName : "—",
                     i.ApplicantDepartment != null ? i.ApplicantDepartment.Name : "—",
+                    i.AssignedDepartment != null ? i.AssignedDepartment.Name : null,
+                    i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty,
+                    i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
+                    i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d",
                     i.SubmittedAt ?? i.CreatedAt,
                     now - (i.SubmittedAt ?? i.CreatedAt) > overdueThreshold))
                 .ToListAsync(ct);
@@ -82,6 +86,7 @@ namespace Ibtikar.Repositories
                     ApplicantName = i.ApplicantUser != null ? i.ApplicantUser.FullName : "—",
                     ApplicantDepartmentName = i.ApplicantDepartment != null ? i.ApplicantDepartment.Name : "خارجي",
                     AssignedDepartmentName = i.AssignedDepartment != null ? i.AssignedDepartment.Name : null,
+                    AssignedDepartmentId = i.AssignedDepartmentId,
                     StatusName = i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
                     StatusColor = i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d",
                     StatusCode = i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty,
@@ -125,10 +130,10 @@ namespace Ibtikar.Repositories
                 .Select(d => new AuditDepartmentOptionDto(d.Id, d.Name))
                 .ToListAsync(ct);
 
-            var actionableStatuses = new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted, IdeaStatusCodes.UnderStudy };
-            var canDecide = actionableStatuses.Contains(header.StatusCode);
+            var actionableStatuses = new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted };
             var isUnderStudy = header.StatusCode == IdeaStatusCodes.UnderStudy;
-            var isRoutedToSpecialist = isUnderStudy && !string.IsNullOrEmpty(header.AssignedDepartmentName);
+            var isRoutedToSpecialist = isUnderStudy && header.AssignedDepartmentId.HasValue;
+            var canDecide = actionableStatuses.Contains(header.StatusCode);
 
             return new AuditDetailsDto(
                 header.Id,
@@ -149,6 +154,7 @@ namespace Ibtikar.Repositories
                 header.ApplicantName,
                 header.ApplicantDepartmentName,
                 header.AssignedDepartmentName,
+                header.StatusCode,
                 header.StatusName,
                 header.StatusColor,
                 header.SubmittedAt ?? header.CreatedAt,

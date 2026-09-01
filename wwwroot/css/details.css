@@ -337,6 +337,50 @@
   margin-inline-end: 6px;
 }
 
+/* ---------- Routed banner (Audit/Details) ---------- */
+.bog-routed-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3, 12px);
+  padding: var(--spacing-4, 16px) var(--spacing-6, 24px);
+  background: linear-gradient(135deg, #ecfeff, #f0f9ff);
+  border-bottom: 1px solid var(--border-light, #ECECED);
+  color: #0e7490;
+}
+
+.bog-routed-banner__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md, 8px);
+  background: #0dcaf0;
+  color: #0c111d;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.bog-routed-banner__icon .material-icons { font-size: 22px; }
+
+.bog-routed-banner strong {
+  display: block;
+  color: #155e75;
+  font-size: var(--text-md, 16px);
+}
+
+.bog-routed-banner small {
+  display: block;
+  color: #0e7490;
+  font-size: var(--text-sm, 13px);
+  margin-top: 2px;
+}
+
+@media (max-width: 575.98px) {
+  .bog-routed-banner {
+    padding-inline: var(--spacing-4, 16px);
+  }
+}
+
 /* ---------- Attachment list (Audit/Details) ---------- */
 .bog-attachment-list {
   list-style: none;

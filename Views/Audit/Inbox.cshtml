@@ -44,6 +44,7 @@
                         <option value="" selected="@(string.IsNullOrEmpty(Model.Status))">الكل</option>
                         <option value="new" selected="@(Model.Status == "new")">جديد</option>
                         <option value="resubmitted" selected="@(Model.Status == "resubmitted")">معاد تقديمها</option>
+                        <option value="routed" selected="@(Model.Status == "routed")">تم التحويل إلى جهة</option>
                         <option value="rejected" selected="@(Model.Status == "rejected")">مرفوض</option>
                     </select>
                 </div>
@@ -68,10 +69,18 @@
                  data-status="@Model.Status">
                 @foreach (var i in Model.Items)
                 {
+                    var isRoutedRow = i.StatusCode == "under_study" && !string.IsNullOrWhiteSpace(i.AssignedDepartment);
                     <a class="bog-idea-card" asp-action="Details" asp-route-id="@i.Id">
                         <div class="bog-idea-card__head">
                             <span class="bog-idea-card__ref"><code>@i.Reference</code></span>
-                            @if (i.IsOverdue)
+                            @if (isRoutedRow)
+                            {
+                                <span class="bog-idea-card__status" style="--chip-bg:#0dcaf0">
+                                    <span class="bog-idea-card__status-dot" style="background-color:#0dcaf0"></span>
+                                    محوّل إلى: @i.AssignedDepartment
+                                </span>
+                            }
+                            else if (i.IsOverdue)
                             {
                                 <span class="bog-idea-card__status" style="--chip-bg:#D92D20">
                                     <span class="bog-idea-card__status-dot" style="background-color:#D92D20"></span>
@@ -80,9 +89,9 @@
                             }
                             else
                             {
-                                <span class="bog-idea-card__status" style="--chip-bg:#079455">
-                                    <span class="bog-idea-card__status-dot" style="background-color:#079455"></span>
-                                    بانتظار المراجعة
+                                <span class="bog-idea-card__status" style="--chip-bg:@i.StatusColor">
+                                    <span class="bog-idea-card__status-dot" style="background-color:@i.StatusColor"></span>
+                                    @i.StatusName
                                 </span>
                             }
                         </div>
@@ -93,7 +102,7 @@
                                 @i.SubmittedAt.FormatDateTime()
                             </small>
                             <span class="bog-idea-card__chevron">
-                                مراجعة
+                                @(isRoutedRow ? "استعراض" : "مراجعة")
                                 <span class="material-icons" style="font-size:18px">chevron_left</span>
                             </span>
                         </div>

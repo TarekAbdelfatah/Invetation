@@ -98,7 +98,7 @@ namespace Ibtikar.Controllers
             => new(dto.Items.Select(ToRowVm).ToList(), dto.ApplicantType, dto.Status, dto.Page, dto.PageSize, dto.TotalCount);
 
         private static AuditInboxVm.Row ToRowVm(AuditInboxRowDto dto)
-            => new(dto.Id, dto.Reference, dto.Title, dto.Domain, dto.ApplicantName, dto.Department, dto.SubmittedAt, dto.IsOverdue);
+            => new(dto.Id, dto.Reference, dto.Title, dto.Domain, dto.ApplicantName, dto.Department, dto.AssignedDepartment, dto.StatusCode, dto.StatusName, dto.StatusColor, dto.SubmittedAt, dto.IsOverdue);
 
         private static AuditDetailsVm ToDetailsVm(AuditDetailsDto dto)
             => new(
@@ -120,6 +120,7 @@ namespace Ibtikar.Controllers
                 dto.ApplicantName,
                 dto.ApplicantDepartment,
                 dto.AssignedDepartment,
+                dto.StatusCode,
                 dto.StatusName,
                 dto.StatusColor,
                 dto.SubmittedAt,

@@ -20,7 +20,19 @@ namespace Ibtikar.ViewModels
             PageSize = pageSize;
             TotalCount = totalCount;
         }
-        public record Row(Guid Id, string Reference, string Title, string Domain, string ApplicantName, string Department, DateTime SubmittedAt, bool IsOverdue);
+        public record Row(
+            Guid Id,
+            string Reference,
+            string Title,
+            string Domain,
+            string ApplicantName,
+            string Department,
+            string? AssignedDepartment,
+            string StatusCode,
+            string StatusName,
+            string StatusColor,
+            DateTime SubmittedAt,
+            bool IsOverdue);
     }
 
     public class AuditDetailsVm
@@ -43,6 +55,7 @@ namespace Ibtikar.ViewModels
         public string ApplicantName { get; }
         public string ApplicantDepartment { get; }
         public string? AssignedDepartment { get; }
+        public string StatusCode { get; }
         public string StatusName { get; }
         public string StatusColor { get; }
         public DateTime SubmittedAt { get; }
@@ -50,6 +63,7 @@ namespace Ibtikar.ViewModels
         public bool IsUnderStudy { get; }
         public bool IsRoutedToSpecialist { get; }
         public bool IsTerminal { get; }
+        public bool IsRouted { get; }
         public List<DepartmentOption> ActiveDepartments { get; }
         public List<AuditHistoryRow> History { get; }
         public List<Attachment> Attachments { get; }
@@ -73,6 +87,7 @@ namespace Ibtikar.ViewModels
             string applicantName,
             string applicantDepartment,
             string? assignedDepartment,
+            string statusCode,
             string statusName,
             string statusColor,
             DateTime submittedAt,
@@ -102,6 +117,7 @@ namespace Ibtikar.ViewModels
             ApplicantName = applicantName;
             ApplicantDepartment = applicantDepartment;
             AssignedDepartment = assignedDepartment;
+            StatusCode = statusCode;
             StatusName = statusName;
             StatusColor = statusColor;
             SubmittedAt = submittedAt;
@@ -109,6 +125,7 @@ namespace Ibtikar.ViewModels
             IsUnderStudy = isUnderStudy;
             IsRoutedToSpecialist = isRoutedToSpecialist;
             IsTerminal = isTerminal;
+            IsRouted = isRoutedToSpecialist && !string.IsNullOrWhiteSpace(assignedDepartment);
             ActiveDepartments = activeDepartments;
             History = history;
             Attachments = attachments;

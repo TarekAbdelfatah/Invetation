@@ -248,10 +248,17 @@ namespace Ibtikar.Services.Implementations
             {
                 "new" => new[] { IdeaStatusCodes.New },
                 "resubmitted" => new[] { IdeaStatusCodes.Resubmitted },
+                "routed" => new[] { IdeaStatusCodes.UnderStudy },
                 "rejected" => new[] { IdeaStatusCodes.Rejected },
-                _ => new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted }
+                _ => new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted, IdeaStatusCodes.UnderStudy }
             };
-            return await _repo.GetInboxRowsAsync(applicantTypeNorm, codes, page, pageSize, ct);
+            var inbox = await _repo.GetInboxRowsAsync(applicantTypeNorm, codes, page, pageSize, ct);
+            var normalizedStatus = statusNorm switch
+            {
+                "new" or "resubmitted" or "routed" or "rejected" => statusNorm,
+                _ => string.Empty
+            };
+            return inbox with { Status = normalizedStatus };
         }
 
         private static string Normalize(string? value) => (value ?? string.Empty).Trim().ToLowerInvariant();

@@ -40,6 +40,18 @@
                 <strong><code class="fs-6">@Model.Reference</code></strong>
                 <span class="badge rounded-pill" style="background-color:@Model.StatusColor">@Model.StatusName</span>
             </div>
+            @if (Model.IsRouted)
+            {
+                <div class="bog-routed-banner">
+                    <span class="bog-routed-banner__icon">
+                        <span class="material-icons">call_split</span>
+                    </span>
+                    <div>
+                        <strong>تم تحويل الملف إلى: @Model.AssignedDepartment</strong>
+                        <small>الملف خرج من صندوق التدقيق ويخضع حالياً للجهة المختصة. لا يمكن اتخاذ قرارات تدقيق إضافية.</small>
+                    </div>
+                </div>
+            }
             <div class="card-body">
                 <h3 class="mb-3">@Model.Title</h3>
                 <dl class="row mb-0 bog-idea-summary__list">
