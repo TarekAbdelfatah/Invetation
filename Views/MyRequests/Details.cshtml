@@ -146,6 +146,16 @@
             </div>
         }
 
+        @if (!string.IsNullOrWhiteSpace(Model.RequiredResources))
+        {
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white"><strong>الموارد المطلوبة</strong></div>
+                <div class="card-body">
+                    <p class="mb-0" style="white-space:pre-line">@Model.RequiredResources</p>
+                </div>
+            </div>
+        }
+
         <div class="card bog-section mb-3">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <strong>المرفقات</strong>

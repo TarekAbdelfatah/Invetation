@@ -39,6 +39,7 @@ namespace Ibtikar.ViewModels
         string? ProblemStatement,
         string? ProposedSolution,
         string? ExpectedBenefits,
+        string? RequiredResources,
         string? ExpectedImpactOther,
         string? TargetAudienceOther,
         bool UsesEmergingTech,

@@ -143,6 +143,7 @@ namespace Ibtikar.Controllers
                 dto.ProblemStatement,
                 dto.ProposedSolution,
                 dto.ExpectedBenefits,
+                dto.RequiredResources,
                 dto.ExpectedImpactOther,
                 dto.TargetAudienceOther,
                 dto.UsesEmergingTech,
