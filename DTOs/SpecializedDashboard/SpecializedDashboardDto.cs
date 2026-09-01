@@ -55,7 +55,9 @@ namespace Ibtikar.DTOs.SpecializedDashboard
     public sealed record SpecializedReferralsDto(
         IReadOnlyList<SpecializedReferralRowDto> Items,
         string StatusFilter,
-        int Take);
+        int Page,
+        int PageSize,
+        int TotalCount);
 
     public sealed record SpecializedCriterionDto(
         Guid Id,
@@ -114,7 +116,9 @@ namespace Ibtikar.DTOs.SpecializedDashboard
     public sealed record SpecializedRequestSubmissionDto(
         Guid IdeaId,
         IReadOnlyList<Guid> PartnerDepartmentIds,
-        string? Note);
+        IReadOnlyList<SpecializedRequestPartnerNoteDto> PartnerNotes);
+
+    public sealed record SpecializedRequestPartnerNoteDto(Guid PartnerDepartmentId, string? Note);
 
     public sealed record SpecializedRequestOutcomeDto(
         bool Success,

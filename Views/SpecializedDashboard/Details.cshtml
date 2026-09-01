@@ -110,17 +110,26 @@
                 @if (Model.Attachments.Any())
                 {
                     <div class="card bog-section mb-3">
-                        <div class="card-header bg-white">
+                        <div class="card-header bg-white d-flex align-items-center gap-2">
                             <span class="material-icons text-primary align-middle">attach_file</span>
                             <strong class="ms-2">المرفقات</strong>
+                            <span class="badge bg-secondary ms-auto">@Model.Attachments.Count</span>
                         </div>
                         <ul class="list-group list-group-flush">
                             @foreach (var a in Model.Attachments)
                             {
                                 <li class="list-group-item d-flex align-items-center gap-2">
                                     <span class="material-icons text-muted">picture_as_pdf</span>
-                                    <span>@a.FileName</span>
-                                    <small class="text-muted ms-auto">@((a.SizeBytes / 1024.0).ToString("0.0")) KB · @a.UploadedAt.FormatDateTime()</small>
+                                    <span class="text-break">@a.FileName</span>
+                                    <small class="text-muted ms-auto">
+                                        @((a.SizeBytes / 1024.0).ToString("0.0")) KB · @a.UploadedAt.FormatDateTime()
+                                    </small>
+                                    <a class="btn btn-sm btn-outline-primary"
+                                       href="@Url.Action("Download", "AttachmentDownload", new { attachmentId = a.Id })"
+                                       download="@a.FileName" target="_blank" rel="noopener noreferrer">
+                                        <span class="material-icons align-middle" style="font-size:16px">download</span>
+                                        تحميل
+                                    </a>
                                 </li>
                             }
                         </ul>

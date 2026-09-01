@@ -53,16 +53,20 @@ namespace Ibtikar.Controllers
         }
 
         [HttpGet("SpecializedDashboard/Referrals")]
-        public async Task<IActionResult> Referrals(string? status, CancellationToken ct)
+        public async Task<IActionResult> Referrals(string? status, int? page, int? pageSize, CancellationToken ct)
         {
             var departmentId = ResolveDepartmentId();
-            var dto = await _service.GetReferralsAsync(departmentId, status, ct);
+            var (p, ps) = PagedRequest.Normalize(page, pageSize);
+            var dto = await _service.GetReferralsAsync(departmentId, status, p, ps, ct);
             if (dto is null) return Forbid();
 
             var vm = new SpecializedReferralsVm
             {
                 StatusFilter = dto.StatusFilter ?? string.Empty,
                 DepartmentName = ResolveDepartmentName(),
+                Page = dto.Page,
+                PageSize = dto.PageSize,
+                TotalCount = dto.TotalCount,
                 Items = dto.Items.Select(i => new SpecializedReferralRowVm(
                     i.Id, i.Reference, i.Title,
                     i.StatusCode, i.StatusName, i.StatusColor,
@@ -212,17 +216,39 @@ namespace Ibtikar.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmRequest(SpecializedRequestSubmitVm vm, CancellationToken ct)
         {
+            vm.PartnerIds ??= new List<Guid>();
+            vm.Notes ??= new List<SpecializedRequestPartnerNoteVm>();
+
+            vm.PartnerIds = vm.PartnerIds.Where(id => id != Guid.Empty).Distinct().ToList();
+            vm.Notes = vm.Notes
+                .Where(n => n.PartnerId != Guid.Empty)
+                .GroupBy(n => n.PartnerId)
+                .Select(g => new SpecializedRequestPartnerNoteVm { PartnerId = g.Key, Note = g.First().Note })
+                .ToList();
+
+            if (vm.PartnerIds.Count > SpecializedRequestSubmitVm.MaxPartners)
+            {
+                ModelState.AddModelError(nameof(vm.PartnerIds), $"لا يمكن طلب رأي أكثر من {SpecializedRequestSubmitVm.MaxPartners} إدارات في المرة الواحدة.");
+            }
+
+            if (vm.PartnerIds.Count == 0)
+            {
+                ModelState.AddModelError(nameof(vm.PartnerIds), "يرجى اختيار جهة واحدة على الأقل لطلب الرأي.");
+            }
+
             if (!ModelState.IsValid)
             {
                 var requestVm = await BuildRequestVmAsync(vm.IdeaId, ct);
                 if (requestVm is null) return Forbid();
                 requestVm.PartnerIds = vm.PartnerIds;
                 requestVm.SelectedPartnerIds = vm.PartnerIds;
-                requestVm.Note = vm.Note;
                 return View("Request", requestVm);
             }
 
-            var submission = new SpecializedRequestSubmissionDto(vm.IdeaId, vm.PartnerIds, vm.Note);
+            var submission = new SpecializedRequestSubmissionDto(
+                vm.IdeaId,
+                vm.PartnerIds,
+                vm.Notes.Select(n => new SpecializedRequestPartnerNoteDto(n.PartnerId, n.Note)).ToList());
             var result = await _service.RequestPartnerOpinionsAsync(ResolveDepartmentId(), ResolveUserId(), submission, ct);
 
             TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";

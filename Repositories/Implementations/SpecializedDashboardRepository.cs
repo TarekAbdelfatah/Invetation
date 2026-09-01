@@ -9,7 +9,7 @@ namespace Ibtikar.Repositories
     public interface ISpecializedDashboardRepository
     {
         Task<SpecializedDashboardDto> GetSnapshotAsync(Guid departmentId, CancellationToken ct);
-        Task<SpecializedReferralsDto> GetReferralsAsync(Guid departmentId, string statusFilter, int take, CancellationToken ct);
+        Task<SpecializedReferralsDto> GetReferralsAsync(Guid departmentId, string statusFilter, int page, int pageSize, CancellationToken ct);
         Task<SpecializedDetailsDto?> GetDetailsAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
         Task<SpecializedAssessVmDto?> GetAssessVmAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
         Task<IReadOnlyList<SpecializedPartnerOptionDto>> GetAvailablePartnersAsync(Guid excludeDepartmentId, IReadOnlyCollection<Guid> alreadyAssignedIds, CancellationToken ct);
@@ -60,8 +60,11 @@ namespace Ibtikar.Repositories
             return new SpecializedDashboardDto(underStudy, sentToPartner, sentToExecution, rejectedAfterRouting);
         }
 
-        public async Task<SpecializedReferralsDto> GetReferralsAsync(Guid departmentId, string statusFilter, int take, CancellationToken ct)
+        public async Task<SpecializedReferralsDto> GetReferralsAsync(Guid departmentId, string statusFilter, int page, int pageSize, CancellationToken ct)
         {
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+
             var now = DateTime.UtcNow;
             var query = _db.InnovationIdeas
                 .AsNoTracking()
@@ -78,9 +81,12 @@ namespace Ibtikar.Repositories
                 _ => query
             };
 
+            var totalCount = await query.CountAsync(ct);
+
             var rows = await query
                 .OrderByDescending(i => i.CreatedAt)
-                .Take(take)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(i => new SpecializedReferralRowDto(
                     i.Id,
                     i.ReferenceNumber,
@@ -94,7 +100,7 @@ namespace Ibtikar.Repositories
                     i.AuditAssignedAt.HasValue && (now - i.AuditAssignedAt.Value) > TimeSpan.FromHours(48)))
                 .ToListAsync(ct);
 
-            return new SpecializedReferralsDto(rows, statusFilter, take);
+            return new SpecializedReferralsDto(rows, statusFilter, page, pageSize, totalCount);
         }
 
         public async Task<SpecializedDetailsDto?> GetDetailsAsync(Guid ideaId, Guid departmentId, CancellationToken ct)

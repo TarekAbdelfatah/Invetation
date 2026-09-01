@@ -546,3 +546,99 @@
     margin-top: 4px;
   }
 }
+
+/* ---------- Partner picker (multi-select with autocomplete + per-partner notes) ---------- */
+.bog-partner-picker {
+  position: relative;
+}
+
+.bog-partner-picker__search {
+  position: relative;
+}
+
+.bog-partner-picker__icon {
+  position: absolute;
+  inset-inline-start: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary, #6c757d);
+  font-size: 20px;
+  pointer-events: none;
+}
+
+.bog-partner-picker__search .form-control {
+  padding-inline-start: 40px;
+}
+
+.bog-partner-picker__search .form-control:disabled {
+  background-color: var(--gray-50, #f8f9fa);
+  cursor: not-allowed;
+}
+
+.bog-partner-picker__suggestions {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  top: calc(100% + 4px);
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  background: #fff;
+  border: 1px solid var(--border-light, #ECECED);
+  border-radius: var(--radius-md, 10px);
+  box-shadow: var(--shadow-lg, 0 10px 30px rgba(0, 0, 0, 0.08));
+  z-index: 30;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.bog-partner-picker__suggestion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.bog-partner-picker__suggestion:hover,
+.bog-partner-picker__suggestion:focus {
+  background: var(--brand-50, #f3f6fb);
+  outline: none;
+}
+
+.bog-partner-picker__suggestion .material-icons {
+  font-size: 18px;
+}
+
+.bog-partner-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bog-partner-note {
+  border: 1px solid var(--border-light, #ECECED);
+  border-radius: var(--radius-md, 10px);
+  background: var(--gray-50, #f8f9fa);
+  padding: 12px 14px;
+}
+
+.bog-partner-note__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bog-partner-note__head .material-icons {
+  font-size: 20px;
+}
+
+.bog-partner-note__name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bog-partner-note textarea.form-control {
+  background: #fff;
+}

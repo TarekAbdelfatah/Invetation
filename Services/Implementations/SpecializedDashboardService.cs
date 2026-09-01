@@ -8,7 +8,6 @@ namespace Ibtikar.Services.Implementations
 {
     public sealed class SpecializedDashboardService : ISpecializedDashboardService
     {
-        private const int ReferralsTake = 50;
         private const int MinScore = 1;
         private const int MaxScore = 5;
 
@@ -29,10 +28,12 @@ namespace Ibtikar.Services.Implementations
             return await _repo.GetSnapshotAsync(departmentId.Value, ct);
         }
 
-        public async Task<SpecializedReferralsDto?> GetReferralsAsync(Guid? departmentId, string? status, CancellationToken ct)
+        public async Task<SpecializedReferralsDto?> GetReferralsAsync(Guid? departmentId, string? status, int page, int pageSize, CancellationToken ct)
         {
             if (departmentId is null || departmentId == Guid.Empty) return null;
-            return await _repo.GetReferralsAsync(departmentId.Value, status ?? string.Empty, ReferralsTake, ct);
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+            return await _repo.GetReferralsAsync(departmentId.Value, status ?? string.Empty, page, pageSize, ct);
         }
 
         public async Task<SpecializedDetailsDto?> GetDetailsAsync(Guid? departmentId, Guid ideaId, CancellationToken ct)
@@ -166,6 +167,9 @@ namespace Ibtikar.Services.Implementations
             if (submission.PartnerDepartmentIds is null || submission.PartnerDepartmentIds.Count == 0)
                 return new(false, "اختر إدارة شريكة واحدة على الأقل.", 0);
 
+            if (submission.PartnerDepartmentIds.Count > 2)
+                return new(false, "لا يمكن طلب رأي أكثر من إدارتين في المرة الواحدة.", 0);
+
             var assignedIds = (await _repo.GetAlreadyAssignedPartnersAsync(submission.IdeaId, ct))
                 .Select(p => p.Id).ToHashSet();
 
@@ -177,6 +181,11 @@ namespace Ibtikar.Services.Implementations
             if (newOnes.Count == 0)
                 return new(false, "كل الإدارات المختارة تم إسنادها سابقاً.", 0);
 
+            var notesByPartner = (submission.PartnerNotes ?? new List<SpecializedRequestPartnerNoteDto>())
+                .Where(n => !string.IsNullOrWhiteSpace(n.Note))
+                .GroupBy(n => n.PartnerDepartmentId)
+                .ToDictionary(g => g.Key, g => g.First().Note);
+
             var rows = newOnes.Select(id => new PartnerAssignment
             {
                 Id = Guid.NewGuid(),
@@ -185,7 +194,7 @@ namespace Ibtikar.Services.Implementations
                 RequestedByUserId = actorUserId,
                 SentAt = DateTime.UtcNow,
                 Status = PartnerAssignment.StatusPending,
-                Note = submission.Note
+                Note = notesByPartner.TryGetValue(id, out var n) ? n : null
             }).ToList();
 
             await _repo.AddPartnerAssignmentsAsync(rows, ct);
