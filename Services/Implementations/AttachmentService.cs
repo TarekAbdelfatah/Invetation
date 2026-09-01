@@ -4,7 +4,7 @@ using Ibtikar.Services.Integrations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace Ibtikar.Services.Attachments
+namespace Ibtikar.Services.Implementations
 {
     public sealed class AttachmentService
     {

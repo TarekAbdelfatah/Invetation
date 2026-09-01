@@ -1,7 +1,6 @@
 using Ibtikar.DTOs.Committees;
 using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Helpers;
-using Ibtikar.Services.Helpers;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

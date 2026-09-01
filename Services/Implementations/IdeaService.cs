@@ -1,7 +1,7 @@
 using Ibtikar.DTOs.Ideas;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
-using Ibtikar.Services.Attachments;
+using Ibtikar.Services.Implementations;
 using Ibtikar.Services.Integrations;
 using Microsoft.AspNetCore.Http;
 

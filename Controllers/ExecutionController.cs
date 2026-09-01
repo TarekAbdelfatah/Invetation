@@ -1,7 +1,6 @@
 using Ibtikar.DTOs.Execution;
 using Ibtikar.Services;
 using Ibtikar.Services.Helpers;
-using Ibtikar.Services.Helpers;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -98,7 +97,7 @@ namespace Ibtikar.Controllers
             if (userId is null)
                 return Unauthorized(new { success = false, message = "الجلسة منتهية." });
 
-            var attachmentService = HttpContext.RequestServices.GetRequiredService<Ibtikar.Services.Attachments.AttachmentService>();
+            var attachmentService = HttpContext.RequestServices.GetRequiredService<AttachmentService>();
             var saved = new List<Guid>();
             foreach (var f in files)
             {
