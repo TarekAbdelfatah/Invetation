@@ -43,8 +43,8 @@ namespace Ibtikar.Middleware
         {
             if (context.Response.HasStarted) return Task.CompletedTask;
             context.Response.Clear();
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            context.Response.Redirect("/Error");
+            context.Response.StatusCode = StatusCodes.Status302Found;
+            context.Response.Headers["Location"] = "/Error";
             return Task.CompletedTask;
         }
     }

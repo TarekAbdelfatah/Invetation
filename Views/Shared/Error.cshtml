@@ -1,25 +1,126 @@
-﻿@model ErrorViewModel
+﻿@model Ibtikar.ViewModels.PublicErrorVm
 @{
-    ViewData["Title"] = "Error";
+    ViewData["Title"] = Model.Title;
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<section class="bog-main">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="bog-error-card">
+                    <div class="bog-error-illustration" aria-hidden="true">
+                        <span class="bog-error-icon">
+                            <span class="material-icons">@Model.Icon</span>
+                        </span>
+                        <span class="bog-error-code">@Model.Code</span>
+                    </div>
 
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
+                    <h1 class="bog-error-title">@Model.Title</h1>
+                    <p class="bog-error-message">@Model.Message</p>
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+                    <div class="bog-error-actions">
+                        <a class="btn btn-primary" href="@Model.HomeHref">
+                            <span class="material-icons align-middle" style="font-size:18px">home</span>
+                            العودة إلى الرئيسية
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary" onclick="window.history.back();">
+                            <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
+                            الرجوع للصفحة السابقة
+                        </button>
+                    </div>
+
+                    @if (Model.ShowRequestId)
+                    {
+                        <details class="bog-error-details mt-4">
+                            <summary>تفاصيل تقنية</summary>
+                            <div class="bog-error-details-body">
+                                <div><strong>Request ID:</strong> <code dir="ltr">@Model.RequestId</code></div>
+                                @if (Model.ShowException && !string.IsNullOrEmpty(Model.ExceptionMessage))
+                                {
+                                    <div class="mt-2"><strong>رسالة الخطأ:</strong> <code dir="ltr">@Model.ExceptionMessage</code></div>
+                                }
+                                <p class="text-muted small mt-3 mb-0">
+                                    يُرجى ذكر رقم الطلب عند التواصل مع مدير النظام.
+                                </p>
+                            </div>
+                        </details>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .bog-error-card {
+        background: var(--bg-card, #fff);
+        border: 1px solid var(--border-soft, #e5e7eb);
+        border-radius: 18px;
+        padding: 48px 32px;
+        text-align: center;
+        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.06);
+    }
+    .bog-error-illustration {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 24px;
+    }
+    .bog-error-icon {
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+        background: var(--danger-soft, #fee2e2);
+        color: var(--danger-700, #b91c1c);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .bog-error-icon .material-icons {
+        font-size: 44px;
+    }
+    .bog-error-code {
+        font-weight: 700;
+        font-size: 36px;
+        color: var(--danger-700, #b91c1c);
+        letter-spacing: 2px;
+    }
+    .bog-error-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-strong, #111827);
+        margin-bottom: 12px;
+    }
+    .bog-error-message {
+        color: var(--text-muted, #6b7280);
+        max-width: 520px;
+        margin: 0 auto 28px;
+        line-height: 1.7;
+    }
+    .bog-error-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .bog-error-details {
+        max-width: 480px;
+        margin: 24px auto 0;
+        text-align: right;
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 12px 16px;
+    }
+    .bog-error-details summary {
+        cursor: pointer;
+        color: var(--text-strong, #111827);
+        font-weight: 600;
+    }
+    .bog-error-details-body {
+        margin-top: 12px;
+        font-size: 14px;
+        color: var(--text-muted, #4b5563);
+    }
+</style>
