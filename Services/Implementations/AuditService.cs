@@ -4,7 +4,7 @@ using Ibtikar.Repositories;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Notifications;
 
-namespace Ibtikar.Services.Audit
+namespace Ibtikar.Services.Implementations
 {
     public sealed class AuditService : IAuditService
     {

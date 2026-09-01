@@ -1,5 +1,5 @@
 using Ibtikar.DTOs.MyRequests;
-using Ibtikar.Services.MyRequests;
+using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Helpers;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;

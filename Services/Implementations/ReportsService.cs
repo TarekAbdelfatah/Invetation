@@ -1,7 +1,7 @@
 using Ibtikar.DTOs.Reports;
 using Ibtikar.Repositories;
 
-namespace Ibtikar.Services
+namespace Ibtikar.Services.Implementations
 {
     public sealed class ReportsService : IReportsService
     {

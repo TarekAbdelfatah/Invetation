@@ -3,7 +3,7 @@ using Ibtikar.Models;
 using Ibtikar.Repositories;
 using Ibtikar.Services.Helpers;
 
-namespace Ibtikar.Services.SpecializedDashboard
+namespace Ibtikar.Services.Implementations
 {
     public sealed class SpecializedDashboardService : ISpecializedDashboardService
     {

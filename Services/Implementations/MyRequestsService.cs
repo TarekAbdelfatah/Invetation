@@ -3,7 +3,7 @@ using Ibtikar.Repositories;
 using Ibtikar.Services.Implementations;
 using Ibtikar.Services.Helpers;
 
-namespace Ibtikar.Services.MyRequests
+namespace Ibtikar.Services.Implementations
 {
     public sealed class MyRequestsService : IMyRequestsService
     {

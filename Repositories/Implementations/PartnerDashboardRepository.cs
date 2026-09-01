@@ -1,7 +1,7 @@
 using Ibtikar.Data;
 using Ibtikar.DTOs.PartnerDashboard;
 using Ibtikar.Models;
-using Ibtikar.Services.Ideas;
+using Ibtikar.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Repositories

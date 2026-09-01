@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Ibtikar.Data;
 using Ibtikar.Models;
 using Ibtikar.Services.Helpers;
-using Ibtikar.Services.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;

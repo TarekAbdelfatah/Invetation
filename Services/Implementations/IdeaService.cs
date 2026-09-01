@@ -6,7 +6,7 @@ using Ibtikar.Services.Implementations;
 using Ibtikar.Services.Implementations;
 using Microsoft.AspNetCore.Http;
 
-namespace Ibtikar.Services.Ideas
+namespace Ibtikar.Services.Implementations
 {
     public sealed class IdeaService : IIdeaService
     {

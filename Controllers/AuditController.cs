@@ -1,5 +1,5 @@
 using Ibtikar.DTOs.Audit;
-using Ibtikar.Services.Audit;
+using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Helpers;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;

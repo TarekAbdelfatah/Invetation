@@ -4,7 +4,7 @@ using Ibtikar.Repositories;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Notifications;
 
-namespace Ibtikar.Services.PartnerDashboard
+namespace Ibtikar.Services.Implementations
 {
     public sealed class PartnerDashboardService : IPartnerDashboardService
     {
