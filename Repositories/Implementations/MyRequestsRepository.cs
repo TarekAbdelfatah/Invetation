@@ -54,22 +54,23 @@ namespace Ibtikar.Repositories
                     .OrderByDescending(i => i.CreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(i => new MyRequestSummaryDto(
-                        i.Id,
-                        i.ReferenceNumber,
-                        i.Title,
-                        i.IsDraft,
-                        i.IsDraft
-                            ? string.Empty
-                            : (i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty),
-                        i.IsDraft
-                            ? "مسودة"
-                            : (i.CurrentStatus != null ? i.CurrentStatus.Name : "—"),
-                        i.IsDraft
-                            ? "#6c757d"
-                            : (i.CurrentStatus != null ? i.CurrentStatus.Color : "#888"),
-                        i.CreatedAt,
-                        i.SubmittedAt))
+.Select(i => new MyRequestSummaryDto(
+                    i.Id,
+                    i.ReferenceNumber,
+                    i.Title,
+                    i.InnovationDomain != null ? i.InnovationDomain.Name : null,
+                    i.IsDraft,
+                    i.IsDraft
+                        ? string.Empty
+                        : (i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty),
+                    i.IsDraft
+                        ? "مسودة"
+                        : (i.CurrentStatus != null ? i.CurrentStatus.Name : "—"),
+                    i.IsDraft
+                        ? "#6c757d"
+                        : (i.CurrentStatus != null ? i.CurrentStatus.Color : "#888"),
+                    i.CreatedAt,
+                    i.SubmittedAt))
                     .ToListAsync(ct);
 
                 return new MyRequestsListDto(items, page, pageSize, totalCount);

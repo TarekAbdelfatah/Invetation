@@ -151,6 +151,7 @@ namespace Ibtikar.Controllers
                 dto.Id,
                 dto.Reference,
                 dto.Title,
+                dto.DomainName,
                 dto.IsDraft,
                 dto.StatusCode,
                 dto.StatusName,

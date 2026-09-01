@@ -103,9 +103,67 @@
       });
     }
 
+    function ensureConfirmModal() {
+      let modal = document.getElementById('confirm-modal');
+      if (modal) return modal;
+      const tpl = document.createElement('div');
+      tpl.innerHTML = `
+<div id="confirm-modal" class="bog-modal" hidden role="dialog" aria-modal="true"
+     aria-labelledby="confirm-modal-title" aria-describedby="confirm-modal-message">
+    <div class="bog-modal-backdrop" data-confirm-cancel></div>
+    <div class="bog-modal-dialog bog-modal-dialog-centered" role="document">
+        <div class="bog-modal-content">
+            <h5 id="confirm-modal-title" class="bog-modal-title">تأكيد الإجراء</h5>
+            <p id="confirm-modal-message" class="bog-modal-body" data-confirm-message>هل أنت متأكد؟</p>
+            <div class="bog-modal-actions">
+                <button type="button" class="btn btn-outline-secondary" data-confirm-cancel>إلغاء</button>
+                <button type="button" class="btn btn-danger" data-confirm-ok>تأكيد</button>
+            </div>
+        </div>
+    </div>
+</div>`;
+      modal = tpl.firstElementChild;
+      document.body.appendChild(modal);
+      bindStandaloneModal(modal);
+      return modal;
+    }
+
+    function bindStandaloneModal(modal) {
+      const messageEl = modal.querySelector('[data-confirm-message]');
+      const okBtn = modal.querySelector('[data-confirm-ok]');
+      const cancelBtns = modal.querySelectorAll('[data-confirm-cancel]');
+      let resolver = null;
+      window.__bogConfirm = function (msg, okLabel) {
+        if (messageEl) messageEl.textContent = msg;
+        if (okLabel) okBtn.textContent = okLabel;
+        modal.hidden = false;
+        modal.setAttribute('data-open', 'true');
+        okBtn.focus();
+        return new Promise((res) => { resolver = res; });
+      };
+      okBtn.addEventListener('click', () => {
+        modal.hidden = true;
+        modal.removeAttribute('data-open');
+        if (resolver) { const r = resolver; resolver = null; r(true); }
+      });
+      cancelBtns.forEach((b) => b.addEventListener('click', () => {
+        modal.hidden = true;
+        modal.removeAttribute('data-open');
+        if (resolver) { const r = resolver; resolver = null; r(false); }
+      }));
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.hidden) {
+          modal.hidden = true;
+          modal.removeAttribute('data-open');
+          if (resolver) { const r = resolver; resolver = null; r(false); }
+        }
+      });
+    }
+
     async function deleteAttachment(item, li) {
       if (isReadOnly) return;
-      const confirmed = window.confirm(`هل تريد حذف "${item.fileName}" نهائياً؟`);
+      const modal = ensureConfirmModal();
+      const confirmed = await window.__bogConfirm(`هل تريد حذف "${item.fileName}" نهائياً؟`, 'حذف');
       if (!confirmed) return;
       const token = getAntiForgeryToken();
       try {
@@ -117,14 +175,13 @@
         if (!res.ok) {
           let msg = 'فشل الحذف.';
           try { msg = (await res.json()).error || msg; } catch (_) {}
-          alert(msg);
+          await window.__bogConfirm(msg, 'حسناً');
           return;
         }
         li.remove();
-        // Refresh to update counts in the status row.
         refresh();
       } catch (e) {
-        alert('فشل الاتصال بالخادم.');
+        await window.__bogConfirm('فشل الاتصال بالخادم.', 'حسناً');
       }
     }
 

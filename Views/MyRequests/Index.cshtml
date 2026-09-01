@@ -63,6 +63,13 @@
                                 </div>
 
                                 <h3 class="bog-idea-card__title">@i.Title</h3>
+                                @if (!string.IsNullOrWhiteSpace(i.DomainName))
+                                {
+                                    <div class="bog-idea-card__meta small text-muted">
+                                        <span class="material-icons align-middle" style="font-size:14px">category</span>
+                                        @i.DomainName
+                                    </div>
+                                }
 
                                 <div class="bog-idea-card__progress" aria-label="@stageLabel · @(percent)%">
                                     <div class="bog-idea-card__progress-track">
@@ -123,7 +130,16 @@
                                             }
                                         </td>
                                         <td data-label="العنوان">@i.Title</td>
-                                        <td class="d-none d-lg-table-cell" data-label="المجال">—</td>
+                                        <td class="d-none d-lg-table-cell" data-label="المجال">
+                                            @if (!string.IsNullOrWhiteSpace(i.DomainName))
+                                            {
+                                                <span class="badge bg-light text-dark border">@i.DomainName</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
                                         <td data-label="الحالة">
                                             @if (i.IsDraft)
                                             {
@@ -182,12 +198,12 @@
         </div>
 
         @await Html.PartialAsync("_Pagination", null,
-    new ViewDataDictionary(ViewData)
-    {
-        { "Page", Model.Page },
-        { "PageSize", Model.PageSize },
-        { "TotalCount", Model.TotalCount }
-    })
+            new ViewDataDictionary(ViewData)
+            {
+                { "Page", Model.Page },
+                { "PageSize", Model.PageSize },
+                { "TotalCount", Model.TotalCount }
+            })
     </div>
 </div>
 
