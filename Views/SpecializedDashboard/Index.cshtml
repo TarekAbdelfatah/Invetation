@@ -1,79 +1,212 @@
 @model Ibtikar.ViewModels.SpecializedDashboardVm
 @using Ibtikar.ViewModels
 @{
-    ViewData["Title"] = "لوحة الإدارة المختصة";
+    ViewData["Title"] = "لوحة الإدارة";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var deptLabel = string.IsNullOrWhiteSpace(Model.DepartmentName) ? "الإدارة المختصة" : Model.DepartmentName;
+    var deptLabel = string.IsNullOrWhiteSpace(Model.DepartmentName) ? "الإدارة" : Model.DepartmentName;
 }
 
-<div class="bog-main">
-    <div class="container py-4">
-        <div class="bog-page-header">
-            <h1>
-                <span class="bog-page-icon" aria-hidden="true">
-                    <span class="material-icons">engineering</span>
-                </span>
-                لوحة @deptLabel
-            </h1>
-            <span class="bog-page-role">
-                <span class="material-icons" aria-hidden="true">apartment</span>
+<div class="container py-4">
+    <div class="partner-hero">
+        <div class="partner-hero__content">
+            <span class="partner-hero__icon" aria-hidden="true">
+                <span class="material-icons">engineering</span>
+            </span>
+            <div>
+                <h1 class="partner-hero__title">لوحة @deptLabel</h1>
+                <p class="partner-hero__subtitle">تابع الأفكار المحوّلة لإدارتك والاستشارات الواردة من إدارات أخرى.</p>
+            </div>
+            <span class="partner-hero__badge">
+                <span class="material-icons" style="font-size:16px">apartment</span>
                 @deptLabel
             </span>
-            <a class="btn btn-primary ms-auto" asp-action="Referrals">
-                <span class="material-icons align-middle" style="font-size:18px">list_alt</span>
-                كل الأفكار المحوّلة
+        </div>
+    </div>
+
+    @if (TempData["AlertMessage"] is string ok)
+    {
+        <div class="alert alert-success bog-alert" role="alert">
+            <span class="material-icons bog-alert-icon">check_circle</span>
+            <span class="bog-alert-text">@ok</span>
+        </div>
+    }
+    @if (TempData["AlertError"] is string err)
+    {
+        <div class="alert alert-danger bog-alert" role="alert">
+            <span class="material-icons bog-alert-icon">error</span>
+            <span class="bog-alert-text">@err</span>
+        </div>
+    }
+
+    @* ============ القسم الأول: الأفكار المحوّلة لإدارتك (التخصص) ============ *@
+    <div class="partner-section-head">
+        <h2 class="partner-section-head__title">
+            <span class="material-icons">assignment</span>
+            الأفكار المحوّلة لإدارتك
+        </h2>
+        <a class="btn btn-sm btn-outline-primary" asp-action="Referrals">
+            <span class="material-icons align-middle" style="font-size:16px">list_alt</span>
+            كل الأفكار المحوّلة
+        </a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <a class="partner-kpi partner-kpi--pending text-decoration-none d-block" asp-action="Referrals" asp-route-status="under_study">
+                <div class="partner-kpi__head">
+                    <span class="partner-kpi__icon"><span class="material-icons">hourglass_top</span></span>
+                    <span class="partner-kpi__chip">بانتظار تقييمك</span>
+                </div>
+                <div class="partner-kpi__value">@Model.UnderStudy</div>
+                <div class="partner-kpi__label">قيد الدراسة</div>
+                <div class="partner-kpi__meta">أفكار بانتظار تقييم إدارتك</div>
             </a>
         </div>
+        <div class="col-lg-3 col-md-6">
+            <a class="partner-kpi partner-kpi--done text-decoration-none d-block" asp-action="Referrals" asp-route-status="sent_to_partner">
+                <div class="partner-kpi__head">
+                    <span class="partner-kpi__icon"><span class="material-icons">send</span></span>
+                    <span class="partner-kpi__chip">بانتظار الردود</span>
+                </div>
+                <div class="partner-kpi__value">@Model.SentToPartner</div>
+                <div class="partner-kpi__label">أُرسل لجهات أخرى</div>
+                <div class="partner-kpi__meta">بانتظار ردود الاستشارة</div>
+            </a>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <a class="partner-kpi partner-kpi--done text-decoration-none d-block" asp-action="Referrals" asp-route-status="in_execution">
+                <div class="partner-kpi__head">
+                    <span class="partner-kpi__icon"><span class="material-icons">rocket_launch</span></span>
+                    <span class="partner-kpi__chip">قُبلت من اللجنة</span>
+                </div>
+                <div class="partner-kpi__value">@Model.SentToExecution</div>
+                <div class="partner-kpi__label">أُرسلت للتنفيذ</div>
+                <div class="partner-kpi__meta">أفكار قُبلت وانتقلت للتنفيذ</div>
+            </a>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <a class="partner-kpi partner-kpi--late text-decoration-none d-block" asp-action="Referrals" asp-route-status="rejected">
+                <div class="partner-kpi__head">
+                    <span class="partner-kpi__icon"><span class="material-icons">cancel</span></span>
+                    <span class="partner-kpi__chip">بعد التحويل</span>
+                </div>
+                <div class="partner-kpi__value">@Model.RejectedAfterRouting</div>
+                <div class="partner-kpi__label">مرفوضة بعد التحويل</div>
+                <div class="partner-kpi__meta">باستثناء رفض التدقيق</div>
+            </a>
+        </div>
+    </div>
 
-        <div class="row g-3 mb-4">
-            <div class="col-lg-3 col-md-6">
-                <a class="card h-100 bog-kpi-card bog-kpi-card--link text-decoration-none"
-                   asp-action="Referrals" asp-route-status="under_study">
-                    <div class="card-body">
-                        <div class="bog-kpi-label">قيد الدراسة</div>
-                        <div class="bog-kpi-value text-primary">@Model.UnderStudy</div>
-                        <div class="bog-kpi-meta">بانتظار تقييم إدارتك</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <a class="card h-100 bog-kpi-card bog-kpi-card--link text-decoration-none"
-                   asp-action="Referrals" asp-route-status="sent_to_partner">
-                    <div class="card-body">
-                        <div class="bog-kpi-label">أُرسل للجهات الشريكة</div>
-                        <div class="bog-kpi-value text-info">@Model.SentToPartner</div>
-                        <div class="bog-kpi-meta">بانتظار ردود الشركاء</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <a class="card h-100 bog-kpi-card bog-kpi-card--link text-decoration-none"
-                   asp-action="Referrals" asp-route-status="in_execution">
-                    <div class="card-body">
-                        <div class="bog-kpi-label">أُرسلت للتنفيذ</div>
-                        <div class="bog-kpi-value text-success">@Model.SentToExecution</div>
-                        <div class="bog-kpi-meta">قُبلت من اللجنة</div>
-                    </div>
-                </a>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <a class="card h-100 bog-kpi-card bog-kpi-card--link text-decoration-none"
-                   asp-action="Referrals" asp-route-status="rejected">
-                    <div class="card-body">
-                        <div class="bog-kpi-label">مرفوضة بعد التحويل</div>
-                        <div class="bog-kpi-value text-danger">@Model.RejectedAfterRouting</div>
-                        <div class="bog-kpi-meta">باستثناء رفض التدقيق</div>
-                    </div>
-                </a>
+    @* ============ القسم الثاني: الاستشارات الواردة ============ *@
+    <div class="partner-section-head">
+        <h2 class="partner-section-head__title">
+            <span class="material-icons">forum</span>
+            الاستشارات الواردة
+        </h2>
+        <span class="partner-section-head__count">@Model.AdvisoryItems.Count</span>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-4 col-md-6">
+            <div class="partner-kpi partner-kpi--pending">
+                <div class="partner-kpi__head">
+                    <span class="partner-kpi__icon"><span class="material-icons">hourglass_top</span></span>
+                    <span class="partner-kpi__chip">بانتظار ردك</span>
+                </div>
+                <div class="partner-kpi__value">@Model.AdvisoryPending</div>
+                <div class="partner-kpi__label">استشارات بانتظار الرد</div>
+                <div class="partner-kpi__meta">من إدارات أخرى</div>
             </div>
         </div>
-
-        <div class="alert alert-light border d-flex align-items-start gap-2">
-            <span class="material-icons text-muted">info</span>
-            <div class="text-muted small">
-                لوحة المراجعة الفنية للأفكار. الأرقام خاصة بإدارتك فقط بناءً على
-                <code>AssignedDepartmentId</code> من جلسة الدخول.
+        <div class="col-lg-4 col-md-6">
+            <div class="partner-kpi partner-kpi--late">
+                <div class="partner-kpi__head">
+                    <span class="partner-kpi__icon"><span class="material-icons">schedule</span></span>
+                    <span class="partner-kpi__chip">تجاوزت 4 أيام</span>
+                </div>
+                <div class="partner-kpi__value">@Model.AdvisoryLate</div>
+                <div class="partner-kpi__label">استشارات متأخرة</div>
+                <div class="partner-kpi__meta">تحتاج استجابة عاجلة</div>
             </div>
         </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="partner-kpi partner-kpi--done">
+                <div class="partner-kpi__head">
+                    <span class="partner-kpi__icon"><span class="material-icons">check_circle</span></span>
+                    <span class="partner-kpi__chip">آخر 30 يوم</span>
+                </div>
+                <div class="partner-kpi__value">@Model.AdvisorySubmitted</div>
+                <div class="partner-kpi__label">تم الرد خلال 30 يوم</div>
+                <div class="partner-kpi__meta">دورة المراجعة الحالية</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bog-section partner-inbox">
+        @if (!Model.AdvisoryItems.Any())
+        {
+            <div class="card-body text-center text-muted p-5">
+                <span class="material-icons d-block mb-3" style="font-size:56px;color:var(--gray-300)">forum</span>
+                <p class="mb-1 fs-6 fw-medium">لا توجد استشارات حالياً.</p>
+                <p class="small">ستظهر هنا أي استشارات تحوّلها إدارات أخرى لطلب رأي إدارتك في أفكارها.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="bog-card-list mb-0">
+                    <thead>
+                        <tr>
+                            <th>المرجع</th>
+                            <th>العنوان</th>
+                            <th>الإدارة الطالبة</th>
+                            <th>منذ الإحالة</th>
+                            <th>الحالة</th>
+                            <th class="text-end">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var i in Model.AdvisoryItems)
+                        {
+                            <tr class="@(i.IsLate ? "table-warning" : null)" onclick="window.location='@Url.Action("Details", "PartnerDashboard", new { assignmentId = i.AssignmentId })'">
+                                <td data-label="المرجع"><span class="partner-inbox__ref">@i.IdeaReference</span></td>
+                                <td data-label="العنوان">@i.IdeaTitle</td>
+                                <td data-label="الإدارة الطالبة">@i.SourceDepartmentName</td>
+                                <td data-label="منذ الإحالة">
+                                    <span class="partner-inbox__days">
+                                        <span class="material-icons">timelapse</span>
+                                        <span dir="ltr">@i.DaysOpen.ToString("0.0") يوم</span>
+                                    </span>
+                                </td>
+                                <td data-label="الحالة">
+                                    @if (i.IsReturned)
+                                    {
+                                        <span class="partner-status partner-status--returned"><span class="partner-status__dot"></span>مرتجَع</span>
+                                    }
+                                    else if (!i.IsPending)
+                                    {
+                                        <span class="partner-status partner-status--submitted"><span class="partner-status__dot"></span>تم الرد</span>
+                                    }
+                                    else if (i.IsLate)
+                                    {
+                                        <span class="partner-status partner-status--late"><span class="partner-status__dot"></span>متأخر</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="partner-status partner-status--pending"><span class="partner-status__dot"></span>قيد المراجعة</span>
+                                    }
+                                </td>
+                                <td class="bog-card-list__actions" data-label="">
+                                    <a class="btn btn-sm btn-primary" asp-controller="PartnerDashboard" asp-action="Details" asp-route-assignmentId="@i.AssignmentId">
+                                        <span class="material-icons align-middle" style="font-size:16px">rate_review</span>
+                                        مراجعة
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>

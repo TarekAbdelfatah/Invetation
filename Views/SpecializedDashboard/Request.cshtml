@@ -1,7 +1,7 @@
 @model Ibtikar.ViewModels.SpecializedRequestVm
 @using Ibtikar.ViewModels
 @{
-    ViewData["Title"] = $"طلب رأي الشركاء · {Model.Reference}";
+    ViewData["Title"] = $"طلب رأي جهات أخرى · {Model.Reference}";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -12,7 +12,7 @@
                 <span class="bog-page-icon" aria-hidden="true">
                     <span class="material-icons">groups</span>
                 </span>
-                طلب رأي الإدارات الشريكة
+                طلب رأي جهات أخرى
             </h2>
             <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.IdeaId">
                 <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
@@ -41,7 +41,7 @@
             <div class="card bog-section mb-3">
                 <div class="card-header bg-white d-flex align-items-center gap-2">
                     <span class="material-icons text-info">history</span>
-                    <strong>الإدارات الشريكة التي تم إسنادها سابقاً</strong>
+                    <strong>الجهات التي تم طلب رأيها سابقاً</strong>
                 </div>
                 <ul class="list-group list-group-flush">
                     @foreach (var p in Model.AlreadyAssigned)
@@ -63,12 +63,12 @@
             <div class="card bog-section mb-3">
                 <div class="card-header bg-white d-flex align-items-center gap-2">
                     <span class="material-icons text-primary">add_business</span>
-                    <strong>اختر الإدارات الشريكة</strong>
+                    <strong>اختر الجهات لطلب الرأي</strong>
                 </div>
                 <div class="card-body">
                     @if (!Model.AvailablePartners.Any())
                     {
-                        <p class="text-muted mb-0">لا توجد إدارات شريكة متاحة. كل الإدارات النشطة تم إسنادها أو مستبعدة.</p>
+                        <p class="text-muted mb-0">لا توجد جهات متاحة. كل الإدارات النشطة تم طلب رأيها أو مستبعدة.</p>
                     }
                     else
                     {
@@ -93,7 +93,7 @@
             <div class="card bog-section mb-3">
                 <div class="card-header bg-white d-flex align-items-center gap-2">
                     <span class="material-icons text-info">chat_bubble_outline</span>
-                    <strong>ملاحظة للإدارات الشريكة</strong>
+                    <strong>ملاحظة للجهات المستشارة</strong>
                 </div>
                 <div class="card-body">
                     <textarea name="note" class="form-control" rows="3" maxlength="2000" placeholder="اذكر للمشاركين النقاط التي تريد رأيهم فيها"></textarea>

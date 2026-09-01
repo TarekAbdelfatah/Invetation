@@ -72,8 +72,11 @@ namespace Ibtikar.Services.PartnerDashboard
             if (assignment.Status == PartnerAssignment.StatusReturned)
                 return new(false, "تم إرجاع هذا الطلب ولا يمكن تعديل التقييم.", null);
 
+            if (assignment.Status == PartnerAssignment.StatusSubmitted)
+                return new(false, "تم إرسال التقييم مسبقاً ولا يمكن تعديله.", null);
+
             if (submission.ReturnOnly && string.IsNullOrWhiteSpace(submission.Comment))
-                return new(false, "يرجى كتابة مرئيات وملاحظات الإدارة الشريكة قبل إعادته للإدارة المختصة.", null);
+                return new(false, "يرجى كتابة مرئيات وملاحظات إدارتك قبل إعادته للإدارة صاحبة الفكرة.", null);
 
             if (!submission.ReturnOnly && submission.Scores.Count == 0)
                 return new(false, "أدخل درجة واحدة على الأقل.", null);
@@ -147,7 +150,7 @@ namespace Ibtikar.Services.PartnerDashboard
             }, ct);
 
             var message = submission.ReturnOnly
-                ? "تم إرجاع الطلب للإدارة المختصة."
+                ? "تم إرجاع الطلب للإدارة صاحبة الفكرة."
                 : "تم إرسال التقييم الاستشاري.";
             return new(true, message, total);
         }
@@ -191,7 +194,7 @@ namespace Ibtikar.Services.PartnerDashboard
                 "Partner {Dept} marked assignment {Assignment} as not-competent within {Window}-day window",
                 departmentId, assignment.Id, NotCompetentWindowDays);
 
-            return new(true, "تم إرجاع الطلب للإدارة المختصة بسبب خطأ في التوجيه.", null);
+            return new(true, "تم إرجاع الطلب للإدارة صاحبة الفكرة بسبب خطأ في التوجيه.", null);
         }
 
         private async Task SafeNotifyAsync(string action, string entityId, IDictionary<string, string>? payload, CancellationToken ct)

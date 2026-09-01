@@ -5,155 +5,165 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="bog-main">
-    <div class="container py-4">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-            <h2 class="mb-0 d-flex align-items-center gap-2">
-                <span class="bog-page-icon" aria-hidden="true">
-                    <span class="material-icons">rate_review</span>
-                </span>
-                مراجعة الفكرة
-            </h2>
-            <a class="btn btn-outline-secondary" asp-action="Index">
-                <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
-                العودة للقائمة
-            </a>
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h2 class="mb-0 d-flex align-items-center gap-2">
+            <span class="bog-page-icon" aria-hidden="true">
+                <span class="material-icons">rate_review</span>
+            </span>
+            مراجعة الفكرة
+        </h2>
+        <a class="btn btn-outline-secondary" asp-controller="SpecializedDashboard" asp-action="Index">
+            <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
+            العودة للوحة الإدارة
+        </a>
+    </div>
+
+    @if (TempData["AlertMessage"] is string ok)
+    {
+        <div class="alert alert-success bog-alert" role="alert">
+            <span class="material-icons bog-alert-icon">check_circle</span>
+            <span class="bog-alert-text">@ok</span>
         </div>
-
-        @if (TempData["AlertMessage"] is string ok)
-        {
-            <div class="alert alert-success">@ok</div>
-        }
-        @if (TempData["AlertError"] is string err)
-        {
-            <div class="alert alert-danger">@err</div>
-        }
-
-        <div class="card bog-section mb-3">
-            <div class="card-body d-flex flex-wrap align-items-center gap-2">
-                <code class="fs-6">@Model.IdeaReference</code>
-                <h1 class="h5 mb-0 ms-2">@Model.IdeaTitle</h1>
-                <span class="ms-auto">
-                    @if (Model.IsNotCompetentReturn)
-                    {
-                        <span class="badge bg-danger">معاد للإدارة المختصة — خطأ في التوجيه</span>
-                    }
-                    else if (Model.Status == "Submitted")
-                    {
-                        <span class="badge bg-success">تم الرد</span>
-                    }
-                    else if (Model.Status == "Returned")
-                    {
-                        <span class="badge bg-secondary">مرتجَع</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-warning text-dark">قيد المراجعة</span>
-                    }
-                </span>
-            </div>
+    }
+    @if (TempData["AlertError"] is string err)
+    {
+        <div class="alert alert-danger bog-alert" role="alert">
+            <span class="material-icons bog-alert-icon">error</span>
+            <span class="bog-alert-text">@err</span>
         </div>
+    }
 
-        @if (Model.IsNotCompetentReturn)
-        {
-            <div class="alert alert-danger d-flex flex-wrap align-items-start gap-2" role="alert">
-                <span class="material-icons">report_problem</span>
-                <div class="flex-grow-1">
-                    <strong>معاد للإدارة المختصة — خطأ في التوجيه</strong>
-                    @if (!string.IsNullOrWhiteSpace(Model.NotCompetentReason))
-                    {
-                        <div class="mt-1" style="white-space:pre-wrap">@Model.NotCompetentReason</div>
-                    }
-                </div>
-            </div>
-        }
-
-        <div class="row g-3">
-            <div class="col-lg-7">
-                <div class="card bog-section mb-3">
-                    <div class="card-header bg-white">
-                        <span class="material-icons text-primary align-middle">subject</span>
-                        <strong class="ms-2">الفكرة</strong>
-                    </div>
-                    <div class="card-body">
-                        <dl class="row mb-0">
-                            <dt class="col-sm-3">المُقدِّم</dt>
-                            <dd class="col-sm-9">@Model.ApplicantName (@Model.ApplicantDepartmentName)</dd>
-                            <dt class="col-sm-3">المجال</dt>
-                            <dd class="col-sm-9">@(Model.DomainName ?? "—")</dd>
-                            <dt class="col-sm-3">المحوَّلة من</dt>
-                            <dd class="col-sm-9">@Model.SourceDepartmentName</dd>
-                            <dt class="col-sm-3">الوصف</dt>
-                            <dd class="col-sm-9" style="white-space:pre-wrap">@Model.Description</dd>
-                            @if (!string.IsNullOrWhiteSpace(Model.ProblemStatement))
-                            {
-                                <dt class="col-sm-3">التحديات</dt>
-                                <dd class="col-sm-9" style="white-space:pre-wrap">@Model.ProblemStatement</dd>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(Model.ProposedSolution))
-                            {
-                                <dt class="col-sm-3">الحل المقترح</dt>
-                                <dd class="col-sm-9" style="white-space:pre-wrap">@Model.ProposedSolution</dd>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(Model.ExpectedBenefits))
-                            {
-                                <dt class="col-sm-3">الفوائد</dt>
-                                <dd class="col-sm-9" style="white-space:pre-wrap">@Model.ExpectedBenefits</dd>
-                            }
-                        </dl>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-5">
-                <div class="card bog-section mb-3">
-                    <div class="card-header bg-white">
-                        <span class="material-icons text-info align-middle">event</span>
-                        <strong class="ms-2">التواريخ</strong>
-                    </div>
-                    <div class="card-body">
-                        <dl class="row mb-0">
-                            <dt class="col-sm-4">تاريخ الطلب</dt>
-                            <dd class="col-sm-8" dir="ltr">@Model.SentAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
-                            <dt class="col-sm-4">تاريخ الرد</dt>
-                            <dd class="col-sm-8" dir="ltr">@(Model.RespondedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
-                            @if (Model.AlreadyScored)
-                            {
-                                <dt class="col-sm-4">إجمالي الدرجات</dt>
-                                <dd class="col-sm-8"><strong>@Model.TotalScore</strong></dd>
-                            }
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card bog-section mb-3" aria-labelledby="specialized-assessment-heading">
-            <div class="card-header bg-white d-flex align-items-center gap-2">
-                <span class="material-icons text-secondary align-middle">fact_check</span>
-                <strong id="specialized-assessment-heading" class="ms-2">تقييم الإدارة المختصة</strong>
-                <small class="text-muted ms-auto">للاطلاع فقط — لا يمكن للشريك تعديله.</small>
-            </div>
-            <div class="card-body">
-                @if (Model.SpecializedAssessment.HasAssessment)
+    <div class="partner-summary">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <span class="partner-summary__ref">@Model.IdeaReference</span>
+            <span class="partner-summary__badge">
+                <span class="material-icons" style="font-size:15px">flag</span>
+                @if (Model.IsNotCompetentReturn)
                 {
-                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                        <span class="badge bg-light text-dark">@Model.SpecializedAssessment.AssessorDepartmentName</span>
-                        @if (Model.SpecializedAssessment.SubmittedAt.HasValue)
+                    <text>معاد — خطأ في التوجيه</text>
+                }
+                else if (Model.Status == "Submitted")
+                {
+                    <text>تم الرد</text>
+                }
+                else if (Model.Status == "Returned")
+                {
+                    <text>مرتجَع</text>
+                }
+                else
+                {
+                    <text>قيد المراجعة</text>
+                }
+            </span>
+        </div>
+        <h1 class="partner-summary__title">@Model.IdeaTitle</h1>
+    </div>
+
+    @if (Model.IsNotCompetentReturn)
+    {
+        <div class="partner-misroute" role="alert">
+            <span class="material-icons">report_problem</span>
+            <div class="flex-grow-1">
+                <p class="partner-misroute__title">معاد للإدارة صاحبة الفكرة — خطأ في التوجيه</p>
+                @if (!string.IsNullOrWhiteSpace(Model.NotCompetentReason))
+                {
+                    <div class="partner-misroute__reason">@Model.NotCompetentReason</div>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white">
+                    <span class="material-icons text-primary align-middle">subject</span>
+                    <strong class="ms-2">الفكرة</strong>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">المُقدِّم</dt>
+                        <dd class="col-sm-9">@Model.ApplicantName (@Model.ApplicantDepartmentName)</dd>
+                        <dt class="col-sm-3">المجال</dt>
+                        <dd class="col-sm-9">@(Model.DomainName ?? "—")</dd>
+                        <dt class="col-sm-3">الإدارة الطالبة للرأي</dt>
+                        <dd class="col-sm-9">@Model.SourceDepartmentName</dd>
+                        <dt class="col-sm-3">الوصف</dt>
+                        <dd class="col-sm-9" style="white-space:pre-wrap">@Model.Description</dd>
+                        @if (!string.IsNullOrWhiteSpace(Model.ProblemStatement))
                         {
-                            <small class="text-muted" dir="ltr">@Model.SpecializedAssessment.SubmittedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                            <dt class="col-sm-3">التحديات</dt>
+                            <dd class="col-sm-9" style="white-space:pre-wrap">@Model.ProblemStatement</dd>
                         }
-                        @if (Model.SpecializedAssessment.TotalScore.HasValue)
+                        @if (!string.IsNullOrWhiteSpace(Model.ProposedSolution))
                         {
-                            <span class="badge bg-secondary ms-auto">إجمالي: @Model.SpecializedAssessment.TotalScore</span>
+                            <dt class="col-sm-3">الحل المقترح</dt>
+                            <dd class="col-sm-9" style="white-space:pre-wrap">@Model.ProposedSolution</dd>
                         }
-                    </div>
-                    @if (!string.IsNullOrWhiteSpace(Model.SpecializedAssessment.Comment))
+                        @if (!string.IsNullOrWhiteSpace(Model.ExpectedBenefits))
+                        {
+                            <dt class="col-sm-3">الفوائد</dt>
+                            <dd class="col-sm-9" style="white-space:pre-wrap">@Model.ExpectedBenefits</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white">
+                    <span class="material-icons text-info align-middle">event</span>
+                    <strong class="ms-2">التواريخ</strong>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">تاريخ الطلب</dt>
+                        <dd class="col-sm-8" dir="ltr">@Model.SentAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+                        <dt class="col-sm-4">تاريخ الرد</dt>
+                        <dd class="col-sm-8" dir="ltr">@(Model.RespondedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
+                        @if (Model.AlreadyScored)
+                        {
+                            <dt class="col-sm-4">إجمالي الدرجات</dt>
+                            <dd class="col-sm-8"><strong>@Model.TotalScore</strong></dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="partner-specialized">
+        <div class="partner-specialized__head">
+            <span class="material-icons">fact_check</span>
+            <strong>تقييم الإدارة صاحبة الفكرة</strong>
+            <span class="partner-specialized__lock">
+                <span class="material-icons">lock</span>
+                للاطلاع فقط
+            </span>
+        </div>
+        <div class="partner-specialized__body">
+            @if (Model.SpecializedAssessment.HasAssessment)
+            {
+                <div class="partner-specialized__meta">
+                    <span class="badge bg-light text-dark border">@Model.SpecializedAssessment.AssessorDepartmentName</span>
+                    @if (Model.SpecializedAssessment.SubmittedAt.HasValue)
                     {
-                        <p class="mb-2 small text-muted" style="white-space:pre-wrap">@Model.SpecializedAssessment.Comment</p>
+                        <small class="text-muted" dir="ltr">@Model.SpecializedAssessment.SubmittedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
                     }
-                    @if (Model.SpecializedAssessment.Scores.Any())
+                    @if (Model.SpecializedAssessment.TotalScore.HasValue)
                     {
+                        <span class="partner-specialized__total">@Model.SpecializedAssessment.TotalScore / 25</span>
+                    }
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.SpecializedAssessment.Comment))
+                {
+                    <p class="mb-2 small text-muted" style="white-space:pre-wrap">@Model.SpecializedAssessment.Comment</p>
+                }
+                @if (Model.SpecializedAssessment.Scores.Any())
+                {
+                    <div class="table-responsive">
                         <table class="bog-card-list mb-0">
                             <thead>
                                 <tr>
@@ -173,148 +183,178 @@
                                 }
                             </tbody>
                         </table>
-                    }
+                    </div>
                 }
-                else
-                {
-                    <p class="text-muted mb-0">لم تكمل الإدارة المختصة تقييماً لهذه الفكرة بعد.</p>
-                }
-            </div>
+            }
+            else
+            {
+                <p class="text-muted mb-0">
+                    <span class="material-icons align-middle me-1" style="font-size:18px">info</span>
+                    لم تكمل الإدارة صاحبة الفكرة تقييماً لها بعد.
+                </p>
+            }
         </div>
+    </div>
 
-        @if (Model.CanScore)
-        {
-            <form method="post" asp-action="Submit" id="partner-form" autocomplete="off">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="assignmentId" value="@Model.AssignmentId" />
+    @if (Model.CanScore)
+    {
+        <form method="post" asp-action="Submit" id="partner-form" autocomplete="off">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="assignmentId" value="@Model.AssignmentId" />
 
-                <div class="card bog-section mb-3">
-                    <div class="card-header bg-white d-flex align-items-center gap-2">
-                        <span class="material-icons text-primary">score</span>
-                        <strong>التقييم الاستشاري</strong>
-                        <small class="text-muted ms-auto">رأيك استشاري فقط ولا يحل محل تقييم الإدارة المختصة.</small>
-                    </div>
-                    <div class="card-body p-0">
-                        <table class="bog-card-list mb-0">
-                            <thead>
-                                <tr>
-                                    <th>المعيار</th>
-                                    <th style="width:240px">الدرجة (1 - 5)</th>
-                                    <th>تعليق</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var c in Model.Criteria)
-                                {
-                                    var line = Model.ExistingScores.FirstOrDefault(s => s.CriterionId == c.Id);
-                                    <tr>
-                                        <td data-label="المعيار"><strong>@c.Name</strong></td>
-                                        <td data-label="الدرجة">
-                                            <select name="score_@c.Id" class="form-select form-select-sm partner-score">
-                                                <option value="">—</option>
-                                                @for (var s = 1; s <= 5; s++)
-                                                {
-                                                    <option value="@s" selected="@(line?.Score == s)">@s</option>
-                                                }
-                                            </select>
-                                        </td>
-                                        <td data-label="تعليق">
-                                            <input type="text" name="comment_@c.Id" class="form-control form-control-sm" value="@line?.Comment" maxlength="1000" placeholder="اختياري" />
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="partner-assess">
+                <div class="partner-assess__head">
+                    <span class="material-icons">score</span>
+                    <strong>التقييم الاستشاري</strong>
+                    <small>رأيك استشاري فقط ولا يحل محل تقييم الإدارة صاحبة الفكرة.</small>
                 </div>
-
-                <div class="card bog-section mb-3">
-                    <div class="card-header bg-white d-flex align-items-center gap-2">
-                        <span class="material-icons text-info">chat_bubble_outline</span>
-                        <strong>تعليق عام</strong>
-                    </div>
-                    <div class="card-body">
-                        <textarea name="comment" class="form-control" rows="3" maxlength="2000" placeholder="ملاحظاتك الاستشارية…">@Model.Comment</textarea>
-                    </div>
-                </div>
-
-                <div class="d-flex flex-wrap gap-2 justify-content-end">
-                    @if (Model.CanReturnNotCompetent)
-                    {
-                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#notCompetentModal">
-                            <span class="material-icons align-middle" style="font-size:18px">report_problem</span>
-                            إرجاع لعدم الاختصاص
-                        </button>
-                    }
-                    <button type="submit" name="returnOnly" value="true" class="btn btn-outline-secondary">
-                        <span class="material-icons align-middle" style="font-size:18px">undo</span>
-                        إرجاع دون تقييم
-                    </button>
-                    <button type="submit" name="returnOnly" value="false" class="btn btn-primary">
-                        <span class="material-icons align-middle" style="font-size:18px">send</span>
-                        إرسال التقييم الاستشاري
-                    </button>
-                </div>
-            </form>
-        }
-
-        @if (Model.CanReturnNotCompetent)
-        {
-            <div class="modal fade" id="notCompetentModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <form method="post" asp-action="ReturnNotCompetent" autocomplete="off">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="assignmentId" value="@Model.AssignmentId" />
-                            <div class="modal-header">
-                                <h5 class="modal-title">إرجاع الطلب لعدم الاختصاص</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <p class="text-muted small mb-2">
-                                    مسموح فقط خلال ثلاثة أيام عمل من تاريخ الإسناد. سيظهر للإدارة المختصة شارة حمراء مع سبب الإعادة.
-                                </p>
-                                <label for="notCompetentReason" class="form-label">سبب الإعادة (إلزامي)</label>
-                                <textarea id="notCompetentReason" name="reason" class="form-control" rows="3" maxlength="2000" required></textarea>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
-                                <button type="submit" class="btn btn-danger">تأكيد الإعادة</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        }
-        else if (Model.AlreadyScored)
-        {
-            <div class="card bog-section mb-3">
-                <div class="card-header bg-white">
-                    <span class="material-icons text-primary align-middle">score</span>
-                    <strong class="ms-2">التقييم المُرسَل</strong>
-                </div>
-                <div class="card-body p-0">
+                <div class="partner-assess__body">
                     <table class="bog-card-list mb-0">
                         <thead>
                             <tr>
                                 <th>المعيار</th>
-                                <th>الدرجة</th>
+                                <th style="width:240px">الدرجة (1 - 5)</th>
                                 <th>تعليق</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var s in Model.ExistingScores)
+                            @foreach (var c in Model.Criteria)
                             {
+                                var line = Model.ExistingScores.FirstOrDefault(s => s.CriterionId == c.Id);
                                 <tr>
-                                    <td data-label="المعيار"><strong>@s.CriterionName</strong></td>
-                                    <td data-label="الدرجة"><span class="badge bg-primary">@s.Score</span></td>
-                                    <td data-label="تعليق" class="small">@(s.Comment ?? "—")</td>
+                                    <td data-label="المعيار"><strong>@c.Name</strong></td>
+                                    <td data-label="الدرجة">
+                                        <select name="score_@c.Id" class="form-select form-select-sm partner-score">
+                                            <option value="">—</option>
+                                            @for (var s = 1; s <= 5; s++)
+                                            {
+                                                <option value="@s" selected="@(line?.Score == s)">@s</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td data-label="تعليق">
+                                        <input type="text" name="comment_@c.Id" class="form-control form-control-sm" value="@line?.Comment" maxlength="1000" placeholder="اختياري" />
+                                    </td>
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
             </div>
-        }
-    </div>
+
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons text-info align-middle">chat_bubble_outline</span>
+                    <strong>تعليق عام</strong>
+                </div>
+                <div class="card-body">
+                    <textarea name="comment" class="form-control" rows="3" maxlength="2000" placeholder="ملاحظاتك الاستشارية…">@Model.Comment</textarea>
+                </div>
+            </div>
+
+            <div class="partner-actions">
+                @if (Model.CanReturnNotCompetent)
+                {
+                    <button type="button" class="btn btn-outline-danger" data-open-not-competent>
+                        <span class="material-icons">report_problem</span>
+                        إرجاع لعدم الاختصاص
+                    </button>
+                }
+                <button type="submit" name="returnOnly" value="true" class="btn btn-outline-secondary">
+                    <span class="material-icons">undo</span>
+                    إرجاع دون تقييم
+                </button>
+                <button type="submit" name="returnOnly" value="false" class="btn btn-primary">
+                    <span class="material-icons">send</span>
+                    إرسال التقييم الاستشاري
+                </button>
+            </div>
+        </form>
+    }
+
+    @if (Model.CanReturnNotCompetent)
+    {
+        <div id="notCompetentModal" class="bog-modal" hidden role="dialog" aria-modal="true"
+             aria-labelledby="notCompetentModalTitle">
+            <div class="bog-modal-backdrop" data-close-not-competent></div>
+            <div class="bog-modal-dialog bog-modal-dialog-centered" role="document">
+                <div class="bog-modal-content">
+                    <form method="post" asp-action="ReturnNotCompetent" autocomplete="off">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="assignmentId" value="@Model.AssignmentId" />
+                        <h5 id="notCompetentModalTitle" class="bog-modal-title">إرجاع الطلب لعدم الاختصاص</h5>
+                        <p class="bog-modal-body">
+                            مسموح فقط خلال ثلاثة أيام عمل من تاريخ الإسناد. سيظهر للإدارة صاحبة الفكرة شارة حمراء مع سبب الإعادة.
+                        </p>
+                        <label for="notCompetentReason" class="form-label">سبب الإعادة (إلزامي)</label>
+                        <textarea id="notCompetentReason" name="reason" class="form-control mb-3" rows="3" maxlength="2000" required></textarea>
+                        <div class="bog-modal-actions">
+                            <button type="button" class="btn btn-outline-secondary" data-close-not-competent>إلغاء</button>
+                            <button type="submit" class="btn btn-danger">تأكيد الإعادة</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model.AlreadyScored)
+    {
+        <div class="card bog-section mb-3">
+            <div class="card-header bg-white">
+                <span class="material-icons text-primary align-middle">score</span>
+                <strong class="ms-2">التقييم المُرسَل</strong>
+            </div>
+            <div class="card-body p-0">
+                <table class="bog-card-list mb-0">
+                    <thead>
+                        <tr>
+                            <th>المعيار</th>
+                            <th>الدرجة</th>
+                            <th>تعليق</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model.ExistingScores)
+                        {
+                            <tr>
+                                <td data-label="المعيار"><strong>@s.CriterionName</strong></td>
+                                <td data-label="الدرجة"><span class="badge bg-primary">@s.Score</span></td>
+                                <td data-label="تعليق" class="small">@(s.Comment ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var modal = document.getElementById('notCompetentModal');
+            if (!modal) return;
+
+            function open() {
+                modal.hidden = false;
+                var reason = modal.querySelector('#notCompetentReason');
+                if (reason) setTimeout(function () { reason.focus(); }, 50);
+            }
+
+            function close() {
+                modal.hidden = true;
+            }
+
+            var openTrigger = document.querySelector('[data-open-not-competent]');
+            if (openTrigger) openTrigger.addEventListener('click', open);
+
+            modal.querySelectorAll('[data-close-not-competent]').forEach(function (el) {
+                el.addEventListener('click', close);
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && !modal.hidden) close();
+            });
+        })();
+    </script>
+}

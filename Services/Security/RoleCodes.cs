@@ -15,7 +15,7 @@ namespace Ibtikar.Services.Security
             {
                 [AuditEmployee]            = "/Audit/Inbox",
                 [SpecializedDepartment]    = "/SpecializedDashboard",
-                [PartnerDepartment]        = "/PartnerDashboard",
+                [PartnerDepartment]        = "/SpecializedDashboard",
                 [InnovationCommitteeMember]= "/Committee",
                 [SystemAdmin]              = "/AdminOverview",
                 [ExternalBeneficiary]      = "/MyRequests",
@@ -26,5 +26,6 @@ namespace Ibtikar.Services.Security
         public const string UserIdClaim = "ibtikar_user_id";
         public const string FullNameClaim = "ibtikar_full_name";
         public const string DepartmentIdClaim = "ibtikar_department_id";
+        public const string DepartmentNameClaim = "ibtikar_department_name";
     }
 }

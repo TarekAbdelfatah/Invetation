@@ -29,6 +29,7 @@ namespace Ibtikar.Services.Security
 
             var user = await _db.Users
                 .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+                .Include(u => u.Department)
                 .FirstOrDefaultAsync(u => u.Username == username && u.IsActive, ct);
 
             var ok = user is not null && _hasher.Verify(password, user.PasswordSalt, user.PasswordHash);
@@ -54,6 +55,10 @@ namespace Ibtikar.Services.Security
             if (user.DepartmentId.HasValue)
             {
                 claims.Add(new Claim(RoleCodes.DepartmentIdClaim, user.DepartmentId.Value.ToString()));
+                if (!string.IsNullOrWhiteSpace(user.Department?.Name))
+                {
+                    claims.Add(new Claim(RoleCodes.DepartmentNameClaim, user.Department.Name));
+                }
             }
 
             foreach (var ur in user.UserRoles)

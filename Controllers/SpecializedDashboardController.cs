@@ -1,3 +1,4 @@
+using Ibtikar.DTOs.PartnerDashboard;
 using Ibtikar.DTOs.SpecializedDashboard;
 using Ibtikar.Services.Security;
 using Ibtikar.ViewModels;
@@ -7,19 +8,27 @@ using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = RoleCodes.SpecializedDepartment)]
+    [Authorize(Roles = $"{RoleCodes.SpecializedDepartment},{RoleCodes.PartnerDepartment}")]
     public class SpecializedDashboardController : Controller
     {
         private readonly Services.SpecializedDashboard.ISpecializedDashboardService _service;
+        private readonly Services.PartnerDashboard.IPartnerDashboardService _partnerService;
 
-        public SpecializedDashboardController(Services.SpecializedDashboard.ISpecializedDashboardService service)
-            => _service = service;
+        public SpecializedDashboardController(
+            Services.SpecializedDashboard.ISpecializedDashboardService service,
+            Services.PartnerDashboard.IPartnerDashboardService partnerService)
+        {
+            _service = service;
+            _partnerService = partnerService;
+        }
 
         [HttpGet]
         public async Task<IActionResult> Index(CancellationToken ct)
         {
             var departmentId = ResolveDepartmentId();
             var dto = await _service.GetSnapshotAsync(departmentId, ct);
+            var advisoryDto = await _partnerService.GetSnapshotAsync(departmentId, ct);
+            var advisoryInbox = await _partnerService.GetInboxAsync(departmentId, ct);
 
             var vm = new SpecializedDashboardVm
             {
@@ -27,7 +36,17 @@ namespace Ibtikar.Controllers
                 SentToPartner = dto?.SentToPartner ?? 0,
                 SentToExecution = dto?.SentToExecution ?? 0,
                 RejectedAfterRouting = dto?.RejectedAfterRouting ?? 0,
-                DepartmentName = ResolveDepartmentName()
+                AdvisoryPending = advisoryDto?.PendingAssignments ?? 0,
+                AdvisoryLate = advisoryDto?.OverdueLate ?? 0,
+                AdvisorySubmitted = advisoryDto?.SubmittedThisCycle ?? 0,
+                DepartmentName = ResolveDepartmentName(),
+                AdvisoryItems = (advisoryInbox?.Items ?? new List<PartnerAssignmentRowDto>())
+                    .Select(i => new PartnerAssignmentRowVm(
+                        i.AssignmentId, i.IdeaId, i.IdeaReference, i.IdeaTitle,
+                        i.ApplicantName, i.SourceDepartmentName,
+                        i.SentAt, i.RespondedAt,
+                        i.Status, i.IsLate, i.IsPending, i.IsReturned, i.DaysOpen))
+                    .ToList()
             };
             return View(vm);
         }
@@ -241,7 +260,7 @@ namespace Ibtikar.Controllers
         }
 
         private string? ResolveDepartmentName()
-            => User.FindFirst("ibtikar_department_name")?.Value;
+            => User.FindFirst(RoleCodes.DepartmentNameClaim)?.Value;
 
         private Guid ResolveUserId()
         {

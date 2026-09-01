@@ -111,7 +111,7 @@ namespace Ibtikar.Repositories
                 : new PartnerScoreLineDto(c.Id, c.Code, c.Name, null, null))
                 .ToList();
 
-            var canScore = assignment.Status != PartnerAssignment.StatusReturned;
+            var canScore = assignment.Status == PartnerAssignment.StatusPending;
             var isNotCompetentReturn = assignment.Status == PartnerAssignment.StatusReturned
                 && assignment.Note?.StartsWith("NotCompetent:", StringComparison.Ordinal) == true;
             var notCompetentReason = isNotCompetentReturn && assignment.Note is { Length: > 14 }

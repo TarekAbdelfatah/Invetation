@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = RoleCodes.PartnerDepartment)]
+    [Authorize(Roles = $"{RoleCodes.SpecializedDepartment},{RoleCodes.PartnerDepartment}")]
     public class PartnerDashboardController : Controller
     {
         private readonly Services.PartnerDashboard.IPartnerDashboardService _service;
@@ -23,32 +23,9 @@ namespace Ibtikar.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(CancellationToken ct)
+        public IActionResult Index()
         {
-            try
-            {
-                var departmentId = ResolveDepartmentId();
-                var snapshot = await _service.GetSnapshotAsync(departmentId, ct);
-                var inbox = await _service.GetInboxAsync(departmentId, ct);
-
-                var vm = new PartnerDashboardVm
-                {
-                    PendingAssignments = snapshot?.PendingAssignments ?? 0,
-                    OverdueLate = snapshot?.OverdueLate ?? 0,
-                    SubmittedThisCycle = snapshot?.SubmittedThisCycle ?? 0,
-                    DepartmentName = ResolveDepartmentName(),
-                    Items = (inbox?.Items ?? new List<PartnerAssignmentRowDto>())
-                        .Select(ToListItemVm)
-                        .ToList()
-                };
-                return View(vm);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Partner dashboard index fallback (database unavailable): {Message}", ex.Message);
-                ViewBag.DatabaseError = ex.Message;
-                return View(new PartnerDashboardVm { Items = new List<PartnerAssignmentRowVm>() });
-            }
+            return RedirectToAction("Index", "SpecializedDashboard");
         }
 
         [HttpGet("PartnerDashboard/Details/{assignmentId:guid}")]
@@ -164,7 +141,7 @@ namespace Ibtikar.Controllers
         }
 
         private string? ResolveDepartmentName()
-            => User.FindFirst("ibtikar_department_name")?.Value;
+            => User.FindFirst(RoleCodes.DepartmentNameClaim)?.Value;
 
         private Guid ResolveUserId()
         {

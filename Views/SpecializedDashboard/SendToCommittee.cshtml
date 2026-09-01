@@ -47,7 +47,7 @@
                         <div class="bog-kpi-value @(Model.UnrepliedPartners > 0 ? "text-warning" : "text-success")">
                             @Model.UnrepliedPartners
                         </div>
-                        <div class="bog-kpi-meta">@(Model.UnrepliedPartners > 0 ? "غير محسوم" : "كل الشركاء ردّوا")</div>
+                        <div class="bog-kpi-meta">@(Model.UnrepliedPartners > 0 ? "غير محسوم" : "كل الجهات ردّت")</div>
                     </div>
                 </div>
             </div>
@@ -91,7 +91,7 @@
                 </a>
                 <button type="submit" class="btn btn-success" @(Model.CanSend ? null : "disabled")>
                     <span class="material-icons align-middle" style="font-size:18px">send</span>
-                    @(Model.UnrepliedPartners > 0 ? "إرسال رغم تحذير الشركاء" : "إرسال إلى اللجنة")
+                    @(Model.UnrepliedPartners > 0 ? "إرسال رغم تحذير الجهات" : "إرسال إلى اللجنة")
                 </button>
             </div>
         </form>

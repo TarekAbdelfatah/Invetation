@@ -1,7 +1,7 @@
 @model Ibtikar.ViewModels.SpecializedPartnerOpinionVm
 @using Ibtikar.ViewModels
 @{
-    ViewData["Title"] = $"ردود الشركاء · {Model.Reference}";
+    ViewData["Title"] = $"ردود الجهات المستشارة · {Model.Reference}";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -12,7 +12,7 @@
                 <span class="bog-page-icon" aria-hidden="true">
                     <span class="material-icons">forum</span>
                 </span>
-                متابعة ردود الإدارات الشريكة
+                متابعة ردود الجهات المستشارة
             </h2>
             <div class="d-flex gap-2">
                 <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.IdeaId">
@@ -21,7 +21,7 @@
                 </a>
                 <a class="btn btn-primary" asp-action="Request" asp-route-id="@Model.IdeaId">
                     <span class="material-icons align-middle" style="font-size:18px">add</span>
-                    إضافة شركاء
+                    إضافة جهات أخرى
                 </a>
             </div>
         </div>
@@ -38,10 +38,10 @@
             <div class="card bog-section">
                 <div class="card-body text-center text-muted p-5">
                     <span class="material-icons" style="font-size:48px;color:var(--text-muted)">forum</span>
-                    <p class="mb-1 mt-2">لم يتم إرسال أي طلب لشركاء بعد.</p>
+                    <p class="mb-1 mt-2">لم يتم إرسال أي طلب لجهات أخرى بعد.</p>
                     <a class="btn btn-primary mt-3" asp-action="Request" asp-route-id="@Model.IdeaId">
                         <span class="material-icons align-middle" style="font-size:18px">groups</span>
-                        طلب رأي الشركاء
+                        طلب رأي جهات أخرى
                     </a>
                 </div>
             </div>
@@ -51,14 +51,14 @@
             <div class="card bog-section">
                 <div class="card-header bg-white d-flex align-items-center gap-2">
                     <span class="material-icons text-primary">inventory_2</span>
-                    <strong>الإدارات الشريكة وردودها</strong>
+                    <strong>الجهات المستشارة وردودها</strong>
                     <span class="badge bg-secondary ms-auto">@Model.Rows.Count</span>
                 </div>
                 <div class="table-responsive">
                     <table class="bog-card-list mb-0">
                         <thead>
                             <tr>
-                                <th>الإدارة الشريكة</th>
+                                <th>الجهة المستشارة</th>
                                 <th>الحالة</th>
                                 <th>منذ الطلب</th>
                                 <th>الرد</th>
@@ -69,7 +69,7 @@
                             @foreach (var r in Model.Rows)
                             {
                                 <tr class="@(r.IsLate ? "table-warning" : null)">
-                                    <td data-label="الإدارة الشريكة">
+                                    <td data-label="الجهة المستشارة">
                                         <span class="material-icons text-muted align-middle">apartment</span>
                                         @r.PartnerDepartmentName
                                     </td>

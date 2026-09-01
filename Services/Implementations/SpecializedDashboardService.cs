@@ -236,7 +236,7 @@ namespace Ibtikar.Services.SpecializedDashboard
             var fromId = idea.CurrentStatusId;
             idea.CurrentStatusId = referredId.Value;
 
-            var note = $"إرسال إلى اللجنة بواسطة الإدارة المختصة. تم تقييم {summary.CompletedCriteria} من {summary.TotalCriteria} معيار.";
+            var note = $"إرسال إلى اللجنة بواسطة الإدارة. تم تقييم {summary.CompletedCriteria} من {summary.TotalCriteria} معيار.";
             _logger.LogInformation("Specialized sent {Idea} to committee (department={Dept}, user={User})",
                 idea.ReferenceNumber, departmentId, actorUserId);
 

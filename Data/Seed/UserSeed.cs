@@ -13,7 +13,7 @@ namespace Ibtikar.Data.Seed
         {
             EnsureUserForRole(db, hasher, "audit", "audit", "موظف تدقيق", "audit-employee", "internal");
             EnsureUserForRole(db, hasher, "specialized", "specialized", "الإدارة المختصة", "specialized-department", "internal", "judicial");
-            EnsureUserForRole(db, hasher, "partner", "partner", "الإدارة الشريكة", "partner-department", "internal", "audit");
+            EnsureUserForRole(db, hasher, "partner", "partner", "الإدارة الشريكة", "partner-department", "internal", "tech");
             EnsureUserForRole(db, hasher, "committee", "committee", "عضو لجنة", "innovation-committee-member", "internal");
             EnsureUserForRole(db, hasher, "admin", "admin", "مدير النظام", "system-admin", "internal");
             EnsureUserForRole(db, hasher, "ext-beneficiary", "ext", "مستفيد خارجي", "external-beneficiary", "external");

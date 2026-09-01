@@ -7,6 +7,11 @@ namespace Ibtikar.ViewModels
         public int SentToExecution { get; set; }
         public int RejectedAfterRouting { get; set; }
         public string? DepartmentName { get; set; }
+
+        public int AdvisoryPending { get; set; }
+        public int AdvisoryLate { get; set; }
+        public int AdvisorySubmitted { get; set; }
+        public List<PartnerAssignmentRowVm> AdvisoryItems { get; set; } = new();
     }
 
     public class SpecializedReferralsVm

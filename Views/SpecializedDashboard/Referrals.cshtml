@@ -4,7 +4,7 @@
     ViewData["Title"] = "الأفكار المحوّلة";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var currentStatus = Model.StatusFilter;
-    var deptLabel = string.IsNullOrWhiteSpace(Model.DepartmentName) ? "الإدارة المختصة" : Model.DepartmentName;
+    var deptLabel = string.IsNullOrWhiteSpace(Model.DepartmentName) ? "الإدارة" : Model.DepartmentName;
 }
 
 <div class="bog-main">

@@ -1,135 +1,154 @@
 @model Ibtikar.ViewModels.PartnerDashboardVm
 @using Ibtikar.ViewModels
 @{
-    ViewData["Title"] = "لوحة الشريك";
+    ViewData["Title"] = "لوحة الإدارة";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var deptLabel = string.IsNullOrWhiteSpace(Model.DepartmentName) ? "الإدارة الشريكة" : Model.DepartmentName;
+    var deptLabel = string.IsNullOrWhiteSpace(Model.DepartmentName) ? "الإدارة" : Model.DepartmentName;
 }
 
-<div class="bog-main">
-    <div class="container py-4">
-        <div class="bog-page-header">
-            <h1>
-                <span class="bog-page-icon" aria-hidden="true">
-                    <span class="material-icons">handshake</span>
-                </span>
-                لوحة @deptLabel
-            </h1>
-            <span class="bog-page-role">
-                <span class="material-icons" aria-hidden="true">apartment</span>
+<div class="container py-4">
+    <div class="partner-hero">
+        <div class="partner-hero__content">
+            <span class="partner-hero__icon" aria-hidden="true">
+                <span class="material-icons">engineering</span>
+            </span>
+            <div>
+                <h1 class="partner-hero__title">لوحة @deptLabel</h1>
+                <p class="partner-hero__subtitle">استشارات واردة من إدارات أخرى لطلب رأي إدارتك في أفكارها.</p>
+            </div>
+            <span class="partner-hero__badge">
+                <span class="material-icons" style="font-size:16px">apartment</span>
                 @deptLabel
             </span>
         </div>
+    </div>
 
-        @if (TempData["AlertMessage"] is string ok)
-        {
-            <div class="alert alert-success">@ok</div>
-        }
-        @if (TempData["AlertError"] is string err)
-        {
-            <div class="alert alert-danger">@err</div>
-        }
+    @if (TempData["AlertMessage"] is string ok)
+    {
+        <div class="alert alert-success bog-alert" role="alert">
+            <span class="material-icons bog-alert-icon">check_circle</span>
+            <span class="bog-alert-text">@ok</span>
+        </div>
+    }
+    @if (TempData["AlertError"] is string err)
+    {
+        <div class="alert alert-danger bog-alert" role="alert">
+            <span class="material-icons bog-alert-icon">error</span>
+            <span class="bog-alert-text">@err</span>
+        </div>
+    }
 
-        <div class="row g-3 mb-4">
-            <div class="col-lg-4 col-md-6">
-                <div class="card h-100 bog-kpi-card">
-                    <div class="card-body">
-                        <div class="bog-kpi-label">إسنادات بانتظار الرد</div>
-                        <div class="bog-kpi-value text-warning">@Model.PendingAssignments</div>
-                        <div class="bog-kpi-meta">من الإدارة المختصة</div>
-                    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-lg-4 col-md-6">
+            <div class="partner-kpi partner-kpi--pending">
+                <div class="partner-kpi__head">
+                    <span class="partner-kpi__icon"><span class="material-icons">hourglass_top</span></span>
+                    <span class="partner-kpi__chip">بانتظار ردك</span>
                 </div>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <div class="card h-100 bog-kpi-card">
-                    <div class="card-body">
-                        <div class="bog-kpi-label">طلبات متأخرة</div>
-                        <div class="bog-kpi-value text-danger">@Model.OverdueLate</div>
-                        <div class="bog-kpi-meta">أكثر من 4 أيام</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <div class="card h-100 bog-kpi-card">
-                    <div class="card-body">
-                        <div class="bog-kpi-label">تم الرد خلال 30 يوم</div>
-                        <div class="bog-kpi-value text-success">@Model.SubmittedThisCycle</div>
-                        <div class="bog-kpi-meta">دورة المراجعة</div>
-                    </div>
-                </div>
+                <div class="partner-kpi__value">@Model.PendingAssignments</div>
+                <div class="partner-kpi__label">استشارات بانتظار الرد</div>
+                <div class="partner-kpi__meta">من إدارات أخرى</div>
             </div>
         </div>
-
-        <div class="card bog-section">
-            <div class="card-header bg-white d-flex align-items-center gap-2">
-                <span class="material-icons text-primary">inbox</span>
-                <strong>الإسنادات الحالية</strong>
-                <span class="badge bg-secondary ms-auto">@Model.Items.Count</span>
-            </div>
-
-            @if (!Model.Items.Any())
-            {
-                <div class="card-body text-center text-muted p-5">
-                    <span class="material-icons" style="font-size:48px;color:var(--text-muted)">inbox</span>
-                    <p class="mb-1 mt-2">لا توجد إسنادات حالياً.</p>
+        <div class="col-lg-4 col-md-6">
+            <div class="partner-kpi partner-kpi--late">
+                <div class="partner-kpi__head">
+                    <span class="partner-kpi__icon"><span class="material-icons">schedule</span></span>
+                    <span class="partner-kpi__chip">تجاوزت 4 أيام</span>
                 </div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="bog-card-list mb-0">
-                        <thead>
-                            <tr>
-                                <th>المرجع</th>
-                                <th>العنوان</th>
-                                <th>مُقدِّم الفكرة</th>
-                                <th>من إدارة</th>
-                                <th>منذ الإسناد</th>
-                                <th>الحالة</th>
-                                <th class="text-end">إجراءات</th>
+                <div class="partner-kpi__value">@Model.OverdueLate</div>
+                <div class="partner-kpi__label">طلبات متأخرة</div>
+                <div class="partner-kpi__meta">تحتاج استجابة عاجلة</div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="partner-kpi partner-kpi--done">
+                <div class="partner-kpi__head">
+                    <span class="partner-kpi__icon"><span class="material-icons">check_circle</span></span>
+                    <span class="partner-kpi__chip">آخر 30 يوم</span>
+                </div>
+                <div class="partner-kpi__value">@Model.SubmittedThisCycle</div>
+                <div class="partner-kpi__label">تم الرد خلال 30 يوم</div>
+                <div class="partner-kpi__meta">دورة المراجعة الحالية</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="partner-section-head">
+        <h2 class="partner-section-head__title">
+            <span class="material-icons">inbox</span>
+            الاستشارات الواردة
+        </h2>
+        <span class="partner-section-head__count">@Model.Items.Count</span>
+    </div>
+
+    <div class="card bog-section partner-inbox">
+        @if (!Model.Items.Any())
+        {
+            <div class="card-body text-center text-muted p-5">
+                <span class="material-icons d-block mb-3" style="font-size:56px;color:var(--gray-300)">inbox</span>
+                <p class="mb-1 fs-6 fw-medium">لا توجد استشارات حالياً.</p>
+                <p class="small">ستظهر هنا أي استشارات تحوّلها إدارات أخرى لطلب رأي إدارتك في أفكارها.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="bog-card-list mb-0">
+                    <thead>
+                        <tr>
+                            <th>المرجع</th>
+                            <th>العنوان</th>
+                            <th>مُقدِّم الفكرة</th>
+                            <th>الإدارة الطالبة</th>
+                            <th>منذ الإحالة</th>
+                            <th>الحالة</th>
+                            <th class="text-end">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var i in Model.Items)
+                        {
+                            <tr class="@(i.IsLate ? "table-warning" : null)" onclick="window.location='@Url.Action("Details", new { assignmentId = i.AssignmentId })'">
+                                <td data-label="المرجع"><span class="partner-inbox__ref">@i.IdeaReference</span></td>
+                                <td data-label="العنوان">@i.IdeaTitle</td>
+                                <td data-label="مُقدِّم الفكرة">@i.ApplicantName</td>
+                                <td data-label="الإدارة الطالبة">@i.SourceDepartmentName</td>
+                                <td data-label="منذ الإحالة">
+                                    <span class="partner-inbox__days">
+                                        <span class="material-icons">timelapse</span>
+                                        <span dir="ltr">@i.DaysOpen.ToString("0.0") يوم</span>
+                                    </span>
+                                </td>
+                                <td data-label="الحالة">
+                                    @if (i.IsReturned)
+                                    {
+                                        <span class="partner-status partner-status--returned"><span class="partner-status__dot"></span>مرتجَع</span>
+                                    }
+                                    else if (!i.IsPending)
+                                    {
+                                        <span class="partner-status partner-status--submitted"><span class="partner-status__dot"></span>تم الرد</span>
+                                    }
+                                    else if (i.IsLate)
+                                    {
+                                        <span class="partner-status partner-status--late"><span class="partner-status__dot"></span>متأخر</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="partner-status partner-status--pending"><span class="partner-status__dot"></span>قيد المراجعة</span>
+                                    }
+                                </td>
+                                <td class="bog-card-list__actions" data-label="">
+                                    <a class="btn btn-sm btn-primary" asp-action="Details" asp-route-assignmentId="@i.AssignmentId">
+                                        <span class="material-icons align-middle" style="font-size:16px">rate_review</span>
+                                        مراجعة
+                                    </a>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var i in Model.Items)
-                            {
-                                <tr class="@(i.IsLate ? "table-warning" : null)">
-                                    <td data-label="المرجع"><code>@i.IdeaReference</code></td>
-                                    <td data-label="العنوان">@i.IdeaTitle</td>
-                                    <td data-label="مُقدِّم الفكرة">@i.ApplicantName</td>
-                                    <td data-label="من إدارة">@i.SourceDepartmentName</td>
-                                    <td data-label="منذ الإسناد">
-                                        <small dir="ltr">@i.DaysOpen.ToString("0.0") يوم</small>
-                                    </td>
-                                    <td data-label="الحالة">
-                                        @if (i.IsReturned)
-                                        {
-                                            <span class="badge bg-secondary">مرتجَع</span>
-                                        }
-                                        else if (!i.IsPending)
-                                        {
-                                            <span class="badge bg-success">تم الرد</span>
-                                        }
-                                        else if (i.IsLate)
-                                        {
-                                            <span class="badge bg-danger">متأخر</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-warning text-dark">قيد المراجعة</span>
-                                        }
-                                    </td>
-                                    <td class="bog-card-list__actions" data-label="">
-                                        <a class="btn btn-sm btn-primary" asp-action="Details" asp-route-assignmentId="@i.AssignmentId">
-                                            <span class="material-icons align-middle" style="font-size:16px">rate_review</span>
-                                            مراجعة
-                                        </a>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>
