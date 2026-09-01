@@ -1,6 +1,6 @@
 using Ibtikar.Models;
 
-namespace Ibtikar.Services.Committee
+namespace Ibtikar.Services.Interfaces
 {
     public interface IDelegationService
     {

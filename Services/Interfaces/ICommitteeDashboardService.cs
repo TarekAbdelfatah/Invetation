@@ -1,6 +1,6 @@
 using Ibtikar.DTOs.Committee;
 
-namespace Ibtikar.Services.Committee
+namespace Ibtikar.Services.Interfaces
 {
     public interface ICommitteeDashboardService
     {
