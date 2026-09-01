@@ -17,4 +17,23 @@ namespace Ibtikar.DTOs.AdminOverview
         string StatusColor,
         string Domain,
         DateTime CreatedAt);
+
+    public sealed record AdminOverviewIdeaRowDto(
+        Guid Id,
+        string Reference,
+        string Title,
+        string DomainName,
+        string ApplicantName,
+        string ApplicantDepartmentName,
+        string AssignedDepartmentName,
+        string StatusCode,
+        string StatusName,
+        string StatusColor,
+        DateTime CreatedAt,
+        bool IsDraft);
+
+    public sealed record AdminOverviewListDto(
+        IReadOnlyList<AdminOverviewIdeaRowDto> Rows,
+        string? StatusFilter,
+        int TotalCount);
 }

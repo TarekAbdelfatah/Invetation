@@ -14,13 +14,15 @@ namespace Ibtikar.Controllers
 
         public AdminOverviewController(IAdminOverviewService service) => _service = service;
 
-        public async Task<IActionResult> Index(CancellationToken ct)
+        public async Task<IActionResult> Index(string? status, CancellationToken ct)
         {
-            var dto = await _service.GetSnapshotAsync(ct);
-            return View(ToVm(dto));
+            var snapshot = await _service.GetSnapshotAsync(ct);
+            var ideas = await _service.GetIdeasAsync(status, 200, ct);
+
+            return View(ToVm(snapshot, ideas));
         }
 
-        private static AdminOverviewVm ToVm(AdminOverviewDto dto)
+        private static AdminOverviewVm ToVm(AdminOverviewDto dto, AdminOverviewListDto ideas)
             => new()
             {
                 TotalIdeas = dto.TotalIdeas,
@@ -38,7 +40,13 @@ namespace Ibtikar.Controllers
                         r.StatusColor,
                         r.Domain,
                         r.CreatedAt))
-                    .ToList()
+                    .ToList(),
+                StatusFilter = ideas.StatusFilter,
+                Ideas = ideas.Rows.Select(i => new AdminOverviewVm.IdeaRow(
+                    i.Id, i.Reference, i.Title, i.DomainName, i.ApplicantName,
+                    i.ApplicantDepartmentName, i.AssignedDepartmentName,
+                    i.StatusCode, i.StatusName, i.StatusColor, i.CreatedAt, i.IsDraft)).ToList(),
+                IdeasTotalCount = ideas.TotalCount
             };
     }
 }

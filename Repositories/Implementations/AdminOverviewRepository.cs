@@ -42,5 +42,34 @@ namespace Ibtikar.Repositories
 
             return new AdminOverviewDto(totalIdeas, drafts, submitted, totalUsers, byStatus, recent);
         }
+
+        public async Task<AdminOverviewListDto> GetIdeasAsync(string? statusFilter, int take, CancellationToken ct)
+        {
+            var query = _db.InnovationIdeas.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(statusFilter))
+                query = query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == statusFilter);
+
+            var total = await query.CountAsync(ct);
+            var rows = await query
+                .OrderByDescending(i => i.CreatedAt)
+                .Take(take)
+                .Select(i => new AdminOverviewIdeaRowDto(
+                    i.Id,
+                    i.ReferenceNumber,
+                    i.Title,
+                    i.InnovationDomain != null ? i.InnovationDomain.Name : "—",
+                    i.ApplicantUser != null ? i.ApplicantUser.FullName : "—",
+                    i.ApplicantDepartment != null ? i.ApplicantDepartment.Name : "خارجي",
+                    i.AssignedDepartment != null ? i.AssignedDepartment.Name : null,
+                    i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty,
+                    i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
+                    i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d",
+                    i.CreatedAt,
+                    i.IsDraft))
+                .ToListAsync(ct);
+
+            return new AdminOverviewListDto(rows, statusFilter, total);
+        }
     }
 }
