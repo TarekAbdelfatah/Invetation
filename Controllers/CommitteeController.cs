@@ -1,5 +1,5 @@
 using Ibtikar.DTOs.Committee;
-using Ibtikar.Services.Committee;
+using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Security;
 using Ibtikar.ViewModels;
