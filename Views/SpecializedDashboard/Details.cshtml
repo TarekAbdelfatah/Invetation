@@ -1,6 +1,7 @@
 @model Ibtikar.ViewModels.SpecializedDetailsVm
 @using Ibtikar.ViewModels
 @using Ibtikar.Services.Helpers
+@using static Ibtikar.Services.Helpers.KsaTime
 @{
     ViewData["Title"] = $"تفاصيل {Model.Reference}";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -119,7 +120,7 @@
                                 <li class="list-group-item d-flex align-items-center gap-2">
                                     <span class="material-icons text-muted">picture_as_pdf</span>
                                     <span>@a.FileName</span>
-                                    <small class="text-muted ms-auto">@((a.SizeBytes / 1024.0).ToString("0.0")) KB · @a.UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                                    <small class="text-muted ms-auto">@((a.SizeBytes / 1024.0).ToString("0.0")) KB · @a.UploadedAt.FormatDateTime()</small>
                                 </li>
                             }
                         </ul>
@@ -169,7 +170,7 @@
                                     <li class="mb-3">
                                         <div class="d-flex justify-content-between">
                                             <span>@h.FromStatus → @h.ToStatus</span>
-                                            <small class="text-muted" dir="ltr">@h.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                                            <small class="text-muted" dir="ltr">@h.ChangedAt.FormatDateTime()</small>
                                         </div>
                                         <small class="text-muted">@h.By</small>
                                         @if (!string.IsNullOrWhiteSpace(h.Note))

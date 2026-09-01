@@ -41,6 +41,7 @@ namespace Ibtikar.DTOs.Audit
         DateTime SubmittedAt,
         bool CanOpen,
         bool IsUnderStudy,
+        bool IsRoutedToSpecialist,
         bool IsTerminal,
         IReadOnlyList<AuditDepartmentOptionDto> ActiveDepartments,
         IReadOnlyList<AuditHistoryRowDto> History);

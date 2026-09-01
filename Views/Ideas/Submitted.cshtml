@@ -1,4 +1,5 @@
 @model Ibtikar.ViewModels.IdeaSuccessVm
+@using static Ibtikar.Services.Helpers.KsaTime
 @{
     ViewData["Title"] = "تم تقديم الفكرة بنجاح";
     Layout = "_Layout";
@@ -30,7 +31,7 @@
                     </dd>
 
                     <dt class="col-sm-3">تاريخ التقديم</dt>
-                    <dd class="col-sm-9" dir="ltr">@Model.SubmittedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+                    <dd class="col-sm-9" dir="ltr">@Model.SubmittedAt.FormatDateTime()</dd>
                 </dl>
 
                 <div class="d-flex gap-2 justify-content-center mb-4">

@@ -1,5 +1,6 @@
 @model Ibtikar.ViewModels.ExecutionTimelineVm
 @using Ibtikar.ViewModels
+@using static Ibtikar.Services.Helpers.KsaTime
 @{
     ViewData["Title"] = $"السجل الزمني لتنفيذ {Model.Reference}";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -52,7 +53,7 @@
                             <li class="mb-3">
                                 <div class="d-flex justify-content-between">
                                     <span class="fw-bold">@r.StageName</span>
-                                    <small class="text-muted" dir="ltr">@r.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                                    <small class="text-muted" dir="ltr">@r.ChangedAt.FormatDateTime()</small>
                                 </div>
                                 <small class="text-muted">@r.ChangedByName</small>
                                 @if (!string.IsNullOrWhiteSpace(r.Note))

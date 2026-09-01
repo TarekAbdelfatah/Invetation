@@ -1,6 +1,7 @@
 @using Ibtikar.Controllers
 @using Ibtikar.Services.Helpers
 @using Ibtikar.ViewModels
+@using static Ibtikar.Services.Helpers.KsaTime
 @model AuditDetailsVm
 @{
     ViewData["Title"] = $"تدقيق {Model.Reference}";
@@ -45,7 +46,7 @@
                     }
 
                     <dt class="col-sm-3">تاريخ التقديم</dt>
-                    <dd class="col-sm-9" dir="ltr">@Model.SubmittedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+                    <dd class="col-sm-9" dir="ltr">@Model.SubmittedAt.FormatDateTime()</dd>
                 </dl>
             </div>
         </div>
@@ -129,7 +130,7 @@
             </div>
         }
 
-        @if (Model.IsUnderStudy)
+        @if (Model.IsUnderStudy && !Model.IsRoutedToSpecialist)
         {
             <div class="card bog-section mb-3 bog-idea-action bog-idea-action--success">
                 <div class="bog-idea-action__head">
@@ -222,7 +223,7 @@
                                     }
                                 </div>
                                 <div class="bog-idea-history__meta">
-                                    <span class="bog-idea-history__date" dir="ltr">@h.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                                    <span class="bog-idea-history__date" dir="ltr">@h.ChangedAt.FormatDateTime()</span>
                                     <span class="bog-idea-history__by">@h.By</span>
                                 </div>
                             </li>

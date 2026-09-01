@@ -25,6 +25,8 @@ namespace Ibtikar.Models
         public DateTime? AuditAssignedAt { get; set; }
 
         public bool IsDraft { get; set; } = true;
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? SubmittedAt { get; set; }
 

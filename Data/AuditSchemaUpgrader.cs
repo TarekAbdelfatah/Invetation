@@ -14,7 +14,9 @@ namespace Ibtikar.Data
             db.Database.ExecuteSqlRaw(
                 "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"AssignedDepartmentId\" uuid NULL; " +
                 "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"AuditEmployeeId\" uuid NULL; " +
-                "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"AuditAssignedAt\" timestamp with time zone NULL;");
+                "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"AuditAssignedAt\" timestamp with time zone NULL; " +
+                "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"IsDeleted\" boolean NOT NULL DEFAULT FALSE; " +
+                "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"DeletedAt\" timestamp with time zone NULL;");
 
             db.Database.ExecuteSqlRaw(
                 "CREATE TABLE IF NOT EXISTS \"AuditActionItems\" (" +

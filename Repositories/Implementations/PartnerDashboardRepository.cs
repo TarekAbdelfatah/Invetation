@@ -134,7 +134,7 @@ namespace Ibtikar.Repositories
                     Comment: specialized.Comment,
                     SubmittedAt: specialized.SubmittedAt,
                     Scores: specialized.Details
-                        .OrderBy(d => d.Criterion!.DisplayOrder)
+                        .OrderBy(d => d.Criterion?.DisplayOrder ?? 0)
                         .Select(d => new PartnerSpecializedScoreDto(
                             d.CriterionId,
                             d.Criterion?.Code ?? string.Empty,
@@ -174,6 +174,7 @@ namespace Ibtikar.Repositories
             return await _db.AssessmentHeaders
                 .AsNoTracking()
                 .Include(h => h.Details)
+                    .ThenInclude(d => d.Criterion)
                 .Include(h => h.AssessorDepartment)
                 .Where(h => h.InnovationIdeaId == ideaId
                     && h.Source == AssessmentHeader.SourceSpecialized

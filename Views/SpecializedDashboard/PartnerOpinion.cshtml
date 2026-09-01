@@ -1,5 +1,6 @@
 @model Ibtikar.ViewModels.SpecializedPartnerOpinionVm
 @using Ibtikar.ViewModels
+@using static Ibtikar.Services.Helpers.KsaTime
 @{
     ViewData["Title"] = $"ردود الجهات المستشارة · {Model.Reference}";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -84,7 +85,7 @@
                                         }
                                     </td>
                                     <td data-label="الرد" dir="ltr">
-                                        @(r.RespondedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "—")
+                                        @r.RespondedAt.FormatDateTime()
                                     </td>
                                     <td data-label="ملاحظة" class="small">@(r.Note ?? "—")</td>
                                 </tr>

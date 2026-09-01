@@ -32,6 +32,7 @@ namespace Ibtikar.ViewModels
         public DateTime SubmittedAt { get; }
         public bool CanOpen { get; }
         public bool IsUnderStudy { get; }
+        public bool IsRoutedToSpecialist { get; }
         public bool IsTerminal { get; }
         public List<DepartmentOption> ActiveDepartments { get; }
         public List<AuditHistoryRow> History { get; }
@@ -53,6 +54,7 @@ namespace Ibtikar.ViewModels
             DateTime submittedAt,
             bool canOpen,
             bool isUnderStudy,
+            bool isRoutedToSpecialist,
             bool isTerminal,
             List<DepartmentOption> activeDepartments,
             List<AuditHistoryRow> history)
@@ -73,6 +75,7 @@ namespace Ibtikar.ViewModels
             SubmittedAt = submittedAt;
             CanOpen = canOpen;
             IsUnderStudy = isUnderStudy;
+            IsRoutedToSpecialist = isRoutedToSpecialist;
             IsTerminal = isTerminal;
             ActiveDepartments = activeDepartments;
             History = history;

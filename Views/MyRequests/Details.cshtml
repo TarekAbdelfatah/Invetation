@@ -1,6 +1,7 @@
 @using Ibtikar.Controllers
 @using Ibtikar.Services.Helpers
 @using Ibtikar.ViewModels
+@using static Ibtikar.Services.Helpers.KsaTime
 @model MyRequestDetailsVm
 @{
     ViewData["Title"] = string.IsNullOrEmpty(Model.Reference) ? "تفاصيل المسودة" : $"تفاصيل الطلب {Model.Reference}";
@@ -87,7 +88,7 @@
 
                     <dt class="col-sm-3">تاريخ التقديم</dt>
                     <dd class="col-sm-9" dir="ltr">
-                        @((Model.SubmittedAt ?? Model.CreatedAt).ToLocalTime().ToString("yyyy-MM-dd HH:mm"))
+                        @((Model.SubmittedAt ?? Model.CreatedAt).FormatDateTime())
                     </dd>
                 </dl>
             </div>
@@ -162,7 +163,7 @@
                                     @a.FileName
                                 </span>
                                 <small class="text-muted" dir="ltr">
-                                    @(a.SizeBytes / 1024) KB · @a.UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                                    @(a.SizeBytes / 1024) KB · @a.UploadedAt.FormatDateTime()
                                 </small>
                             </li>
                         }

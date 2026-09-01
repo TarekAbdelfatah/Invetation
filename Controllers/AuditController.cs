@@ -117,6 +117,7 @@ namespace Ibtikar.Controllers
                 dto.SubmittedAt,
                 dto.CanOpen,
                 dto.IsUnderStudy,
+                dto.IsRoutedToSpecialist,
                 dto.IsTerminal,
                 dto.ActiveDepartments.Select(d => new AuditDetailsVm.DepartmentOption(d.Id, d.Name)).ToList(),
                 dto.History.Select(h => new AuditDetailsVm.AuditHistoryRow(h.ChangedAt, h.FromStatus, h.ToStatus, h.By, h.Note)).ToList());

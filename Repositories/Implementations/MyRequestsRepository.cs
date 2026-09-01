@@ -16,7 +16,7 @@ namespace Ibtikar.Repositories
         {
             var items = await _db.InnovationIdeas
                 .AsNoTracking()
-                .Where(i => i.ApplicantUserId == applicantId)
+                .Where(i => i.ApplicantUserId == applicantId && !i.IsDeleted)
                 .OrderByDescending(i => i.CreatedAt)
                 .Take(take)
                 .Select(i => new MyRequestSummaryDto(
@@ -44,7 +44,7 @@ namespace Ibtikar.Repositories
         {
             var header = await _db.InnovationIdeas
                 .AsNoTracking()
-                .Where(i => i.Id == id && i.ApplicantUserId == applicantId)
+                .Where(i => i.Id == id && i.ApplicantUserId == applicantId && !i.IsDeleted)
                 .Select(i => new DetailsHeader(
                     i.Id,
                     i.ReferenceNumber,
@@ -119,20 +119,10 @@ namespace Ibtikar.Repositories
             return await _db.InnovationIdeas
                 .Include(i => i.CurrentStatus)
                 .Include(i => i.Attachments)
-                .FirstOrDefaultAsync(i => i.Id == id && i.ApplicantUserId == applicantId, ct);
+                .FirstOrDefaultAsync(i => i.Id == id && i.ApplicantUserId == applicantId && !i.IsDeleted, ct);
         }
 
-        public Task RemoveIdeaAsync(InnovationIdea idea, CancellationToken ct)
-        {
-            _db.InnovationIdeas.Remove(idea);
-            return Task.CompletedTask;
-        }
-
-        public Task RemoveAttachmentAsync(IdeaAttachment attachment, CancellationToken ct)
-        {
-            _db.IdeaAttachments.Remove(attachment);
-            return Task.CompletedTask;
-        }
+        public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
 
         public async Task<Guid?> GetStatusIdByCodeAsync(string code, CancellationToken ct)
             => await _db.IdeaStatuses
@@ -140,8 +130,6 @@ namespace Ibtikar.Repositories
                 .Where(s => s.Code == code)
                 .Select(s => (Guid?)s.Id)
                 .FirstOrDefaultAsync(ct);
-
-        public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
 
         private static string? LatestNoteFor(IReadOnlyList<HistoryEntry> history, string statusCode)
             => history

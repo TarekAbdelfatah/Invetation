@@ -102,6 +102,7 @@ namespace Ibtikar.Repositories
             var openStatuses = new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted };
             var canOpen = openStatuses.Contains(header.StatusCode);
             var isUnderStudy = header.StatusCode == IdeaStatusCodes.UnderStudy;
+            var isRoutedToSpecialist = isUnderStudy && !string.IsNullOrEmpty(header.AssignedDepartmentName);
 
             return new AuditDetailsDto(
                 header.Id,
@@ -120,6 +121,7 @@ namespace Ibtikar.Repositories
                 header.SubmittedAt ?? header.CreatedAt,
                 canOpen,
                 isUnderStudy,
+                isRoutedToSpecialist,
                 header.IsTerminal,
                 departments,
                 history);
