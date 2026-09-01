@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Ibtikar.ViewModels
 {
-    public class IdeaCreateViewModel
+    public class IdeaCreateViewModel : IValidatableObject
     {
         public const int TitleMax = 200;
         public const int DescriptionMax = 3000;
@@ -69,6 +69,13 @@ namespace Ibtikar.ViewModels
 
         public Guid? CurrentDraftId { get; set; }
 
+        /// <summary>
+        /// Whether the user pressed "إرسال الفكرة" (Submit).
+        /// When true, all text/select fields are required (attachment remains optional).
+        /// When false (Save Draft), fields can be left empty.
+        /// </summary>
+        public bool IsSubmit { get; set; }
+
         [Display(Name = "الاسم")]
         public string? ApplicantFullName { get; set; }
 
@@ -76,5 +83,43 @@ namespace Ibtikar.ViewModels
         public string? ApplicantDepartmentName { get; set; }
 
         public bool IsInternalApplicant { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            // Draft saves stay relaxed; only submission requires every field.
+            if (!IsSubmit)
+            {
+                yield break;
+            }
+
+            if (string.IsNullOrWhiteSpace(ProblemStatement))
+                yield return FieldRequired(nameof(ProblemStatement));
+
+            if (string.IsNullOrWhiteSpace(ProposedSolution))
+                yield return FieldRequired(nameof(ProposedSolution));
+
+            if (string.IsNullOrWhiteSpace(ExpectedBenefits))
+                yield return FieldRequired(nameof(ExpectedBenefits));
+
+            if (!ExpectedImpactId.HasValue || ExpectedImpactId.Value == Guid.Empty)
+                yield return FieldRequired(nameof(ExpectedImpactId));
+
+            if (!TargetAudienceId.HasValue || TargetAudienceId.Value == Guid.Empty)
+                yield return FieldRequired(nameof(TargetAudienceId));
+        }
+
+        private static ValidationResult FieldRequired(string member)
+            => new(MemberLabel(member) + " مطلوب", new[] { member });
+
+        private static string MemberLabel(string member)
+            => member switch
+            {
+                nameof(ProblemStatement) => "التحديات الحالية",
+                nameof(ProposedSolution) => "الحل المقترح",
+                nameof(ExpectedBenefits) => "الفوائد المتوقعة",
+                nameof(ExpectedImpactId) => "الأثر المتوقع",
+                nameof(TargetAudienceId) => "الفئة المستهدفة",
+                _ => member
+            };
     }
 }

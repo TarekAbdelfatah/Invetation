@@ -42,7 +42,7 @@
                         <div class="mb-4">
                             <label asp-for="Title" class="form-label fw-semibold"></label>
                             <span class="text-danger">*</span>
-                            <input asp-for="Title" class="form-control" maxlength="200" />
+                            <input asp-for="Title" class="form-control" maxlength="200" data-required-on-submit="true" />
                             <span asp-validation-for="Title" class="text-danger small"></span>
                         </div>
 
@@ -50,7 +50,8 @@
                             <label asp-for="Description" class="form-label fw-semibold"></label>
                             <span class="text-danger">*</span>
                             <textarea asp-for="Description" class="form-control" rows="4"
-                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.DescriptionMax"></textarea>
+                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.DescriptionMax"
+                                      data-required-on-submit="true"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="Description"></small>
                             <span asp-validation-for="Description" class="text-danger small"></span>
                         </div>
@@ -58,7 +59,8 @@
                         <div class="mb-4">
                             <label asp-for="ProblemStatement" class="form-label fw-semibold"></label>
                             <textarea asp-for="ProblemStatement" class="form-control" rows="4"
-                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.ProblemMax"></textarea>
+                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.ProblemMax"
+                                      data-required-on-submit="true"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="ProblemStatement"></small>
                             <span asp-validation-for="ProblemStatement" class="text-danger small"></span>
                         </div>
@@ -66,7 +68,8 @@
                         <div class="mb-4">
                             <label asp-for="ProposedSolution" class="form-label fw-semibold"></label>
                             <textarea asp-for="ProposedSolution" class="form-control" rows="3"
-                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.SolutionMax"></textarea>
+                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.SolutionMax"
+                                      data-required-on-submit="true"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="ProposedSolution"></small>
                             <span asp-validation-for="ProposedSolution" class="text-danger small"></span>
                         </div>
@@ -74,7 +77,8 @@
                         <div class="mb-4">
                             <label asp-for="ExpectedBenefits" class="form-label fw-semibold"></label>
                             <textarea asp-for="ExpectedBenefits" class="form-control" rows="3"
-                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.BenefitsMax"></textarea>
+                                      data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.BenefitsMax"
+                                      data-required-on-submit="true"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="ExpectedBenefits"></small>
                             <span asp-validation-for="ExpectedBenefits" class="text-danger small"></span>
                         </div>
@@ -85,7 +89,7 @@
                             <label asp-for="InnovationDomainId" class="form-label fw-semibold"></label>
                             <span class="text-danger">*</span>
                             <select asp-for="InnovationDomainId" asp-items="@(ViewBag.InnovationDomains as IEnumerable<SelectListItem>)"
-                                    class="form-select">
+                                    class="form-select" data-required-on-submit="true">
                                 <option value="">-- اختر مجال الابتكار --</option>
                             </select>
                             <span asp-validation-for="InnovationDomainId" class="text-danger small"></span>
@@ -94,7 +98,7 @@
                         <div class="mb-4">
                             <label asp-for="ExpectedImpactId" class="form-label fw-semibold"></label>
                             <select asp-for="ExpectedImpactId" asp-items="@(ViewBag.ExpectedImpacts as IEnumerable<SelectListItem>)"
-                                    class="form-select" data-other="ExpectedImpactOther">
+                                    class="form-select" data-other="ExpectedImpactOther" data-required-on-submit="true">
                                 <option value="">-- اختر الأثر المتوقع --</option>
                             </select>
                             <span asp-validation-for="ExpectedImpactId" class="text-danger small"></span>
@@ -109,7 +113,7 @@
                         <div class="mb-4">
                             <label asp-for="TargetAudienceId" class="form-label fw-semibold"></label>
                             <select asp-for="TargetAudienceId" asp-items="@(ViewBag.TargetAudiences as IEnumerable<SelectListItem>)"
-                                    class="form-select" data-other="TargetAudienceOther">
+                                    class="form-select" data-other="TargetAudienceOther" data-required-on-submit="true">
                                 <option value="">-- اختر الفئة المستهدفة --</option>
                             </select>
                             <span asp-validation-for="TargetAudienceId" class="text-danger small"></span>

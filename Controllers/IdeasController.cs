@@ -68,6 +68,21 @@ namespace Ibtikar.Controllers
         [RequestSizeLimit(20 * 1024 * 1024)]
         public async Task<IActionResult> Create(IdeaCreateViewModel model, string action, List<IFormFile>? attachments, CancellationToken ct)
         {
+            var isSaveDraft = string.Equals(action, "SaveDraft", StringComparison.OrdinalIgnoreCase);
+            var isSubmit = string.Equals(action, "Submit", StringComparison.OrdinalIgnoreCase);
+            if (!isSaveDraft && !isSubmit)
+            {
+                ModelState.AddModelError(string.Empty, "إجراء غير معروف.");
+                await PopulateLookupsAsync(model, ct);
+                return View(model);
+            }
+
+            // Re-run validation now that we know whether the user is submitting or saving a draft,
+            // so conditional Required rules (submit only) are applied correctly.
+            model.IsSubmit = isSubmit;
+            ModelState.ClearValidationState(nameof(IdeaCreateViewModel));
+            TryValidateModel(model);
+
             if (!ModelState.IsValid)
             {
                 await PopulateLookupsAsync(model, ct);
@@ -79,15 +94,6 @@ namespace Ibtikar.Controllers
             {
                 _logger.LogWarning("Authenticated user has no parsable id claim.");
                 return Challenge();
-            }
-
-            var isSaveDraft = string.Equals(action, "SaveDraft", StringComparison.OrdinalIgnoreCase);
-            var isSubmit = string.Equals(action, "Submit", StringComparison.OrdinalIgnoreCase);
-            if (!isSaveDraft && !isSubmit)
-            {
-                ModelState.AddModelError(string.Empty, "إجراء غير معروف.");
-                await PopulateLookupsAsync(model, ct);
-                return View(model);
             }
 
             var departmentId = User.FindFirst("ibtikar_department_id")?.Value is { } depStr

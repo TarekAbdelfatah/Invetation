@@ -25,7 +25,7 @@ namespace Ibtikar.Controllers
         public readonly record struct DemoUser(string Username, string FullName, string RoleName);
 
         [HttpGet]
-        public async Task<IActionResult> Login(LoginVm? vm = null, string? returnUrl = null)
+        public async Task<IActionResult> Login(string? returnUrl = null)
         {
             if (User.Identity?.IsAuthenticated == true)
             {
@@ -33,8 +33,8 @@ namespace Ibtikar.Controllers
                 if (!string.IsNullOrEmpty(home)) return Redirect(home);
             }
 
-            var model = vm ?? new LoginVm { ReturnUrl = returnUrl };
-            if (vm is null) ViewData["ReturnUrl"] = returnUrl;
+            var model = new LoginVm { ReturnUrl = returnUrl };
+            ViewData["ReturnUrl"] = returnUrl;
             PopulateDemoUsers();
             return View(model);
         }
