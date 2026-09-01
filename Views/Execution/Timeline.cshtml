@@ -1,0 +1,69 @@
+@model Ibtikar.ViewModels.ExecutionTimelineVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = $"السجل الزمني لتنفيذ {Model.Reference}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <h2 class="mb-0 d-flex align-items-center gap-2">
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">timeline</span>
+                </span>
+                السجل الزمني للتنفيذ
+            </h2>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" asp-action="Update" asp-route-id="@Model.IdeaId">
+                    <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
+                    العودة لتحديث المرحلة
+                </a>
+                <a class="btn btn-outline-info" asp-action="Index">
+                    <span class="material-icons align-middle" style="font-size:18px">list</span>
+                    قائمة التنفيذ
+                </a>
+            </div>
+        </div>
+
+        <div class="card bog-section mb-3">
+            <div class="card-body p-4">
+                <code class="fs-6 d-block mb-1">@Model.Reference</code>
+                <h1 class="h3 mb-0">@Model.Title</h1>
+            </div>
+        </div>
+
+        <div class="card bog-section">
+            <div class="card-header bg-white d-flex align-items-center gap-2">
+                <span class="material-icons text-primary align-middle">history</span>
+                <strong>السجل (للقراءة فقط، الأحدث أولاً)</strong>
+                <span class="badge bg-secondary ms-auto">@Model.Rows.Count</span>
+            </div>
+            <div class="card-body">
+                @if (!Model.Rows.Any())
+                {
+                    <p class="text-muted small mb-0">لا توجد تحديثات مراحل حتى الآن.</p>
+                }
+                else
+                {
+                    <ul class="list-unstyled mb-0 bog-timeline">
+                        @foreach (var r in Model.Rows)
+                        {
+                            <li class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-bold">@r.StageName</span>
+                                    <small class="text-muted" dir="ltr">@r.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                                </div>
+                                <small class="text-muted">@r.ChangedByName</small>
+                                @if (!string.IsNullOrWhiteSpace(r.Note))
+                                {
+                                    <div class="small mt-1" style="white-space:pre-wrap">@r.Note</div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
