@@ -545,3 +545,276 @@
 
 > 📌 **مصدر الدليل:** تم إعداده بناءً على قراءة 9 فيتشرز و 133 تاسك منجزة في مشروع Ibtikar (Project `a8ffd050-3155-4522-b7cc-57e22dec4266`).
 > **آخر تحديث للـ Doc:** بعد دمج فيتشر "Partner department advisory scoring" (6 مهام) في لوحة "الإدارة المختصة" الموحّدة — `2026-09-01`.
+
+---
+
+## 9. الفيتشرات الثلاثة الجديدة — 2026-09-01 (الإضافة الكاملة)
+
+تم إضافة **3 فيتشرات جديدة** فوق الـ Stack، تتبع **بنية Controller Architecture** (Controller → Service → Repository → EF Core) ونفس الـ Theme البصري (`bog-main` + `bog-section` + `bog-card-list` + RTL).
+
+### 9.1 نظرة عامة على الفيتشرات الثلاثة
+
+| # | الفيتشر | الدور | الـ URLs | عدد الأكشنز |
+|---|---|---|---|---|
+| 1 | **Execution tracking & completion** | `specialized-department` | `/Execution`, `/Execution/Update/{id}`, `/Execution/Timeline/{id}`, `/Execution/Complete/{id}`, `/Execution/UploadCompletion` | 5 |
+| 2 | **System admin read-only overview** | `system-admin` | `/AdminOverview`, `/AdminOverview/Details/{id}` | 2 (GET only) |
+| 3 | **Date-range reports & challenges** | `system-admin` | `/Reports`, `/Reports/Challenges` | 2 (GET only) |
+
+> **العدد الإجمالي:** 10 مهام إضافية (5 + 2 + 3) + 1 migration جديدة لـ `ExecutionProgresses`.
+
+---
+
+### 👤 المستخدم 4-b: Execution Tracking (تتبّع تنفيذ الأفكار المعتمدة)
+
+**الـ Scope:** تتبع الأفكار عبر 5 مراحل تنفيذ (البدء → التخطيط → التنفيذ → المتابعة → الإغلاق) + إكمال التنفيذ برفع ملفَي PDF + سجل زمني read-only.
+
+**الـ URLs:**
+- `/Execution` — قائمة الأفكار المُحالة للتنفيذ للإدارة الحالية
+- `/Execution/Update/{id}` — تحديث المرحلة التالية + إكمال التنفيذ
+- `/Execution/Timeline/{id}` — السجل الزمني read-only (الأحدث أولاً)
+- `/Execution/UploadCompletion` — endpoint رفع ملفَي PDF (JSON)
+
+**الـ Roles:** `SpecializedDepartment` فقط.
+
+#### 9.1.1 Execution List (Happy Path)
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 40.1 | Login كـ `specialized@ibtikar.local` (قسم `judicial`) | ينتقل إلى `/SpecializedDashboard` (افتراضي) |
+| 40.2 | افتح `/Execution` مباشرة | قائمة الأفكار في حالة `in-execution` المُحالة لإدارتي فقط (فلتر `AssignedDepartmentId` على الخادم) |
+| 40.3 | افحص العنوان | "تنفيذ الأفكار في {DepartmentName}" بأيقونة `build_circle` |
+| 40.4 | افحص الجدول | أعمدة: المرجع، العنوان، المُقدِّم، المرحلة الحالية (badge)، الحالة، إجراءات |
+| 40.5 | اضغط "تحديث المرحلة" على فكرة | ينتقل إلى `/Execution/Update/{id}` |
+| 40.6 | اضغط "السجل الزمني" | ينتقل إلى `/Execution/Timeline/{id}` |
+
+#### 9.1.2 Stage Update (خمسة مراحل)
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 41.1 | افتح Update لمرحلة لم تبدأ بعد | يظهر: 5 مراحل في `list-group-numbered` (البدء مُعلَّم حالياً)، نموذج "الانتقال للمرحلة التالية" |
+| 41.2 | اضغط Submit **بدون** إدخال note | رفض المتصفح — `required` + `minlength="5"` |
+| 41.3 | أدخل note بطول 4 أحرف | رفض المتصفح — `minlength="5"` |
+| 41.4 | أدخل note بطول ≥5 أحرف، اضغط "تسجيل المرحلة" | رسالة خضراء، يُضاف صف جديد في `ExecutionProgresses` بالطابع الزمني للخادم + اسم المستخدم + الإدارة |
+| 41.5 | تحقّق من أن الطابع الزمني في DB هو UTC وليس من المتصفح | الـ timestamp يُسجَّل على الخادم (`DateTime.UtcNow`) |
+| 41.6 | حدّث الصفحة | المرحلة تتقدّم، يظهر نموذج للمرحلة التالية |
+
+#### 9.1.3 Timeline (read-only)
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 42.1 | افتح `/Execution/Timeline/{id}` | جدول زمني read-only، الأحدث أولاً، يعرض: اسم المرحلة، التاريخ/الوقت، اسم المستخدم، note |
+| 42.2 | اضغط "تعديل" على row | غير ممكن — لا أزرار تعديل (read-only) |
+| 42.3 | افتح بدون Login | redirect إلى `/Account/Login` (Authorize) |
+| 42.4 | Login كـ `audit@ibtikar.local` وافتح `/Execution/Timeline/{id}` | 403 / redirect — `SpecializedDepartment` فقط |
+
+#### 9.1.4 Complete Execution (Two PDFs)
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 43.1 | افتح Update لمرحلة `الإغلاق` (الخامسة) | يظهر نموذج "إكمال التنفيذ" بدلاً من نموذج "المرحلة التالية" |
+| 43.2 | اضغط "إكمال التنفيذ" بدون رفع ملف | alert: "يرجى إرفاق ملفَي PDF بالضبط." |
+| 43.3 | ارفع ملف واحد فقط | alert: "يرجى إرفاق ملفَي PDF بالضبط." |
+| 43.4 | ارفع ملف `.txt` مع `.pdf` | alert: "يجب أن يكون الملفان بصيغة PDF." |
+| 43.5 | ارفع ملفَين PDF (مثل: `proof1.pdf` + `proof2.pdf`) | يبدأ spinner "جارٍ الرفع..." ثم modal تأكيد يفتح |
+| 43.6 | اضغط "إلغاء" في الـ modal | الـ modal يُغلق، الـ form لا يُرسَل |
+| 43.7 | اضغط "نعم، إكمال التنفيذ" | spinner، ثم redirect إلى Update مع alert أخضر "تم تنفيذ الفكرة وتسجيلها ضمن المكتملة" |
+| 43.8 | تحقّق من DB | `CurrentStatus` → `completed`، `ExecutionProgresses` به صف للمرحلة الأخيرة، `IdeaAttachments` به 2 ملف مرتبطان بنفس الفكرة |
+| 43.9 | افتح الـ Timeline مرة أخرى | صف جديد في الأعلى بعبارة "تم تنفيذ الفكرة وإرفاق ملفَي الإغلاق" |
+
+#### 9.1.5 Validation Hardening
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 44.1 | أكمل مرحلة ثم حاول POST `/Execution/Complete/{id}` مع `attachmentId` واحد فقط | رفض — "تتطلب مرحلة (تم التنفيذ) رفع ملفين PDF اثنين." |
+| 44.2 | أكمل مرحلة مع `attachmentId` يخص فكرة أخرى | رفض — "يجب أن يكون الملفان مرفقان على نفس الفكرة." |
+| 44.3 | حاول Update لمُسوَّدة (IsDraft=true) | رفض — "لا يمكن تحديث فكرة مسودة." |
+| 44.4 | حاول Update لفكرة في حالة `approved` (ليست in-execution) | رفض — "الفكرة ليست في حالة تنفيذ." |
+| 44.5 | حاول Update بدون CSRF token (curl) | 400 |
+
+#### 9.1.6 IDOR / Out of Scope
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 45.1 | Login كـ `specialized` (قسم `judicial`)، افتح `/Execution/Update/{id}` لفكرة محالة لقسم `tech` | 404 / Forbid — `IsAssigneeAsync` يطبّق `AssignedDepartmentId == departmentId` على الخادم |
+| 45.2 | Login كـ `partner`، افتح `/Execution` | redirect إلى `/Account/Login` (Authorize) أو 403 |
+| 45.3 | حاول POST لـ `/Execution/UploadCompletion` بدون Session | 401 |
+
+#### 9.1.7 Out of Scope
+- ❌ لا يُعدّل فكرة في حالة `new` أو `under-study` (فقط `in-execution`).
+- ❌ لا يصل إلى `/Execution` كأدوار أخرى (Audit، Committee، Admin).
+- ❌ لا يمكنه إكمال التنفيذ بدون ملفَي PDF فعليّين (الـ Signature يُفحص).
+
+---
+
+### 👤 المستخدم 5-b: Date-range Reports & Challenges (تقارير الفترة والتحديات)
+
+**الـ Scope:** تقرير الفترة الزمنية (4 KPI + stage-mix %) + تقرير التحديات (مع فلتر المجال، استبعاد المرفوض من التدقيق).
+
+**الـ URLs:**
+- `/Reports` — تقرير الفترة الزمنية
+- `/Reports/Challenges` — تقرير التحديات
+
+**الـ Roles:** `SystemAdmin` فقط.
+
+#### 9.2.1 Date-range Report (Happy Path)
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 46.1 | Login كـ `admin@ibtikar.local` | ينتقل إلى `/AdminOverview` (افتراضي) |
+| 46.2 | افتح `/Reports` مباشرة | نموذج الفترة: من/إلى تاريخ + زر "عرض التقرير" + زر "تقرير التحديات" |
+| 46.3 | الفترة الافتراضية | آخر 30 يوم |
+| 46.4 | اضغط "عرض التقرير" | 4 KPI cards: إجمالي / مُقدَّمة / معتمدة / قيد التنفيذ والمنجزة |
+| 46.5 | تحقّق من KPI cards | الأرقام تطابق DB (`InnovationIdeas.CreatedAt` ضمن الفترة) |
+| 46.6 | تحقّق من جدول "توزيع الحالات" | كل حالة من الـ 14 status في صف مع badge لوني + النسبة المئوية |
+| 46.7 | تحقّق من مجموع النسب | = 100% (تقريباً) — أو warning أصفر "مجموع عدد الحالات لا يساوي الإجمالي" |
+| 46.8 | غيّر الفترة إلى فترة فارغة (مثلاً قبل سنة) | Empty state: "لا توجد بيانات في الفترة المختارة." مع `data-testid="empty-range-message"` |
+
+#### 9.2.2 Date-range Validation
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 47.1 | اختر `from=2026-12-01` و `to=2026-01-01` (معكوسة) | alert أحمر "تاريخ البداية بعد تاريخ النهاية." (server-side) |
+| 47.2 | اختر `from=2026-12-01` و `to=2026-12-01` (نفس اليوم) | يقبل، النطاق = يوم واحد |
+| 47.3 | اضغط submit بدون أي تاريخ | المتصفح يمنع (HTML5 required) |
+| 47.4 | اختر فترة قديمة جداً قبل 5 سنوات | Empty state طبيعي |
+
+#### 9.2.3 Challenges Report
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 48.1 | افتح `/Reports/Challenges?from=...&to=...` | Banner أزرق "يتم تلقائياً استبعاد الأفكار المرفوضة من قِبل التدقيق." |
+| 48.2 | تحقّق من الفلتر | dropdown "المجال" مع كل المجالات + خيار "كل المجالات" |
+| 48.3 | اختر مجالاً معيّناً | الجدول يتقلّص ليشمل فقط ذلك المجال |
+| 48.4 | تحقّق من الأعمدة | المرجع، العنوان، المجال، المُقدِّم (+الإدارة)، التحدي، الحل المقترح، الحالة، التاريخ |
+| 48.5 | تحقّق من الاستبعاد | لا تظهر أي فكرة `CurrentStatus.Code == "rejected"` (تم استبعادها في `ReportsRepository.GetChallengesAsync`) |
+| 48.6 | لو لا توجد بيانات | Empty state "لا توجد تحديات في الفترة المختارة." |
+
+#### 9.2.4 IDOR / Out of Scope
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 49.1 | Login كـ `audit@ibtikar.local` وافتح `/Reports` | redirect إلى `/Account/Login` (Authorize) أو 403 |
+| 49.2 | Login كـ `specialized` وافتح `/Reports` | redirect إلى `/Account/Login` (Authorize) أو 403 |
+| 49.3 | حاول GET `/Reports?from=2025-01-01&to=2025-01-01` بدون فترة كبيرة | Empty state — لا crash |
+| 49.4 | حاول POST لـ `/Reports` (لا توجد action POST) | 405 Method Not Allowed |
+
+#### 9.2.5 Out of Scope
+- ❌ لا يكتب (Read-only) — لا توجد POST actions.
+- ❌ لا يصل كأدوار أخرى (Audit، Specialized، Committee).
+- ❌ لا يستطيع تعديل أي lookup من داخل التقارير.
+
+---
+
+### 👤 المستخدم 5-c: System Admin Overview (لوحة مدير النظام للقراءة فقط)
+
+**الـ Scope:** لوحة شاملة (KPI + recent + global ideas table + status filter + read-only details).
+
+**الـ URLs:**
+- `/AdminOverview` — لوحة شاملة (4 KPI cards + global ideas table)
+- `/AdminOverview/Details/{id}` — تفاصيل فكرة (read-only، جميع التقييمات + timeline)
+
+**الـ Roles:** `SystemAdmin` فقط. **لا توجد POST actions.**
+
+#### 9.3.1 Admin Dashboard
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 50.1 | Login كـ `admin@ibtikar.local` | ينتقل إلى `/AdminOverview` |
+| 50.2 | افحص العنوان | "نظرة عامة على النظام" بأيقونة `monitoring` + badge "مدير النظام" |
+| 50.3 | افحص 4 KPI cards | إجمالي الأفكار / المسودات / المُرسلة / المستخدمون النشطون |
+| 50.4 | افحص قسم "أحدث الأفكار" | جدول بأحدث 8 أفكار + mobile cards |
+| 50.5 | افحص قسم "توزيع الأفكار حسب الحالة" | كل حالة مع badge لوني وعدد |
+| 50.6 | افحص قسم "سجل الأفكار الكامل" | جدول بكل الأفكار (حتى 200)، فلتر بالحالة dropdown |
+| 50.7 | طبّق فلتر (مثلاً `in-execution`) | الجدول يتقلّص ليشمل فقط تلك الحالة |
+| 50.8 | اضغط "إعادة ضبط" | الفلتر يُمسح |
+| 50.9 | اضغط "تفاصيل" على فكرة | ينتقل إلى `/AdminOverview/Details/{id}` |
+| 50.10 | افحص الـ top-right links | زرّا "التقارير الزمنية" و "تقرير التحديات" |
+
+#### 9.3.2 Admin Details (read-only)
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 51.1 | افتح `/AdminOverview/Details/{id}` | تفاصيل كاملة: reference, title, status badge, domain, applicant |
+| 51.2 | افحص قسم "وصف الفكرة" | يعرض `Description` بشكل read-only |
+| 51.3 | تحقّق من قسم "التصنيف" | المجال، الأثر المتوقع، الفئة المستهدفة |
+| 51.4 | تحقّق من قسم "المرفقات" | قائمة بالملفات (PDF) + الحجم + التاريخ + المُحمِّل |
+| 51.5 | تحقّق من قسم "جميع التقييمات" | badge لكل تقييم (`الإدارة المختصة` / `الإدارة الشريكة` / `اللجنة`) + اسم المُقيِّم + الإدارة + إجمالي + خطوط المعايير |
+| 51.6 | تحقّق من قسم "السجل الزمني" | timeline read-only، الأحدث أولاً |
+| 51.7 | حاول إدخال نص في أي حقل | **لا توجد حقول إدخال!** كل القيم read-only |
+| 51.8 | افحص banner "للقراءة فقط" | يظهر في الأسفل لتأكيد الـ read-only |
+
+#### 9.3.3 IDOR / Security
+| # | الخطوة | المتوقع |
+|---|---|---|
+| 52.1 | Login كـ `audit@ibtikar.local` وافتح `/AdminOverview` | redirect إلى `/Account/Login` أو 403 |
+| 52.2 | Login كـ `specialized` وافتح `/AdminOverview/Details/{id}` | 403 |
+| 52.3 | حاول POST لـ `/AdminOverview/Details/{id}` | 405 Method Not Allowed |
+| 52.4 | افتح GUID عشوائي غير موجود | 404 |
+| 52.5 | افتح GUID موجود كـ `audit` | 403 |
+
+#### 9.3.4 Out of Scope
+- ❌ لا يكتب — **لا توجد POST actions** على AdminOverview.
+- ❌ لا يصل كأدوار أخرى.
+- ❌ لا يعدّل من Details.
+
+---
+
+### مصفوفة الفيتشرات الثلاثة × الأدوار
+
+| الفيتشر | المستفيد | التدقيق | اللجنة | التخصصية | المدير | الشريك |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|
+| **Execution tracking (5)** | — | — | — | ✅ **منفّذ** | — | — |
+| **System admin overview (2)** | — | — | — | — | ✅ **قارئ** | — |
+| **Date-range reports & challenges (3)** | — | — | — | — | ✅ **قارئ** | — |
+
+### الـ 10 مهام المنفّذة في هذه الإضافة
+
+| Block | الفيتشر | الملفات الرئيسية |
+|---|---|---|
+| `f851ff01` | Add ExecutionProgress entity | `Models/ExecutionProgress.cs`, `Data/Configurations/ExecutionProgressConfiguration.cs`, `Migrations/...AddExecutionProgress.cs` |
+| `06199256` | Add execution task list | `Controllers/ExecutionController.cs`, `Services/Implementations/ExecutionService.cs`, `Repositories/Implementations/ExecutionRepository.cs`, `Views/Execution/Index.cshtml` |
+| `1accf06a` | Add execution stage update | `Views/Execution/Update.cshtml`, `Controllers/ExecutionController.cs` (POST `Update`, `UploadCompletion`) |
+| `0941f31d` | Add execution timeline | `Views/Execution/Timeline.cshtml` |
+| `3676cac3` | Complete execution with two PDFs | Confirmation modal in `Update.cshtml`, validation in `ExecutionService.CompleteAsync` |
+| `0bfdc518` | Add system-admin overview dashboard | `Controllers/AdminOverviewController.cs`, `Services/Implementations/AdminOverviewService.cs`, `Repositories/Implementations/AdminOverviewRepository.cs`, `Views/AdminOverview/Index.cshtml` (KPI + recent + global ideas table) |
+| `0ee8e365` | Add read-only admin idea details | `Views/AdminOverview/Details.cshtml` (full idea + all assessments + timeline, no forms) |
+| `2d0b42a9` | Add date-range KPI report | `Controllers/ReportsController.cs`, `Services/Implementations/ReportsService.cs`, `Repositories/Implementations/ReportsRepository.cs`, `Views/Reports/Index.cshtml` |
+| `d8a1872d` | Validate report dates | `Views/Reports/Index.cshtml` (inline + script + exact Arabic strings) |
+| `39ed2410` | Add challenges report | `Views/Reports/Challenges.cshtml` (domain filter + audit-reject exclusion) |
+
+---
+
+### 🧪 سيناريوهات End-to-End للـ Features الثلاثة
+
+#### E2E-RT-1 — Date Range + Admin Overview (Full Admin Flow)
+1. **Admin:** Login → `/AdminOverview` → لاحظ 4 KPI cards + global ideas table.
+2. **Admin:** طبّق فلتر `in-execution` على جدول الأفكار → الجدول يتقلّص.
+3. **Admin:** اضغط "تفاصيل" على فكرة في حالة `in-execution` → `/AdminOverview/Details/{id}` يعرض الفكرة + التقييمات (إن وُجدت) + Timeline.
+4. **Admin:** ارجع لـ `/AdminOverview` → اضغط "التقارير الزمنية" في الأعلى.
+5. **Admin:** في `/Reports`، اضغط "تقرير التحديات" → `/Reports/Challenges` يعرض الجدول مع banner "يتم استبعاد المرفوض من التدقيق".
+
+**يتوقع:** كل التنقلات تعمل، لا crash، KPI + status filter يعملان، Reports → Challenges link يعمل.
+
+#### E2E-RT-2 — Execution Flow (من التحويل للإغلاق)
+1. **(مسبوقاً):** Audit Accept + Specialized Assess + Committee Approve (يقوم بتحويل الفكرة لحالة `in-execution`).
+2. **Specialized:** Login → افتح `/Execution` → الفكرة الجديدة تظهر في القائمة.
+3. **Specialized:** اضغط "تحديث المرحلة" → انتقل للمرحلة الأولى (البدء) بحفظ note.
+4. **Specialized:** كرّر للمراحل 2، 3، 4.
+5. **Specialized:** في المرحلة 5 (الإغلاق) → نموذج "إكمال التنفيذ" يظهر بدلاً من "المرحلة التالية".
+6. **Specialized:** ارفع ملفَين PDF → spinner → modal تأكيد → اضغط "نعم".
+7. **Specialized:** alert أخضر "تم تنفيذ الفكرة وتسجيلها ضمن المكتملة" → الـ Timeline به صف جديد.
+
+**يتوقع:** DB به `ExecutionProgresses` بـ 5 صفوف (4 مراحل + الإغلاق) + `IdeaAttachments` بـ 2 ملف جديدَين.
+
+---
+
+### 🔐 Test Credentials (للـ Playwright / الاختبار اليدوي)
+
+```
+URL: https://localhost:5001
+كلمة المرور: Ibtikar@2026 (UserSeed.DefaultPassword)
+
+Username         | Role                    | Department  | Home redirect
+-----------------|-------------------------|-------------|----------------------
+specialized      | specialized-department  | judicial    | /SpecializedDashboard
+admin            | system-admin            | (no dept)   | /AdminOverview
+audit            | audit-employee          | (no dept)   | /Audit/Inbox
+partner          | partner-department      | tech        | /SpecializedDashboard
+committee        | innovation-committee-member | (no dept) | /Committee
+ext-beneficiary  | external-beneficiary    | (none)      | /MyRequests
+int-beneficiary  | internal-beneficiary    | judicial    | /MyRequests
+```
+
+> **للاختبار العملي:**
+> - **التنفيذ:** استعمل `specialized` → `/Execution`
+> - **التقارير:** استعمل `admin` → `/Reports`, `/Reports/Challenges`
+> - **لوحة الإدارة:** استعمل `admin` → `/AdminOverview`, `/AdminOverview/Details/{id}`
+
