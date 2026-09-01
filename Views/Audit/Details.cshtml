@@ -52,6 +52,26 @@
                     </div>
                 </div>
             }
+
+            @if (!string.IsNullOrWhiteSpace(Model.LatestCompletionNote))
+            {
+                <div class="bog-completion-note">
+                    <div class="bog-completion-note__head">
+                        <span class="bog-completion-note__icon">
+                            <span class="material-icons">support_agent</span>
+                        </span>
+                        <div>
+                            <strong>آخر طلب استكمال أرسله المدقق</strong>
+                            @if (Model.LatestCompletionNoteAt.HasValue)
+                            {
+                                <small>بتاريخ <span dir="ltr">@Model.LatestCompletionNoteAt.Value.FormatDateTime()</span></small>
+                            }
+                        </div>
+                    </div>
+                    <p class="bog-completion-note__body" style="white-space:pre-line">@Model.LatestCompletionNote</p>
+                    <small class="text-muted d-block mt-2">تعليمات الاستكمال التي يحتاجها مقدم الفكرة قبل المتابعة. راجع التاريخ الكامل أدناه لمتابعة كل الرسائل السابقة.</small>
+                </div>
+            }
             <div class="card-body">
                 <h3 class="mb-3">@Model.Title</h3>
                 <dl class="row mb-0 bog-idea-summary__list">

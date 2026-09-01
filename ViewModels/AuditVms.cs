@@ -64,6 +64,8 @@ namespace Ibtikar.ViewModels
         public bool IsRoutedToSpecialist { get; }
         public bool IsTerminal { get; }
         public bool IsRouted { get; }
+        public string? LatestCompletionNote { get; }
+        public DateTime? LatestCompletionNoteAt { get; }
         public List<DepartmentOption> ActiveDepartments { get; }
         public List<AuditHistoryRow> History { get; }
         public List<Attachment> Attachments { get; }
@@ -95,6 +97,8 @@ namespace Ibtikar.ViewModels
             bool isUnderStudy,
             bool isRoutedToSpecialist,
             bool isTerminal,
+            string? latestCompletionNote,
+            DateTime? latestCompletionNoteAt,
             List<DepartmentOption> activeDepartments,
             List<AuditHistoryRow> history,
             List<Attachment> attachments)
@@ -126,6 +130,8 @@ namespace Ibtikar.ViewModels
             IsRoutedToSpecialist = isRoutedToSpecialist;
             IsTerminal = isTerminal;
             IsRouted = isRoutedToSpecialist && !string.IsNullOrWhiteSpace(assignedDepartment);
+            LatestCompletionNote = latestCompletionNote;
+            LatestCompletionNoteAt = latestCompletionNoteAt;
             ActiveDepartments = activeDepartments;
             History = history;
             Attachments = attachments;

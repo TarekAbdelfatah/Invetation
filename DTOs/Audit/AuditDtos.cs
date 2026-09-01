@@ -65,6 +65,8 @@ namespace Ibtikar.DTOs.Audit
         bool IsUnderStudy,
         bool IsRoutedToSpecialist,
         bool IsTerminal,
+        string? LatestCompletionNote,
+        DateTime? LatestCompletionNoteAt,
         IReadOnlyList<AuditDepartmentOptionDto> ActiveDepartments,
         IReadOnlyList<AuditHistoryRowDto> History,
         IReadOnlyList<AuditAttachmentDto> Attachments);

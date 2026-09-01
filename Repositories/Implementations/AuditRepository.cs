@@ -114,7 +114,7 @@ namespace Ibtikar.Repositories
                 .AsNoTracking()
                 .Where(h => h.InnovationIdeaId == id)
                 .OrderByDescending(h => h.ChangedAt)
-                .Take(10)
+                .Take(20)
                 .Select(h => new AuditHistoryRowDto(
                     h.ChangedAt,
                     h.FromStatus != null ? h.FromStatus.NameEn : "—",
@@ -134,6 +134,15 @@ namespace Ibtikar.Repositories
             var isUnderStudy = header.StatusCode == IdeaStatusCodes.UnderStudy;
             var isRoutedToSpecialist = isUnderStudy && header.AssignedDepartmentId.HasValue;
             var canDecide = actionableStatuses.Contains(header.StatusCode);
+
+            var latestCompletionNote = await _db.IdeaStatusHistories
+                .AsNoTracking()
+                .Where(h => h.InnovationIdeaId == id
+                    && h.ToStatus != null
+                    && h.ToStatus.Code == IdeaStatusCodes.WaitingForCompletion)
+                .OrderByDescending(h => h.ChangedAt)
+                .Select(h => new { h.Note, h.ChangedAt })
+                .FirstOrDefaultAsync(ct);
 
             return new AuditDetailsDto(
                 header.Id,
@@ -162,6 +171,8 @@ namespace Ibtikar.Repositories
                 isUnderStudy,
                 isRoutedToSpecialist,
                 header.IsTerminal,
+                latestCompletionNote?.Note,
+                latestCompletionNote?.ChangedAt,
                 departments,
                 history,
                 attachments);

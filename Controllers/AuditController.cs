@@ -128,6 +128,8 @@ namespace Ibtikar.Controllers
                 dto.IsUnderStudy,
                 dto.IsRoutedToSpecialist,
                 dto.IsTerminal,
+                dto.LatestCompletionNote,
+                dto.LatestCompletionNoteAt,
                 dto.ActiveDepartments.Select(d => new AuditDetailsVm.DepartmentOption(d.Id, d.Name)).ToList(),
                 dto.History.Select(h => new AuditDetailsVm.AuditHistoryRow(h.ChangedAt, h.FromStatus, h.ToStatus, h.By, h.Note)).ToList(),
                 dto.Attachments.Select(a => new AuditDetailsVm.Attachment(a.Id, a.FileName, a.SizeBytes, a.ContentType, a.UploadedAt)).ToList());
