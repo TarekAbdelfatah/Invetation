@@ -13,10 +13,22 @@ namespace Ibtikar.ViewModels
         DateTime CreatedAt,
         DateTime? SubmittedAt);
 
-    public class MyRequestsVm
+    public sealed class MyRequestsVm
     {
         public List<MyRequestVm> Items { get; }
-        public MyRequestsVm(List<MyRequestVm> items) => Items = items;
+        public int Page { get; }
+        public int PageSize { get; }
+        public int TotalCount { get; }
+        public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
+        public bool HasPrevious => Page > 1;
+        public bool HasNext => Page < TotalPages;
+        public MyRequestsVm(List<MyRequestVm> items, int page, int pageSize, int totalCount)
+        {
+            Items = items;
+            Page = page;
+            PageSize = pageSize;
+            TotalCount = totalCount;
+        }
     }
 
     public record MyRequestDetailsVm(

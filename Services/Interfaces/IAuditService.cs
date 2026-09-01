@@ -4,7 +4,7 @@ namespace Ibtikar.Services.Interfaces
 {
     public interface IAuditService
     {
-        Task<AuditInboxDto> GetInboxAsync(string? applicantType, string? status, CancellationToken ct);
+        Task<AuditInboxDto> GetInboxAsync(string? applicantType, string? status, int page, int pageSize, CancellationToken ct);
         Task<IReadOnlyList<AuditInboxRowDto>> GetInboxRowsAsync(string? applicantType, string? status, CancellationToken ct);
         Task<AuditDetailsDto?> GetDetailsAsync(Guid id, CancellationToken ct);
 

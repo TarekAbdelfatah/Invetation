@@ -15,12 +15,13 @@ namespace Ibtikar.Controllers
 
         public MyRequestsController(IMyRequestsService service) => _service = service;
 
-        public async Task<IActionResult> Index(CancellationToken ct)
+        public async Task<IActionResult> Index(int? page, int? pageSize, CancellationToken ct)
         {
             var applicantId = ResolveApplicantId();
             if (applicantId == Guid.Empty) return Challenge();
 
-            var dto = await _service.GetListAsync(applicantId, ct);
+            var (p, ps) = PagedRequest.Normalize(page, pageSize);
+            var dto = await _service.GetListAsync(applicantId, p, ps, ct);
             return View(ToListVm(dto));
         }
 
@@ -119,7 +120,7 @@ namespace Ibtikar.Controllers
         }
 
         private static MyRequestsVm ToListVm(MyRequestsListDto dto)
-            => new(dto.Items.Select(ToItemVm).ToList());
+            => new(dto.Items.Select(ToItemVm).ToList(), dto.Page, dto.PageSize, dto.TotalCount);
 
         private static MyRequestVm ToItemVm(MyRequestSummaryDto dto)
             => new(

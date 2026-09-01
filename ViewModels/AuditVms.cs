@@ -5,11 +5,20 @@ namespace Ibtikar.ViewModels
         public List<Row> Items { get; }
         public string ApplicantType { get; }
         public string Status { get; }
-        public AuditInboxVm(List<Row> items, string applicantType, string status)
+        public int Page { get; }
+        public int PageSize { get; }
+        public int TotalCount { get; }
+        public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
+        public bool HasPrevious => Page > 1;
+        public bool HasNext => Page < TotalPages;
+        public AuditInboxVm(List<Row> items, string applicantType, string status, int page, int pageSize, int totalCount)
         {
             Items = items;
             ApplicantType = applicantType ?? string.Empty;
             Status = status ?? string.Empty;
+            Page = page;
+            PageSize = pageSize;
+            TotalCount = totalCount;
         }
         public record Row(Guid Id, string Reference, string Title, string Domain, string ApplicantName, string Department, DateTime SubmittedAt, bool IsOverdue);
     }

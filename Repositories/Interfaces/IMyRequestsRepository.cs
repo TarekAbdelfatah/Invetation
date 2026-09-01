@@ -5,7 +5,7 @@ namespace Ibtikar.Repositories
 {
     public interface IMyRequestsRepository
     {
-        Task<MyRequestsListDto> GetListAsync(Guid applicantId, int take, CancellationToken ct);
+        Task<MyRequestsListDto> GetListAsync(Guid applicantId, int page, int pageSize, CancellationToken ct);
         Task<MyRequestDetailsDto?> GetDetailsAsync(Guid applicantId, Guid id, CancellationToken ct);
         Task<InnovationIdea?> GetForApplicantAsync(Guid applicantId, Guid id, CancellationToken ct);
         Task<Guid?> GetStatusIdByCodeAsync(string code, CancellationToken ct);

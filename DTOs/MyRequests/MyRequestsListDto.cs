@@ -11,5 +11,9 @@ namespace Ibtikar.DTOs.MyRequests
         DateTime CreatedAt,
         DateTime? SubmittedAt);
 
-    public sealed record MyRequestsListDto(IReadOnlyList<MyRequestSummaryDto> Items);
+    public sealed record MyRequestsListDto(
+        IReadOnlyList<MyRequestSummaryDto> Items,
+        int Page,
+        int PageSize,
+        int TotalCount);
 }

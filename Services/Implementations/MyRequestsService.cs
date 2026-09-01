@@ -7,8 +7,6 @@ namespace Ibtikar.Services.Implementations
 {
     public sealed class MyRequestsService : IMyRequestsService
     {
-        private const int ListTake = 50;
-
         private readonly IMyRequestsRepository _repo;
         private readonly FileStorageService _storage;
 
@@ -18,8 +16,8 @@ namespace Ibtikar.Services.Implementations
             _storage = storage;
         }
 
-        public Task<MyRequestsListDto> GetListAsync(Guid applicantId, CancellationToken ct)
-            => _repo.GetListAsync(applicantId, ListTake, ct);
+        public Task<MyRequestsListDto> GetListAsync(Guid applicantId, int page, int pageSize, CancellationToken ct)
+            => _repo.GetListAsync(applicantId, page, pageSize, ct);
 
         public Task<MyRequestDetailsDto?> GetDetailsAsync(Guid applicantId, Guid id, CancellationToken ct)
             => _repo.GetDetailsAsync(applicantId, id, ct);

@@ -4,7 +4,7 @@ namespace Ibtikar.Services.Interfaces
 {
     public interface IMyRequestsService
     {
-        Task<MyRequestsListDto> GetListAsync(Guid applicantId, CancellationToken ct);
+        Task<MyRequestsListDto> GetListAsync(Guid applicantId, int page, int pageSize, CancellationToken ct);
         Task<MyRequestDetailsDto?> GetDetailsAsync(Guid applicantId, Guid id, CancellationToken ct);
 
         Task<MyRequestDeleteResult> DeleteAsync(Guid applicantId, Guid id, CancellationToken ct);

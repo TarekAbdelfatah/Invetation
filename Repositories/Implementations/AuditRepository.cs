@@ -12,10 +12,11 @@ namespace Ibtikar.Repositories
 
         public AuditRepository(IbtikarDbContext db) => _db = db;
 
-        public async Task<IReadOnlyList<AuditInboxRowDto>> GetInboxRowsAsync(
+        public async Task<AuditInboxDto> GetInboxRowsAsync(
             string applicantTypeFilter,
             IReadOnlyList<string> statusCodes,
-            int take,
+            int page,
+            int pageSize,
             CancellationToken ct)
         {
             var now = DateTime.UtcNow;
@@ -35,9 +36,12 @@ namespace Ibtikar.Repositories
                 _ => query
             };
 
-            return await query
+            var totalCount = await query.CountAsync(ct);
+
+            var rows = await query
                 .OrderByDescending(i => i.CreatedAt)
-                .Take(take)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(i => new AuditInboxRowDto(
                     i.Id,
                     i.ReferenceNumber,
@@ -48,6 +52,8 @@ namespace Ibtikar.Repositories
                     i.CreatedAt,
                     now - i.CreatedAt > overdueThreshold))
                 .ToListAsync(ct);
+
+            return new AuditInboxDto(rows, applicantTypeFilter, string.Empty, page, pageSize, totalCount);
         }
 
         public async Task<AuditDetailsDto?> GetDetailsAsync(Guid id, CancellationToken ct)

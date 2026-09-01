@@ -1,5 +1,6 @@
 @using Ibtikar.Controllers
 @using Ibtikar.ViewModels
+@using static Ibtikar.Services.Helpers.KsaTime
 @model List<AuditInboxVm.Row>
 @{
     var hasItems = Model is { Count: > 0 };
@@ -13,7 +14,7 @@
             <td data-label="العنوان">@i.Title</td>
             <td class="d-none d-lg-table-cell" data-label="المجال"><small>@i.Domain</small></td>
             <td data-label="الإدارة"><small>@i.Department</small></td>
-            <td class="d-none d-md-table-cell" data-label="تاريخ التقديم"><small dir="ltr">@i.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
+            <td class="d-none d-md-table-cell" data-label="تاريخ التقديم"><small dir="ltr">@i.SubmittedAt.FormatDateTime()</small></td>
             <td class="bog-card-list__actions" data-label="">
                 @if (i.IsOverdue)
                 {

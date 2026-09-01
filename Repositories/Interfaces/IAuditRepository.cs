@@ -5,10 +5,11 @@ namespace Ibtikar.Repositories
 {
     public interface IAuditRepository
     {
-        Task<IReadOnlyList<AuditInboxRowDto>> GetInboxRowsAsync(
+        Task<AuditInboxDto> GetInboxRowsAsync(
             string applicantTypeFilter,
             IReadOnlyList<string> statusCodes,
-            int take,
+            int page,
+            int pageSize,
             CancellationToken ct);
 
         Task<AuditDetailsDto?> GetDetailsAsync(Guid id, CancellationToken ct);

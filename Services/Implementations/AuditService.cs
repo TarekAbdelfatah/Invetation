@@ -9,8 +9,6 @@ namespace Ibtikar.Services.Implementations
 {
     public sealed class AuditService : IAuditService
     {
-        private const int InboxTake = 50;
-
         private readonly IAuditRepository _repo;
         private readonly AuditLogService _auditLog;
         private readonly INotificationClient _notifier;
@@ -28,19 +26,19 @@ namespace Ibtikar.Services.Implementations
             _logger = logger;
         }
 
-        public async Task<AuditInboxDto> GetInboxAsync(string? applicantType, string? status, CancellationToken ct)
+        public async Task<AuditInboxDto> GetInboxAsync(string? applicantType, string? status, int page, int pageSize, CancellationToken ct)
         {
             var applicantTypeNorm = Normalize(applicantType);
             var statusNorm = Normalize(status);
-            var rows = await GetInboxRowsInternalAsync(applicantTypeNorm, statusNorm, ct);
-            return new AuditInboxDto(rows, applicantTypeNorm, statusNorm);
+            return await GetInboxAsyncInternalAsync(applicantTypeNorm, statusNorm, page, pageSize, ct);
         }
 
         public async Task<IReadOnlyList<AuditInboxRowDto>> GetInboxRowsAsync(string? applicantType, string? status, CancellationToken ct)
         {
             var applicantTypeNorm = Normalize(applicantType);
             var statusNorm = Normalize(status);
-            return await GetInboxRowsInternalAsync(applicantTypeNorm, statusNorm, ct);
+            var inbox = await GetInboxAsyncInternalAsync(applicantTypeNorm, statusNorm, 1, 1000, ct);
+            return inbox.Items;
         }
 
         public Task<AuditDetailsDto?> GetDetailsAsync(Guid id, CancellationToken ct)
@@ -211,7 +209,7 @@ namespace Ibtikar.Services.Implementations
             return new(AuditActionOutcome.Success, "تم طلب استكمال الملف من مقدمه.");
         }
 
-        private async Task<IReadOnlyList<AuditInboxRowDto>> GetInboxRowsInternalAsync(string applicantTypeNorm, string statusNorm, CancellationToken ct)
+        private async Task<AuditInboxDto> GetInboxAsyncInternalAsync(string applicantTypeNorm, string statusNorm, int page, int pageSize, CancellationToken ct)
         {
             var codes = statusNorm switch
             {
@@ -220,7 +218,7 @@ namespace Ibtikar.Services.Implementations
                 "rejected" => new[] { IdeaStatusCodes.Rejected },
                 _ => new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted }
             };
-            return await _repo.GetInboxRowsAsync(applicantTypeNorm, codes, InboxTake, ct);
+            return await _repo.GetInboxRowsAsync(applicantTypeNorm, codes, page, pageSize, ct);
         }
 
         private static string Normalize(string? value) => (value ?? string.Empty).Trim().ToLowerInvariant();

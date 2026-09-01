@@ -16,9 +16,10 @@ namespace Ibtikar.Controllers
         public AuditController(IAuditService service) => _service = service;
 
         [HttpGet]
-        public async Task<IActionResult> Inbox(string? applicantType, string? status, CancellationToken ct)
+        public async Task<IActionResult> Inbox(string? applicantType, string? status, int? page, int? pageSize, CancellationToken ct)
         {
-            var dto = await _service.GetInboxAsync(applicantType, status, ct);
+            var (p, ps) = PagedRequest.Normalize(page, pageSize);
+            var dto = await _service.GetInboxAsync(applicantType, status, p, ps, ct);
             return View(ToInboxVm(dto));
         }
 
@@ -94,7 +95,7 @@ namespace Ibtikar.Controllers
         }
 
         private static AuditInboxVm ToInboxVm(AuditInboxDto dto)
-            => new(dto.Items.Select(ToRowVm).ToList(), dto.ApplicantType, dto.Status);
+            => new(dto.Items.Select(ToRowVm).ToList(), dto.ApplicantType, dto.Status, dto.Page, dto.PageSize, dto.TotalCount);
 
         private static AuditInboxVm.Row ToRowVm(AuditInboxRowDto dto)
             => new(dto.Id, dto.Reference, dto.Title, dto.Domain, dto.ApplicantName, dto.Department, dto.SubmittedAt, dto.IsOverdue);

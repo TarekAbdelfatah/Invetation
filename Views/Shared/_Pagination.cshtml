@@ -1,16 +1,18 @@
 @*
     Reusable pagination partial.
-    Model: PagedResult or anonymous object with: Page, PageSize, TotalCount, TotalPages, HasPrevious, HasPrevious, HasNext
+    Model: PagedResult (with Page, PageSize, TotalCount, TotalPages)
     Optional ViewData:
-      "Route"    — the route name used to build links (default: current request path)
+      "Route"    — the route used to build links (default: current request path)
       "ParamName"— query string key for the page number (default: "page")
 *@
 @using System.Web
+@using Ibtikar.ViewModels
 @{
-    int page = ViewData.Model is int p ? p : 0;
-    int totalPages = (int)(ViewData["TotalPages"] ?? 0);
-    int pageSize = (int)(ViewData["PageSize"] ?? 10);
-    int totalCount = (int)(ViewData["TotalCount"] ?? 0);
+    var data = (PagedResult<object>?)ViewData.Model;
+    int page = data?.Page ?? 0;
+    int totalPages = data?.TotalPages ?? 0;
+    int pageSize = data?.PageSize ?? 0;
+    int totalCount = data?.TotalCount ?? 0;
     var query = Context.Request.Query;
     var route = ViewData["Route"] as string ?? Context.Request.Path;
     var paramName = (ViewData["ParamName"] as string ?? "page").ToString();

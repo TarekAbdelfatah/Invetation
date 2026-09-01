@@ -12,13 +12,18 @@ namespace Ibtikar.Repositories
 
         public MyRequestsRepository(IbtikarDbContext db) => _db = db;
 
-        public async Task<MyRequestsListDto> GetListAsync(Guid applicantId, int take, CancellationToken ct)
+        public async Task<MyRequestsListDto> GetListAsync(Guid applicantId, int page, int pageSize, CancellationToken ct)
         {
-            var items = await _db.InnovationIdeas
+            var baseQuery = _db.InnovationIdeas
                 .AsNoTracking()
-                .Where(i => i.ApplicantUserId == applicantId && !i.IsDeleted)
+                .Where(i => i.ApplicantUserId == applicantId && !i.IsDeleted);
+
+            var totalCount = await baseQuery.CountAsync(ct);
+
+            var items = await baseQuery
                 .OrderByDescending(i => i.CreatedAt)
-                .Take(take)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(i => new MyRequestSummaryDto(
                     i.Id,
                     i.ReferenceNumber,
@@ -37,7 +42,7 @@ namespace Ibtikar.Repositories
                     i.SubmittedAt))
                 .ToListAsync(ct);
 
-            return new MyRequestsListDto(items);
+            return new MyRequestsListDto(items, page, pageSize, totalCount);
         }
 
         public async Task<MyRequestDetailsDto?> GetDetailsAsync(Guid applicantId, Guid id, CancellationToken ct)

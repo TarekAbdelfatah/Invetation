@@ -1,6 +1,7 @@
 @using Ibtikar.Controllers
 @using Ibtikar.Services.Helpers
 @using Ibtikar.ViewModels
+@using static Ibtikar.Services.Helpers.KsaTime
 @model MyRequestsVm
 @{
     ViewData["Title"] = "طلباتي";
@@ -26,7 +27,7 @@
         <div class="card bog-section">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <strong>سجل الأفكار</strong>
-                <span class="badge bg-secondary">@Model.Items.Count</span>
+                <span class="badge bg-secondary">@Model.TotalCount</span>
             </div>
             <div class="card-body p-0">
                 @if (Model.Items.Any())
@@ -79,7 +80,7 @@
                                 <div class="bog-idea-card__foot">
                                     <small class="bog-idea-card__date">
                                         <span class="material-icons" style="font-size:14px">event</span>
-                                        @(i.SubmittedAt?.ToString("yyyy-MM-dd") ?? i.CreatedAt.ToString("yyyy-MM-dd"))
+                                        @((i.SubmittedAt ?? i.CreatedAt).FormatDate())
                                     </small>
                                     <span class="bog-idea-card__chevron">
                                         عرض التفاصيل
@@ -151,7 +152,7 @@
                                                 <small class="text-muted d-block mt-1">@stageLabel · @(percent)%</small>
                                             </div>
                                         </td>
-                                        <td class="d-none d-md-table-cell" data-label="تاريخ التقديم"><small>@(i.SubmittedAt?.ToString("yyyy-MM-dd") ?? i.CreatedAt.ToString("yyyy-MM-dd"))</small></td>
+                                        <td class="d-none d-md-table-cell" data-label="تاريخ التقديم"><small>@((i.SubmittedAt ?? i.CreatedAt).FormatDate())</small></td>
                                         <td class="text-end bog-card-list__actions" data-label="">
                                             <a class="btn btn-sm btn-outline-primary align-middle"
                                                asp-controller="MyRequests" asp-action="Details" asp-route-id="@i.Id"
@@ -178,6 +179,8 @@
                 }
             </div>
         </div>
+
+        @await Html.PartialAsync("_Pagination", Model)
     </div>
 </div>
 

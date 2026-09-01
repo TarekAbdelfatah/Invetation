@@ -13,7 +13,10 @@ namespace Ibtikar.DTOs.Audit
     public sealed record AuditInboxDto(
         IReadOnlyList<AuditInboxRowDto> Items,
         string ApplicantType,
-        string Status);
+        string Status,
+        int Page,
+        int PageSize,
+        int TotalCount);
 
     public sealed record AuditDepartmentOptionDto(Guid Id, string Name);
 
