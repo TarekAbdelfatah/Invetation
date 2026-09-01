@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Ibtikar.Services.Background
+namespace Ibtikar.Services.Hosted
 {
     /// <summary>
     /// Daily hosted service that closes ideas stuck on the applicant in

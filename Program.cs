@@ -10,6 +10,7 @@ using Ibtikar.Services.Audit;
 using Ibtikar.Services.MyRequests;
 using Ibtikar.Services.Attachments;
 using Ibtikar.Services.Background;
+using Ibtikar.Services.Hosted;
 using Ibtikar.Services.Ideas;
 using Ibtikar.Services.Integrations;
 using Ibtikar.Services.Notifications;
