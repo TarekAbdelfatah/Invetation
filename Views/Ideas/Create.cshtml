@@ -14,8 +14,9 @@
                         <p class="text-muted mb-0">املأ البيانات التالية وقدّم فكرتك</p>
                     </div>
 
-                    <form asp-action="Create" method="post" enctype="multipart/form-data" id="idea-form">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    <form asp-action="Create" method="post" enctype="multipart/form-data" id="idea-form" novalidate>
+                        <div asp-validation-summary="All" class="alert alert-danger d-none mb-3" id="ideaFormSummary"
+                             role="alert" data-form-summary></div>
 
                         <input type="hidden" asp-for="CurrentDraftId" />
 
@@ -43,7 +44,7 @@
                             <label asp-for="Title" class="form-label fw-semibold"></label>
                             <span class="text-danger">*</span>
                             <input asp-for="Title" class="form-control" maxlength="200" data-required-on-submit="true" />
-                            <span asp-validation-for="Title" class="text-danger small"></span>
+                            <span asp-validation-for="Title" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4">
@@ -53,7 +54,7 @@
                                       data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.DescriptionMax"
                                       data-required-on-submit="true"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="Description"></small>
-                            <span asp-validation-for="Description" class="text-danger small"></span>
+                            <span asp-validation-for="Description" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4">
@@ -63,7 +64,7 @@
                                       data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.ProblemMax"
                                       data-required-on-submit="true"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="ProblemStatement"></small>
-                            <span asp-validation-for="ProblemStatement" class="text-danger small"></span>
+                            <span asp-validation-for="ProblemStatement" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4">
@@ -73,7 +74,7 @@
                                       data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.SolutionMax"
                                       data-required-on-submit="true"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="ProposedSolution"></small>
-                            <span asp-validation-for="ProposedSolution" class="text-danger small"></span>
+                            <span asp-validation-for="ProposedSolution" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4">
@@ -83,7 +84,7 @@
                                       data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.BenefitsMax"
                                       data-required-on-submit="true"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="ExpectedBenefits"></small>
-                            <span asp-validation-for="ExpectedBenefits" class="text-danger small"></span>
+                            <span asp-validation-for="ExpectedBenefits" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4">
@@ -92,7 +93,7 @@
                                       placeholder="مثل: فريق تطوير متخصص، خوادم إضافية، ميزانية تشغيل..."
                                       data-char-limit="@Ibtikar.ViewModels.IdeaCreateViewModel.RequiredResourcesMax"></textarea>
                             <small class="form-text text-muted d-block" data-char-counter="RequiredResources"></small>
-                            <span asp-validation-for="RequiredResources" class="text-danger small"></span>
+                            <span asp-validation-for="RequiredResources" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <hr />
@@ -104,7 +105,7 @@
                                     class="form-select" data-required-on-submit="true">
                                 <option value="">-- اختر مجال الابتكار --</option>
                             </select>
-                            <span asp-validation-for="InnovationDomainId" class="text-danger small"></span>
+                            <span asp-validation-for="InnovationDomainId" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4">
@@ -114,13 +115,13 @@
                                     class="form-select" data-other="ExpectedImpactOther" data-required-on-submit="true">
                                 <option value="">-- اختر الأثر المتوقع --</option>
                             </select>
-                            <span asp-validation-for="ExpectedImpactId" class="text-danger small"></span>
+                            <span asp-validation-for="ExpectedImpactId" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4 d-none" data-other-field="ExpectedImpactOther">
                             <label asp-for="ExpectedImpactOther" class="form-label fw-semibold"></label>
                             <input asp-for="ExpectedImpactOther" class="form-control" maxlength="200" />
-                            <span asp-validation-for="ExpectedImpactOther" class="text-danger small"></span>
+                            <span asp-validation-for="ExpectedImpactOther" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4">
@@ -130,7 +131,7 @@
                                     class="form-select" data-other="TargetAudienceOther" data-required-on-submit="true">
                                 <option value="">-- اختر الفئة المستهدفة --</option>
                             </select>
-                            <span asp-validation-for="TargetAudienceId" class="text-danger small"></span>
+                            <span asp-validation-for="TargetAudienceId" class="text-danger small invalid-feedback-shim"></span>
                         </div>
 
                         <div class="mb-4 d-none" data-other-field="TargetAudienceOther">
@@ -187,11 +188,13 @@
                         <hr />
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="submit" name="action" value="SaveDraft" class="btn btn-outline-secondary">
+                            <button type="submit" name="action" value="SaveDraft" class="btn btn-outline-secondary"
+                                    data-loading="true" data-loading-text="جارٍ حفظ المسودة...">
                                 <span class="material-icons align-middle" style="font-size:18px">save</span>
                                 حفظ المسودة
                             </button>
-                            <button type="submit" name="action" value="Submit" class="btn btn-primary">
+                            <button type="submit" name="action" value="Submit" class="btn btn-primary"
+                                    data-loading="true" data-loading-text="جارٍ إرسال الفكرة...">
                                 <span class="material-icons align-middle" style="font-size:18px">send</span>
                                 إرسال الفكرة
                             </button>

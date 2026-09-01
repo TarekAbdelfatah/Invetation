@@ -46,7 +46,8 @@
                         <form method="post" asp-action="Delete" asp-route-id="@Model.Id" class="d-inline">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-sm btn-outline-danger"
-                                    data-confirm-trigger data-confirm-message="هل أنت متأكد من حذف هذا الطلب نهائياً؟">
+                                    data-confirm-trigger data-confirm-message="هل أنت متأكد من حذف هذا الطلب نهائياً؟"
+                                    data-loading="true" data-loading-text="جارٍ حذف الطلب...">
                                 <span class="material-icons align-middle" style="font-size:16px">delete</span>
                                 حذف الطلب
                             </button>
