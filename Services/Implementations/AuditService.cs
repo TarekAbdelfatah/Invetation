@@ -95,12 +95,12 @@ namespace Ibtikar.Services.Implementations
                 return new(AuditActionOutcome.InvalidState, "لا يمكن التحويل لجهة في حالة الطلب الحالية.");
 
             var fromId = idea.CurrentStatusId;
-            var wasOpen = idea.AuditEmployeeId is null;
+            var currentCode = idea.CurrentStatus?.Code ?? string.Empty;
 
             idea.AssignedDepartmentId = departmentId;
             idea.AuditEmployeeId = auditorId;
 
-            if (wasOpen)
+            if (currentCode == IdeaStatusCodes.New || currentCode == IdeaStatusCodes.Resubmitted)
             {
                 var underStudyId = await _repo.GetStatusIdByCodeAsync(IdeaStatusCodes.UnderStudy, ct);
                 if (underStudyId is null)
@@ -115,8 +115,12 @@ namespace Ibtikar.Services.Implementations
                     FromStatusId = fromId,
                     ToStatusId = underStudyId.Value,
                     ChangedByUserId = auditorId,
-                    Note = "فتح الملف وتحويله إلى جهة مختصة"
+                    Note = "تحويل الملف إلى جهة مختصة"
                 }, ct);
+            }
+            else if (currentCode == IdeaStatusCodes.UnderStudy)
+            {
+                idea.AuditAssignedAt = DateTime.UtcNow;
             }
 
             await _repo.AddAuditActionAsync(new AuditActionItem

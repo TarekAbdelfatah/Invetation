@@ -232,6 +232,7 @@
   display: grid;
   gap: var(--spacing-4, 16px);
   padding: var(--spacing-5, 20px) var(--spacing-6, 24px) var(--spacing-6, 24px);
+  align-items: stretch;
 }
 
 @media (min-width: 992px) {
@@ -248,7 +249,6 @@
   padding: var(--spacing-5, 20px);
   display: flex;
   flex-direction: column;
-  height: 100%;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
@@ -328,6 +328,11 @@
 .bog-decision-card__form textarea {
   resize: vertical;
   min-height: 96px;
+}
+
+.bog-decision-card__form .form-text {
+  min-height: 40px;
+  line-height: 1.5;
 }
 
 .bog-decision-card__btn {
