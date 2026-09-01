@@ -248,6 +248,7 @@
   padding: var(--spacing-5, 20px);
   display: flex;
   flex-direction: column;
+  height: 100%;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
@@ -283,6 +284,7 @@
   align-items: flex-start;
   gap: var(--spacing-3, 12px);
   margin-bottom: var(--spacing-4, 16px);
+  min-height: 78px;
 }
 
 .bog-decision-card__icon {
@@ -320,6 +322,7 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+  flex: 1 1 auto;
 }
 
 .bog-decision-card__form textarea {
@@ -331,6 +334,7 @@
   font-weight: 700;
   letter-spacing: 0.01em;
   padding-block: var(--spacing-3, 12px);
+  margin-top: auto;
 }
 
 .bog-decision-card__btn .material-icons {
