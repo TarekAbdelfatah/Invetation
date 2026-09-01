@@ -26,6 +26,7 @@ namespace Ibtikar.Data
         public DbSet<InnovationDomain> InnovationDomains => Set<InnovationDomain>();
         public DbSet<Technology> Technologies => Set<Technology>();
         public DbSet<ExecutionStage> ExecutionStages => Set<ExecutionStage>();
+        public DbSet<ExecutionProgress> ExecutionProgresses => Set<ExecutionProgress>();
         public DbSet<InnovationIdea> InnovationIdeas => Set<InnovationIdea>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<IdeaAttachment> IdeaAttachments => Set<IdeaAttachment>();
