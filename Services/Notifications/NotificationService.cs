@@ -1,4 +1,4 @@
-using Ibtikar.Services.Integrations;
+using Ibtikar.Services.Implementations;
 using Microsoft.Extensions.Options;
 
 namespace Ibtikar.Services.Notifications

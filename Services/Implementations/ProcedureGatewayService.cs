@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 
-namespace Ibtikar.Services.Integrations
+namespace Ibtikar.Services.Implementations
 {
     public sealed class ProcedureGatewayService
     {
