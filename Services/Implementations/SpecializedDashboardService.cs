@@ -2,6 +2,7 @@ using Ibtikar.DTOs.SpecializedDashboard;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
 using Ibtikar.Services.Helpers;
+using Ibtikar.Services.Interfaces;
 
 namespace Ibtikar.Services.Implementations
 {

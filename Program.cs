@@ -6,6 +6,7 @@ using Ibtikar.Middleware;
 using Ibtikar.Repositories;
 using Ibtikar.Services;
 using Ibtikar.Services.Implementations;
+using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Hosted;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Notifications;

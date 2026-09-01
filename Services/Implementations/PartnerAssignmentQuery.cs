@@ -1,4 +1,5 @@
 using Ibtikar.Models;
+using Ibtikar.Services.Interfaces;
 
 namespace Ibtikar.Services.Implementations
 {

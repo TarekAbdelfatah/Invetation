@@ -2,6 +2,7 @@ using Ibtikar.Data;
 using Ibtikar.DTOs.Committee;
 using Ibtikar.Models;
 using Ibtikar.Services.Helpers;
+using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Notifications;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,5 +1,6 @@
 using Ibtikar.Data;
 using Ibtikar.Models;
+using Ibtikar.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Services.Implementations

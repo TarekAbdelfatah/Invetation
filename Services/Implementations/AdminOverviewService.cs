@@ -1,5 +1,6 @@
 using Ibtikar.DTOs.AdminOverview;
 using Ibtikar.Repositories;
+using Ibtikar.Services.Interfaces;
 
 namespace Ibtikar.Services.Implementations
 {

@@ -1,6 +1,6 @@
 using Ibtikar.Data;
 using Ibtikar.Models;
-using Ibtikar.Services;
+using Ibtikar.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Data.Seed

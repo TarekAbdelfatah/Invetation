@@ -3,7 +3,7 @@ using Ibtikar.Data;
 using Ibtikar.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Ibtikar.Services
+namespace Ibtikar.Services.Implementations
 {
     public class AuditLogService
     {

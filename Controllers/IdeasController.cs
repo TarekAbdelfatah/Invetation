@@ -1,5 +1,6 @@
 using Ibtikar.DTOs.Ideas;
 using Ibtikar.Services.Helpers;
+using Ibtikar.Services.Interfaces;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

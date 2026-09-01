@@ -2,8 +2,7 @@ using Ibtikar.DTOs.Ideas;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
 using Ibtikar.Services.Helpers;
-using Ibtikar.Services.Implementations;
-using Ibtikar.Services.Implementations;
+using Ibtikar.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 
 namespace Ibtikar.Services.Implementations
