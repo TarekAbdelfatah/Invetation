@@ -4,22 +4,6 @@
     ViewData["Title"] = "إسناد وإدارة الصلاحيات الإدارية";
 }
 
-@section Styles {
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-    <style>
-        .select2-container--bootstrap-5 .select2-selection {
-            min-height: 45px;
-            padding: 8px 12px;
-            font-family: inherit;
-            border-radius: 0.375rem;
-        }
-        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
-            line-height: 26px;
-        }
-    </style>
-}
-
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -56,8 +40,8 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">الموظف <span class="text-danger">*</span></label>
-                            <select class="form-select select2-employee" asp-for="Input.NetworkUser" id="employeeSelect" required>
-                                <option value="">-- ابحث عن موظف (الاسم أو اسم المستخدم) --</option>
+                            <select class="form-select select2" asp-for="Input.NetworkUser" required>
+                                <option value="">-- اختر الموظف (اسم المستخدم / الاسم الكامل) --</option>
                                 @foreach (var emp in Model.Employees)
                                 {
                                     <option value="@emp.NetworkUser">@emp.FullName (@emp.NetworkUser)</option>
@@ -68,7 +52,7 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">الصلاحية <span class="text-danger">*</span></label>
-                            <select class="form-select select2-role" asp-for="Input.RoleId" id="roleSelect" required>
+                            <select class="form-select" asp-for="Input.RoleId" id="roleSelect" required>
                                 <option value="">-- اختر الصلاحية --</option>
                                 @foreach (var role in Model.Roles)
                                 {
@@ -80,7 +64,7 @@
 
                         <div class="mb-3" id="departmentContainer" style="display: none;">
                             <label class="form-label fw-bold">الإدارة المختصة <span class="text-danger">*</span></label>
-                            <select class="form-select select2-dept" asp-for="Input.DeptId" id="deptSelect">
+                            <select class="form-select" asp-for="Input.DeptId" id="deptSelect">
                                 <option value="">-- اختر الإدارة المختصة --</option>
                                 @foreach (var dept in Model.Departments)
                                 {
@@ -181,87 +165,27 @@
 </div>
 
 @section Scripts {
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ar.js"></script>
     <script>
-        $(document).ready(function () {
-            $('.select2-employee').select2({
-                theme: 'bootstrap-5',
-                dir: 'rtl',
-                placeholder: '-- ابحث عن موظف (الاسم أو اسم المستخدم) --',
-                allowClear: true,
-                language: 'ar',
-                width: '100%'
-            });
-
-            $('.select2-role').select2({
-                theme: 'bootstrap-5',
-                dir: 'rtl',
-                placeholder: '-- اختر الصلاحية --',
-                allowClear: true,
-                language: 'ar',
-                width: '100%'
-            });
-
-            $('.select2-dept').select2({
-                theme: 'bootstrap-5',
-                dir: 'rtl',
-                placeholder: '-- اختر الإدارة المختصة --',
-                allowClear: true,
-                language: 'ar',
-                width: '100%'
-            });
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleSelect = document.getElementById('roleSelect');
+            const deptContainer = document.getElementById('departmentContainer');
+            const deptSelect = document.getElementById('deptSelect');
 
             function toggleDepartmentVisibility() {
-                const roleSelect = document.getElementById('roleSelect');
-                const deptContainer = document.getElementById('departmentContainer');
-                const deptSelect = document.getElementById('deptSelect');
+                const selectedOption = roleSelect.options[roleSelect.selectedIndex];
+                const roleCode = selectedOption ? selectedOption.getAttribute('data-code') : '';
 
-                if (!roleSelect || !deptContainer || !deptSelect) return;
-
-                const selectedIndex = roleSelect.selectedIndex;
-                if (selectedIndex < 0) {
-                    deptContainer.style.setProperty('display', 'none', 'important');
-                    deptSelect.removeAttribute('required');
-                    return;
-                }
-
-                const selectedOption = roleSelect.options[selectedIndex];
-                if (!selectedOption || !selectedOption.value) {
-                    deptContainer.style.setProperty('display', 'none', 'important');
-                    deptSelect.removeAttribute('required');
-                    return;
-                }
-
-                const roleCode = (selectedOption.getAttribute('data-code') || '').toLowerCase().trim();
-                const roleText = (selectedOption.text || '').toLowerCase().trim();
-
-                const isSpecialized = roleCode === '@RoleCodes.SpecializedDepartment'.toLowerCase()
-                                   || roleCode === 'specializeddepartment'
-                                   || roleCode.includes('specialized')
-                                   || roleCode.includes('partner')
-                                   || roleText.includes('مختص')
-                                   || roleText.includes('مختصة');
-
-                if (isSpecialized) {
-                    deptContainer.style.setProperty('display', 'block', 'important');
+                if (roleCode === '@RoleCodes.SpecializedDepartment') {
+                    deptContainer.style.display = 'block';
                     deptSelect.setAttribute('required', 'required');
                 } else {
-                    deptContainer.style.setProperty('display', 'none', 'important');
+                    deptContainer.style.display = 'none';
                     deptSelect.removeAttribute('required');
                 }
             }
 
-            $('#roleSelect').on('change select2:select select2:clear', toggleDepartmentVisibility);
-            const roleEl = document.getElementById('roleSelect');
-            if (roleEl) {
-                roleEl.addEventListener('change', toggleDepartmentVisibility);
-            }
-
+            roleSelect.addEventListener('change', toggleDepartmentVisibility);
             toggleDepartmentVisibility();
-            setTimeout(toggleDepartmentVisibility, 100);
-            setTimeout(toggleDepartmentVisibility, 500);
         });
     </script>
 }

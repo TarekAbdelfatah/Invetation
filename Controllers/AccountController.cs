@@ -53,34 +53,34 @@ namespace Ibtikar.Controllers
                 .ToList();
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginVm vm)
-        {
-            if (string.IsNullOrWhiteSpace(vm.Username) || string.IsNullOrWhiteSpace(vm.Password))
-            {
-                ModelState.AddModelError(string.Empty, "يرجى أدخال اسم المستخدم وكلمة المرور.");
-                await PopulateDemoUsersAsync(HttpContext.RequestAborted);
-                return View(vm);
-            }
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Login(LoginVm vm)
+        //{
+        //    if (string.IsNullOrWhiteSpace(vm.Username) || string.IsNullOrWhiteSpace(vm.Password))
+        //    {
+        //        ModelState.AddModelError(string.Empty, "يرجى أدخال اسم المستخدم وكلمة المرور.");
+        //        await PopulateDemoUsersAsync(HttpContext.RequestAborted);
+        //        return View(vm);
+        //    }
 
-            var result = await _auth.LoginAsync(vm.Username, vm.Password, HttpContext.RequestAborted);
-            if (!result.IsSuccess || result.User == null)
-            {
-                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "بيانات الدخول غير صحيحة.");
-                await PopulateDemoUsersAsync(HttpContext.RequestAborted);
-                return View(vm);
-            }
+        //    var result = await _auth.LoginAsync(vm.Username, vm.Password, HttpContext.RequestAborted);
+        //    if (!result.IsSuccess || result.User == null)
+        //    {
+        //        ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "بيانات الدخول غير صحيحة.");
+        //        await PopulateDemoUsersAsync(HttpContext.RequestAborted);
+        //        return View(vm);
+        //    }
 
-            await _auth.SignInAsync(HttpContext, result.User);
+        //    await _auth.SignInAsync(HttpContext, result.User);
 
-            if (!string.IsNullOrEmpty(vm.ReturnUrl) && Url.IsLocalUrl(vm.ReturnUrl))
-            {
-                return Redirect(vm.ReturnUrl);
-            }
+        //    if (!string.IsNullOrEmpty(vm.ReturnUrl) && Url.IsLocalUrl(vm.ReturnUrl))
+        //    {
+        //        return Redirect(vm.ReturnUrl);
+        //    }
 
-            return RedirectToAction("Index", "MyRequests");
-        }
+        //    return RedirectToAction("Index", "MyRequests");
+        //}
 
         [HttpPost]
         [HttpGet]

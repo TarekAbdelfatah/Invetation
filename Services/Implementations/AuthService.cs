@@ -64,13 +64,42 @@ namespace Ibtikar.Services.Implementations
                 claims.Add(new Claim("id_token", idToken));
             }
 
-            if (user.DepartmentId.HasValue)
+            string? resolvedDeptIdStr = user.DepartmentId?.ToString();
+            string? resolvedDeptName = user.Department?.Name;
+
+            if (string.Equals(roleCode, RoleCodes.SpecializedDepartment, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(roleCode, RoleCodes.PartnerDepartment, StringComparison.OrdinalIgnoreCase))
             {
-                claims.Add(new Claim(RoleCodes.DepartmentIdClaim, user.DepartmentId.Value.ToString()));
-                if (!string.IsNullOrWhiteSpace(user.Department?.Name))
+                var adminUser = await _db.Admins
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(a => a.NetworkUser == user.Username && a.IsActive, ct);
+
+                if (adminUser?.DeptId.HasValue == true)
                 {
-                    claims.Add(new Claim(RoleCodes.DepartmentNameClaim, user.Department.Name));
+                    var codeStr = adminUser.DeptId.Value.ToString();
+                    var dept = await _db.Departments
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(d => d.Code == codeStr, ct);
+
+                    if (dept != null)
+                    {
+                        resolvedDeptIdStr = dept.Id.ToString();
+                        resolvedDeptName = dept.Name;
+                    }
+                    else
+                    {
+                        resolvedDeptIdStr = codeStr;
+                    }
                 }
+            }
+
+            if (!string.IsNullOrWhiteSpace(resolvedDeptIdStr))
+            {
+                claims.Add(new Claim(RoleCodes.DepartmentIdClaim, resolvedDeptIdStr));
+            }
+            if (!string.IsNullOrWhiteSpace(resolvedDeptName))
+            {
+                claims.Add(new Claim(RoleCodes.DepartmentNameClaim, resolvedDeptName));
             }
 
             if (!string.IsNullOrEmpty(roleCode))
@@ -100,6 +129,29 @@ namespace Ibtikar.Services.Implementations
                 CookieAuthExtensions.Scheme,
                 principal,
                 authProps);
+
+            try
+            {
+                if (httpContext.Session != null)
+                {
+                    httpContext.Session.SetString("UserId", user.Id.ToString());
+                    httpContext.Session.SetString("Username", user.Username);
+                    httpContext.Session.SetString("FullName", user.FullName ?? string.Empty);
+                    if (!string.IsNullOrEmpty(roleCode))
+                    {
+                        httpContext.Session.SetString("RoleCode", roleCode);
+                    }
+                    if (!string.IsNullOrWhiteSpace(resolvedDeptIdStr))
+                    {
+                        httpContext.Session.SetString("DeptId", resolvedDeptIdStr);
+                    }
+                    if (!string.IsNullOrWhiteSpace(resolvedDeptName))
+                    {
+                        httpContext.Session.SetString("DepartmentName", resolvedDeptName);
+                    }
+                }
+            }
+            catch { }
 
             user.LastLoginAt = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);

@@ -27,7 +27,7 @@ namespace Ibtikar.Services.Helpers
 
             var userPrincipal = context.HttpContext.User;
 
-            // 2. Check if user is authenticated via IdentityServer / Auth Cookie
+            // 2. Check if user is authenticated
             if (userPrincipal.Identity is not { IsAuthenticated: true })
             {
                 context.Result = new UnauthorizedResult();
@@ -41,10 +41,15 @@ namespace Ibtikar.Services.Helpers
                 string.Equals(r, "External-user", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(r, "Internal-user", StringComparison.OrdinalIgnoreCase));
 
+            if (containsBeneficiaryRole)
+            {
+                return;
+            }
+
             // Extract Network User Claim from Token/Cookie
             var networkUser = ExtractNetworkUserClaim(userPrincipal);
 
-            // 4. Resolve Database Context & Query Admins Table for Network User
+            // 4. Resolve Database Context & Query Admins Table for Network User if needed
             var db = context.HttpContext.RequestServices.GetRequiredService<IbtikarDbContext>();
             Admin? adminUser = null;
             if (!string.IsNullOrWhiteSpace(networkUser))
@@ -71,49 +76,12 @@ namespace Ibtikar.Services.Helpers
             }
 
             // 6. Role Authorization Check
-            if (_requiredRoles.Length > 0)
+            bool hasExplicitRole = _requiredRoles.Any(r => roleCodes.Contains(r));
+            if (!hasExplicitRole)
             {
-                // If endpoint accepts external or internal users and the user is logged in, allow access
-                bool hasExplicitRole = _requiredRoles.Any(r => roleCodes.Contains(r));
-                if (!containsBeneficiaryRole && !hasExplicitRole)
-                {
-                    // User does not have the required administrative role
-                    context.Result = new ForbidResult();
-                    return;
-                }
+                context.Result = new ForbidResult();
+                return;
             }
-
-            // 7. Retrieve Department from CommonSysDB schema if DeptId is present
-            if (adminUser?.DeptId.HasValue == true)
-            {
-                var commonDb = context.HttpContext.RequestServices.GetService<CommonSysDbContext>();
-                if (commonDb is not null)
-                {
-                    try
-                    {
-                        var hrDept = await commonDb.HrDepartments
-                            .AsNoTracking()
-                            .FirstOrDefaultAsync(d => d.DeptId == adminUser.DeptId.Value);
-                        if (hrDept is not null)
-                        {
-                            context.HttpContext.Items["CommonDepartment"] = hrDept;
-                            context.HttpContext.Items["DepartmentName"] = hrDept.DeptName;
-                        }
-                    }
-                    catch
-                    {
-                        // Ignore department resolution if HrDepartments table is unreachable
-                    }
-                }
-            }
-
-            // 8. Store resolved Admin, DeptId, and Role info in HttpContext.Items
-            if (adminUser is not null)
-            {
-                context.HttpContext.Items["AdminUser"] = adminUser;
-                context.HttpContext.Items["DeptId"] = adminUser.DeptId;
-            }
-            context.HttpContext.Items["DbUserRoles"] = roleCodes;
         }
 
         private static string? ExtractNetworkUserClaim(ClaimsPrincipal principal)

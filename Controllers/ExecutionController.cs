@@ -1,3 +1,4 @@
+using Ibtikar.Data;
 using Ibtikar.DTOs.Execution;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Implementations;
@@ -5,6 +6,7 @@ using Ibtikar.Services.Interfaces;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Ibtikar.Controllers
@@ -13,8 +15,15 @@ namespace Ibtikar.Controllers
     public class ExecutionController : Controller
     {
         private readonly IExecutionService _service;
+        private readonly IbtikarDbContext _db;
 
-        public ExecutionController(IExecutionService service) => _service = service;
+        public ExecutionController(
+            IExecutionService service,
+            IbtikarDbContext db)
+        {
+            _service = service;
+            _db = db;
+        }
 
         [HttpGet("Execution")]
         public async Task<IActionResult> Index(CancellationToken ct)
