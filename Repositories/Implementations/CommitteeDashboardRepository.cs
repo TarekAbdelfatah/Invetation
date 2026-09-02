@@ -33,20 +33,11 @@ namespace Ibtikar.Repositories
             return new CommitteeDashboardDto(underStudy, underVoting, accepted, rejected);
         }
 
-        public async Task<CommitteeReferralsDto?> GetReferralsAsync(string statusFilter, CancellationToken ct)
+        public async Task<IReadOnlyList<CommitteeReferralRowDto>> GetReferralsAsync(CancellationToken ct)
         {
-            var query = _db.InnovationIdeas.AsNoTracking()
-                .Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee);
-
-            query = statusFilter switch
-            {
-                "accepted" => query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.Approved),
-                "rejected" => query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.Rejected),
-                _ => query
-            };
-
             var now = DateTime.UtcNow;
-            var rows = await query
+            var rows = await _db.InnovationIdeas.AsNoTracking()
+                .Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee)
                 .OrderByDescending(i => i.CreatedAt)
                 .Take(100)
                 .Select(i => new CommitteeReferralRowDto(
@@ -63,7 +54,7 @@ namespace Ibtikar.Repositories
                     i.AuditAssignedAt.HasValue && (now - i.AuditAssignedAt.Value) > TimeSpan.FromDays(4)))
                 .ToListAsync(ct);
 
-            return new CommitteeReferralsDto(rows, statusFilter);
+            return rows;
         }
 
         public async Task<CommitteeAssessIdeaDto?> GetAssessIdeaAsync(Guid ideaId, CancellationToken ct)

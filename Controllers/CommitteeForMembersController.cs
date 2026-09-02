@@ -45,6 +45,16 @@ namespace Ibtikar.Controllers
                     Rejected = dto.Rejected,
                     CommitteeName = ResolveCommitteeName()
                 };
+
+                var referrals = await _dashboardService.GetReferralsAsync(userId, ct);
+                if (referrals is not null)
+                {
+                    vm.Items = referrals.Select(i => new CommitteeReferralRowVm(
+                        i.IdeaId, i.Reference, i.Title,
+                        i.StatusCode, i.StatusName, i.StatusColor,
+                        i.ApplicantName, i.ApplicantDepartmentName,
+                        i.ReferredAt, i.StayDays, i.IsOverdue)).ToList();
+                }
                 return View(vm);
             }
             catch (Exception ex)
@@ -53,26 +63,6 @@ namespace Ibtikar.Controllers
                 ViewBag.DatabaseError = ex.Message;
                 return View(new CommitteeDashboardVm());
             }
-        }
-
-        [HttpGet("CommitteeForMembers/Referrals")]
-        public async Task<IActionResult> Referrals(string? status, CancellationToken ct)
-        {
-            var userId = ResolveUserId();
-            var dto = await _dashboardService.GetReferralsAsync(userId, status ?? string.Empty, ct);
-            if (dto is null) return Forbid();
-
-            var vm = new CommitteeReferralsVm
-            {
-                StatusFilter = dto.StatusFilter ?? string.Empty,
-                CommitteeName = ResolveCommitteeName(),
-                Items = dto.Items.Select(i => new CommitteeReferralRowVm(
-                    i.IdeaId, i.Reference, i.Title,
-                    i.StatusCode, i.StatusName, i.StatusColor,
-                    i.ApplicantName, i.ApplicantDepartmentName,
-                    i.ReferredAt, i.StayDays, i.IsOverdue)).ToList()
-            };
-            return View("Referrals", vm);
         }
 
         [HttpGet("CommitteeForMembers/Assess/{id:guid}")]

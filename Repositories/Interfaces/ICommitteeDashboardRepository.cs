@@ -6,7 +6,7 @@ namespace Ibtikar.Repositories
     public interface ICommitteeDashboardRepository
     {
         Task<CommitteeDashboardDto> GetSnapshotCountsAsync(CancellationToken ct);
-        Task<CommitteeReferralsDto?> GetReferralsAsync(string statusFilter, CancellationToken ct);
+        Task<IReadOnlyList<CommitteeReferralRowDto>> GetReferralsAsync(CancellationToken ct);
         Task<CommitteeAssessIdeaDto?> GetAssessIdeaAsync(Guid ideaId, CancellationToken ct);
         Task<IReadOnlyList<CommitteeCriterionDto>> GetActiveCriteriaAsync(CancellationToken ct);
         Task<int> CountActiveCriteriaAsync(CancellationToken ct);
