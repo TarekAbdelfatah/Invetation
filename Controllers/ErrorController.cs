@@ -34,7 +34,7 @@ namespace Ibtikar.Controllers
         {
             var vm = BuildForCode(code, traceId);
             Response.StatusCode = code;
-            return View("Index", vm);
+            return View("Error", vm);
         }
 
         [Route("Error")]
@@ -42,7 +42,7 @@ namespace Ibtikar.Controllers
         {
             var vm = BuildForUnhandled();
             Response.StatusCode = 500;
-            return View("Index", vm);
+            return View("Error", vm);
         }
 
         [Route("Error/NotFound")]
@@ -59,7 +59,7 @@ namespace Ibtikar.Controllers
                 ShowException = ShouldShowDetails()
             };
             Response.StatusCode = 404;
-            return View("Index", vm);
+            return View("Error", vm);
         }
 
         private PublicErrorVm BuildForCode(int code, string? traceId)

@@ -68,6 +68,13 @@
                                 نظرة عامة
                             </a>
                         }
+                        @if (showAdmin)
+                        {
+                            <a class="bog-nav-link @IsActive("CommitteeForAdmins")" asp-controller="CommitteeForAdmins" asp-action="Index">
+                                <span class="material-icons" aria-hidden="true">groups</span>
+                                لجان الابتكار
+                            </a>
+                        }
                         @if (showIdeasIndex)
                         {
                             <a class="bog-nav-link @IsActive("Ideas")" asp-controller="Ideas" asp-action="Index">

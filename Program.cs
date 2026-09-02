@@ -91,6 +91,8 @@ namespace Ibtikar
 
             ApplyPendingMigrations(app);
 
+            app.UseExceptionHandler("/Error");
+
             app.UseMiddleware<SecurityHeadersMiddleware>();
             app.UseMiddleware<ExceptionMiddleware>();
 
@@ -98,7 +100,6 @@ namespace Ibtikar
 
             if (!app.Environment.IsDevelopment())
             {
-                app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
 

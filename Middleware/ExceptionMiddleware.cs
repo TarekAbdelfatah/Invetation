@@ -23,6 +23,11 @@ namespace Ibtikar.Middleware
             {
                 _logger.LogError(ex, "Unhandled exception at {Path}", context.Request.Path);
                 await WriteAuditAsync(auditLogService, ex, context, context.RequestAborted);
+                var env = context.RequestServices.GetService<IWebHostEnvironment>();
+                if (env?.IsDevelopment() == true)
+                {
+                    throw;
+                }
                 await WriteErrorResponseAsync(context);
             }
         }

@@ -16,7 +16,7 @@ namespace Ibtikar.Services.Helpers
                 [AuditEmployee]            = "/Audit/Inbox",
                 [SpecializedDepartment]    = "/SpecializedDashboard",
                 [PartnerDepartment]        = "/SpecializedDashboard",
-                [InnovationCommitteeMember]= "/Committee",
+                [InnovationCommitteeMember]= "/CommitteeForMembers",
                 [SystemAdmin]              = "/AdminOverview",
                 [ExternalBeneficiary]      = "/MyRequests",
                 [InternalBeneficiary]      = "/MyRequests"

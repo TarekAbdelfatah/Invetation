@@ -1,4 +1,4 @@
-using Ibtikar.DTOs.Committees;
+﻿using Ibtikar.DTOs.Committees;
 using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Helpers;
 using Ibtikar.ViewModels;
@@ -9,18 +9,18 @@ using System.Security.Claims;
 namespace Ibtikar.Controllers
 {
     [Authorize(Roles = RoleCodes.SystemAdmin)]
-    public class CommitteesController : Controller
+    public class CommitteeForAdminsController : Controller
     {
         private readonly ICommitteeFormationService _service;
-        private readonly ILogger<CommitteesController> _logger;
+        private readonly ILogger<CommitteeForAdminsController> _logger;
 
-        public CommitteesController(ICommitteeFormationService service, ILogger<CommitteesController> logger)
+        public CommitteeForAdminsController(ICommitteeFormationService service, ILogger<CommitteeForAdminsController> logger)
         {
             _service = service;
             _logger = logger;
         }
 
-        [HttpGet("Committees")]
+        [HttpGet("CommitteeForAdmins")]
         public async Task<IActionResult> Index(CancellationToken ct)
         {
             try
@@ -40,7 +40,7 @@ namespace Ibtikar.Controllers
             }
         }
 
-        [HttpGet("Committees/Create")]
+        [HttpGet("CommitteeForAdmins/Create")]
         public async Task<IActionResult> Create(CancellationToken ct)
         {
             var candidates = await _service.GetMemberCandidatesAsync(null, ct);
@@ -62,7 +62,7 @@ namespace Ibtikar.Controllers
             return View(vm);
         }
 
-        [HttpPost("Committees/Create")]
+        [HttpPost("CommitteeForAdmins/Create")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CommitteesCreateVm vm, CancellationToken ct)
         {
@@ -92,7 +92,7 @@ namespace Ibtikar.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpPost("Committees/Activate/{id:guid}")]
+        [HttpPost("CommitteeForAdmins/Activate/{id:guid}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
         {
