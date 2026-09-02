@@ -295,7 +295,8 @@ namespace Ibtikar.Repositories
                 .Include(h => h.Details)
                 .Where(h => h.InnovationIdeaId == ideaId
                     && h.Source == AssessmentHeader.SourcePartner
-                    && partnerDeptIds.Contains(h.AssessorDepartmentId)
+                    && h.AssessorDepartmentId != null
+                    && partnerDeptIds.Contains(h.AssessorDepartmentId.Value)
                     && !h.IsDraft)
                 .GroupBy(h => h.AssessorDepartmentId)
                 .Select(g => g.OrderByDescending(h => h.SubmittedAt ?? h.CreatedAt).First())

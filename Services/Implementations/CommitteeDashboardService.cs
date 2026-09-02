@@ -124,7 +124,7 @@ namespace Ibtikar.Services.Implementations
                     Id = Guid.NewGuid(),
                     InnovationIdeaId = submission.IdeaId,
                     AssessorUserId = userId,
-                    AssessorDepartmentId = Guid.Empty,
+                    AssessorDepartmentId = null,
                     Source = AssessmentHeader.SourceCommittee,
                     CreatedAt = DateTime.UtcNow
                 };
