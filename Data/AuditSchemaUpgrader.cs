@@ -67,6 +67,15 @@ namespace Ibtikar.Data
 
                     IF NOT EXISTS (SELECT 1 FROM [Roles] WHERE [Code] = N'admin')
                         INSERT INTO [Roles] ([Id], [Code], [Name], [Description], [IsActive], [CreatedAt]) VALUES (NEWID(), N'admin', N'مدير النظام', N'Admin', 1, GETUTCDATE());
+
+                    IF EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID(N'[CommitteeMembers]') AND type in (N'U'))
+                    BEGIN
+                        IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_CommitteeMembers_Users_UserId')
+                        BEGIN
+                            ALTER TABLE [CommitteeMembers] ADD CONSTRAINT [FK_CommitteeMembers_Users_UserId] 
+                            FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]);
+                        END
+                    END
                 ");
             }
             else

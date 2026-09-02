@@ -9,16 +9,16 @@ using System.Security.Claims;
 namespace Ibtikar.Controllers
 {
     [IbtikarAuthorize(RoleCodes.InnovationCommitteeMember)]
-    public class CommitteeDashboardController : Controller
+    public class CommitteeForMembersController : Controller
     {
         private readonly ICommitteeDashboardService _dashboardService;
         private readonly IDelegationService _delegations;
-        private readonly ILogger<CommitteeDashboardController> _logger;
+        private readonly ILogger<CommitteeForMembersController> _logger;
 
-        public CommitteeDashboardController(
+        public CommitteeForMembersController(
             ICommitteeDashboardService dashboardService,
             IDelegationService delegations,
-            ILogger<CommitteeDashboardController> logger)
+            ILogger<CommitteeForMembersController> logger)
         {
             _dashboardService = dashboardService;
             _delegations = delegations;
@@ -32,10 +32,7 @@ namespace Ibtikar.Controllers
             try
             {
                 var userId = ResolveUserId();
-                if (!await _dashboardService.IsActiveCommitteeMemberAsync(userId, ct))
-                {
-                    return Forbid();
-                }
+                
 
                 var (p, ps) = PagedRequest.Normalize(page, pageSize);
                 var dto = await _dashboardService.GetSnapshotAsync(userId, ct);

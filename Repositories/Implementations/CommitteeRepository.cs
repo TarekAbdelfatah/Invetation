@@ -45,22 +45,54 @@ namespace Ibtikar.Repositories
         public async Task<CommitteeMemberOptionDto[]> GetMemberCandidatesAsync(Guid? excludeCommitteeId, CancellationToken ct)
         {
             var roleCode = RoleCodes.InnovationCommitteeMember;
-            var users = await _db.Admins.AsNoTracking()
-                .Where(a => a.Role != null && a.Role.Code == roleCode && a.IsActive)
-                .Join(_db.Users.AsNoTracking(), a => a.NetworkUser, u => u.Username, (a, u) => new { u.Id, u.FullName, u.Username })
+
+            var adminRecords = await _db.Admins.AsNoTracking()
+                .Where(a => a.IsActive && a.Role != null && a.Role.Code == roleCode)
                 .ToListAsync(ct);
 
-            var alreadyOnCommittee = await _db.CommitteeMembers.AsNoTracking()
-                .Where(m => excludeCommitteeId == null || m.InnovationCommitteeId == excludeCommitteeId)
-                .Select(m => m.UserId)
-                .ToListAsync(ct);
+            if (adminRecords.Count == 0)
+            {
+                return Array.Empty<CommitteeMemberOptionDto>();
+            }
 
-            var alreadySet = new HashSet<Guid>(alreadyOnCommittee);
-            return users
-                .Where(u => !alreadySet.Contains(u.Id))
-                .Select(u => new CommitteeMemberOptionDto(u.Id, u.FullName, u.Username, false))
-                .OrderBy(u => u.FullName)
-                .ToArray();
+            var existingMemberUserIds = new HashSet<Guid>();
+            if (excludeCommitteeId.HasValue)
+            {
+                var existing = await _db.CommitteeMembers.AsNoTracking()
+                    .Where(m => m.InnovationCommitteeId == excludeCommitteeId.Value)
+                    .Select(m => m.UserId)
+                    .ToListAsync(ct);
+                existingMemberUserIds = new HashSet<Guid>(existing);
+            }
+
+            var candidates = new List<CommitteeMemberOptionDto>();
+            foreach (var admin in adminRecords)
+            {
+                if (string.IsNullOrWhiteSpace(admin.NetworkUser)) continue;
+                var cleanUser = admin.NetworkUser.Trim();
+                if (cleanUser.EndsWith("@bog.gov.sa", StringComparison.OrdinalIgnoreCase))
+                {
+                    cleanUser = cleanUser.Substring(0, cleanUser.Length - "@bog.gov.sa".Length);
+                }
+
+                var userId = AdminIdToGuid(admin.Id);
+                if (existingMemberUserIds.Contains(userId)) continue;
+
+                candidates.Add(new CommitteeMemberOptionDto(
+                    userId,
+                    cleanUser,
+                    cleanUser,
+                    false));
+            }
+
+            return candidates.OrderBy(c => c.FullName).ToArray();
+        }
+
+        private static Guid AdminIdToGuid(int adminId)
+        {
+            var bytes = new byte[16];
+            BitConverter.GetBytes(adminId).CopyTo(bytes, 0);
+            return new Guid(bytes);
         }
 
         public async Task AddCommitteeAsync(InnovationCommittee committee, CancellationToken ct)
