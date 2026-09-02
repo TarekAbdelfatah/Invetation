@@ -45,7 +45,7 @@ namespace Ibtikar.Services.Implementations
             var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
             if (committeeId is null) return null;
 
-            return await _repo.GetReferralsAsync(ct);
+            return await _repo.GetReferralsAsync(userId, ct);
         }
 
         public async Task<bool> IsActiveCommitteeMemberAsync(Guid userId, CancellationToken ct)

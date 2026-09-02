@@ -9,6 +9,7 @@ namespace Ibtikar.ViewModels
         public int Accepted { get; set; }
         public int Rejected { get; set; }
         public string? CommitteeName { get; set; }
+        public bool IsHead { get; set; }
         public List<CommitteeReferralRowVm> Items { get; set; } = new();
     }
 
@@ -23,7 +24,11 @@ namespace Ibtikar.ViewModels
         string? ApplicantDepartmentName,
         DateTime? ReferredAt,
         double StayDays,
-        bool IsOverdue);
+        bool IsOverdue,
+        int? DepartmentPercent = null,
+        int? CommitteePercent = null,
+        int? MyCommitteePercent = null,
+        bool HasAddedCommitteeAssessment = false);
 
     public class CommitteeAssessVm
     {

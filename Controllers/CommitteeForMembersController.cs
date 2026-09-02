@@ -37,13 +37,15 @@ namespace Ibtikar.Controllers
                 }
 
                 var dto = await _dashboardService.GetSnapshotAsync(userId, ct);
+                var isHead = (await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue;
                 var vm = new CommitteeDashboardVm
                 {
                     UnderStudy = dto.UnderStudy,
                     UnderVoting = dto.UnderVoting,
                     Accepted = dto.Accepted,
                     Rejected = dto.Rejected,
-                    CommitteeName = ResolveCommitteeName()
+                    CommitteeName = ResolveCommitteeName(),
+                    IsHead = isHead
                 };
 
                 var referrals = await _dashboardService.GetReferralsAsync(userId, ct);
@@ -53,7 +55,9 @@ namespace Ibtikar.Controllers
                         i.IdeaId, i.Reference, i.Title,
                         i.StatusCode, i.StatusName, i.StatusColor,
                         i.ApplicantName, i.ApplicantDepartmentName,
-                        i.ReferredAt, i.StayDays, i.IsOverdue)).ToList();
+                        i.ReferredAt, i.StayDays, i.IsOverdue,
+                        i.DepartmentPercent, i.CommitteePercent,
+                        i.MyCommitteePercent, i.HasAddedCommitteeAssessment)).ToList();
                 }
                 return View(vm);
             }
@@ -122,35 +126,24 @@ namespace Ibtikar.Controllers
             return RedirectToAction(nameof(Votes));
         }
 
-        [HttpGet("CommitteeForMembers/Decision/{id:guid}")]
-        public async Task<IActionResult> Decision(Guid id, CancellationToken ct)
-        {
-            var dto = await _dashboardService.GetDecisionAsync(ResolveUserId(), id, ct);
-            if (dto is null) return Forbid();
-
-            var vm = new CommitteeDecisionVm
-            {
-                IdeaId = dto.IdeaId,
-                Reference = dto.Reference,
-                Title = dto.Title,
-                CombinedAverage = dto.CombinedAverage,
-                CanAccept = dto.CanAccept,
-                ExtraConfirmWarning = dto.ExtraConfirmWarning
-            };
-            return View(vm);
-        }
-
         [HttpPost("CommitteeForMembers/Accept")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Accept(Guid ideaId, bool extraConfirmed, CancellationToken ct)
         {
-            var result = await _dashboardService.AcceptAsync(ResolveUserId(), ideaId, extraConfirmed, ct);
+            var userId = ResolveUserId();
+            if (!(await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue)
+            {
+                TempData["AlertError"] = "قرار اللجنة النهائي متاح لرئيس اللجنة فقط.";
+                return RedirectToAction("Index", "CommitteeForMembers");
+            }
+
+            var result = await _dashboardService.AcceptAsync(userId, ideaId, extraConfirmed, ct);
 
             if (!result.Success)
             {
                 TempData["AlertError"] = result.Message;
                 TempData["AlertType"] = "danger";
-                return RedirectToAction(nameof(Decision), new { id = ideaId });
+                return RedirectToAction("Index", "CommitteeForMembers");
             }
 
             TempData["AlertMessage"] = result.Message;
@@ -162,30 +155,23 @@ namespace Ibtikar.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reject(CommitteeRejectVm vm, CancellationToken ct)
         {
-            if (!ModelState.IsValid)
+            var userId = ResolveUserId();
+            if (!(await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue)
             {
-                var dto = await _dashboardService.GetDecisionAsync(ResolveUserId(), vm.IdeaId, ct);
-                if (dto is null) return Forbid();
-                return View("Decision", new CommitteeDecisionVm
-                {
-                    IdeaId = dto.IdeaId,
-                    Reference = dto.Reference,
-                    Title = dto.Title,
-                    CombinedAverage = dto.CombinedAverage,
-                    CanAccept = dto.CanAccept,
-                    ExtraConfirmWarning = dto.ExtraConfirmWarning,
-                    Reason = vm.Reason,
-                    ShowRejectBox = true
-                });
+                TempData["AlertError"] = "قرار اللجنة النهائي متاح لرئيس اللجنة فقط.";
+                return RedirectToAction("Index", "CommitteeForMembers");
             }
 
-            var result = await _dashboardService.RejectAsync(ResolveUserId(), vm.IdeaId, vm.Reason ?? string.Empty, ct);
+            if (!ModelState.IsValid)
+            {
+                TempData["AlertError"] = "سبب الرفض يجب ألا يقل عن 10 أحرف.";
+                return RedirectToAction("Index", "CommitteeForMembers");
+            }
+
+            var result = await _dashboardService.RejectAsync(userId, vm.IdeaId, vm.Reason ?? string.Empty, ct);
 
             TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
             TempData["AlertType"] = result.Success ? "success" : "danger";
-
-            if (!result.Success)
-                return RedirectToAction(nameof(Decision), new { id = vm.IdeaId });
 
             return RedirectToAction("Index", "CommitteeForMembers");
         }
@@ -194,13 +180,17 @@ namespace Ibtikar.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReturnForDevelopment(Guid ideaId, CancellationToken ct)
         {
-            var result = await _dashboardService.ReturnForDevelopmentAsync(ResolveUserId(), ideaId, ct);
+            var userId = ResolveUserId();
+            if (!(await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue)
+            {
+                TempData["AlertError"] = "قرار اللجنة النهائي متاح لرئيس اللجنة فقط.";
+                return RedirectToAction("Index", "CommitteeForMembers");
+            }
+
+            var result = await _dashboardService.ReturnForDevelopmentAsync(userId, ideaId, ct);
 
             TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
             TempData["AlertType"] = result.Success ? "success" : "danger";
-
-            if (!result.Success)
-                return RedirectToAction(nameof(Decision), new { id = ideaId });
 
             return RedirectToAction("Index", "CommitteeForMembers");
         }

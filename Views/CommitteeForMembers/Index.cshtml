@@ -3,6 +3,8 @@
 @{
     ViewData["Title"] = "لجنة الابتكار";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var isHead = Model.IsHead;
+    var decidedCodes = new[] { "approved", "rejected", "returned_for_development", "in-execution" };
 }
 
 <div class="bog-main">
@@ -16,7 +18,7 @@
             </h1>
             <span class="bog-page-role">
                 <span class="material-icons" aria-hidden="true">how_to_vote</span>
-                عضو لجنة
+                @(isHead ? "رئيس اللجنة" : "عضو لجنة")
             </span>
         </div>
 
@@ -107,13 +109,34 @@
                                     <th>الإدارة</th>
                                     <th>الحالة</th>
                                     <th>أيام الانتظار</th>
+                                    <th>النسبة</th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var i in Model.Items)
                                 {
-                                    <tr>
+                                    var isReferred = i.StatusCode == "referred-committee";
+                                    var isDecided = decidedCodes.Contains(i.StatusCode);
+                                    var combined = (i.DepartmentPercent.HasValue && i.CommitteePercent.HasValue)
+                                        ? (int)Math.Round((i.DepartmentPercent.Value + i.CommitteePercent.Value) / 2.0, MidpointRounding.AwayFromZero)
+                                        : (int?)null;
+                                    var band = combined.HasValue
+                                        ? combined.Value >= 80 ? "success" : combined.Value >= 40 ? "warning" : "danger"
+                                        : "";
+                                    <tr data-idea="@i.IdeaId"
+                                        data-reference="@i.Reference"
+                                        data-title="@i.Title"
+                                        data-status="@i.StatusCode"
+                                        data-status-name="@i.StatusName"
+                                        data-status-color="@i.StatusColor"
+                                        data-dept-percent="@(i.DepartmentPercent?.ToString())"
+                                        data-committee-percent="@(i.CommitteePercent?.ToString())"
+                                        data-my-percent="@(i.MyCommitteePercent?.ToString())"
+                                        data-has-assessment="@(i.HasAddedCommitteeAssessment ? "true" : "false")"
+                                        data-combined="@(combined?.ToString())"
+                                        data-band="@band"
+                                        data-is-referred="@(isReferred ? "true" : "false")">
                                         <td class="text-muted small">@i.Reference</td>
                                         <td class="fw-semibold">@i.Title</td>
                                         <td>@(i.ApplicantName ?? "—")</td>
@@ -124,17 +147,33 @@
                                         <td class="@(i.IsOverdue ? "text-danger fw-semibold" : "text-muted")">
                                             @Math.Ceiling(i.StayDays).ToString("0") يوم
                                         </td>
+                                        <td style="min-width:130px">
+                                            @if (isDecided)
+                                            {
+                                                <span class="badge text-bg-@(band)">@(combined?.ToString() ?? "—")%</span>
+                                                <span class="small text-muted d-block">قرار نهائي</span>
+                                            }
+                                            else if (i.HasAddedCommitteeAssessment)
+                                            {
+                                                <span class="badge text-bg-@(band)">@(combined?.ToString() ?? "—")%</span>
+                                                <span class="small text-muted d-block">بانتظار قرار رئيس اللجنة</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">
+                                                    <span class="material-icons align-middle" style="font-size:14px">schedule</span>
+                                                    في انتظار تصويتك
+                                                </span>
+                                            }
+                                        </td>
                                         <td>
                                             <div class="d-flex gap-1">
                                                 <a class="btn btn-sm btn-outline-primary" asp-action="Assess" asp-route-id="@i.IdeaId">
                                                     تقييم
                                                 </a>
-                                                @if (i.StatusCode == "referred-committee")
-                                                {
-                                                    <a class="btn btn-sm btn-outline-success" asp-action="Decision" asp-route-id="@i.IdeaId">
-                                                        قرار
-                                                    </a>
-                                                }
+                                                <button type="button" class="btn btn-sm btn-outline-success" data-open-decision>
+                                                    @(isReferred ? "قرار" : "تفاصيل القرار")
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -147,3 +186,271 @@
         </div>
     </div>
 </div>
+
+<div id="decisionModal" class="bog-modal" hidden role="dialog" aria-modal="true" aria-labelledby="decisionTitle">
+    <div class="bog-modal-backdrop" data-close-decision></div>
+    <div class="bog-modal-dialog bog-modal-dialog-centered" role="document">
+        <div class="bog-modal-content">
+            <h5 id="decisionTitle" class="bog-modal-title">
+                <span class="material-icons align-middle">fact_check</span>
+                قرار اللجنة
+            </h5>
+
+            <div class="mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <code id="decisionReference" class="fs-6"></code>
+                    <span id="decisionStatusBadge" class="badge"></span>
+                </div>
+                <div id="decisionIdeaTitle" class="h6 mt-2 mb-0"></div>
+            </div>
+
+            <div class="row g-2 text-center mb-3">
+                <div class="col-4">
+                    <div class="border rounded p-2 h-100">
+                        <div class="text-muted small mb-1">الإدارة المختصة</div>
+                        <div id="deptPercent" class="fs-4 fw-bold">—</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded p-2 h-100">
+                        <div class="text-muted small mb-1">تقييم اللجنة (تقييمك)</div>
+                        <div id="committeePercent" class="fs-4 fw-bold">—</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded p-2 h-100">
+                        <div class="text-muted small mb-1">النسبة المجمعة</div>
+                        <div id="combinedPercent" class="fs-4 fw-bold">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="decisionActions" class="d-none">
+                <div class="alert alert-light border small mb-3" id="decisionHint"></div>
+
+                <form id="acceptForm" method="post" asp-action="Accept" autocomplete="off">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ideaId" id="acceptIdeaId" />
+                    <input type="hidden" name="extraConfirmed" id="acceptExtra" value="false" />
+                    <div id="extraConfirmWrap" class="form-check mb-2 d-none">
+                        <input class="form-check-input" type="checkbox" id="extraConfirmedCb">
+                        <label class="form-check-label" for="extraConfirmedCb">
+                            أؤكد قبول الفكرة رغم أن النسبة المجمعة أقل من 40%.
+                        </label>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-success" id="acceptSubmit">قبول الفكرة</button>
+                        <button type="button" class="btn btn-danger" data-show-reject>رفض الفكرة</button>
+                        <button type="button" class="btn btn-warning" data-show-return>إعادة للتطوير</button>
+                        <button type="button" class="btn btn-outline-secondary" data-close-decision>إلغاء</button>
+                    </div>
+                </form>
+
+                <form id="rejectForm" method="post" asp-action="Reject" class="mt-3 d-none" autocomplete="off">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="IdeaId" id="rejectIdeaId" />
+                    <div class="card bog-section">
+                        <div class="card-header bg-white d-flex align-items-center gap-2">
+                            <span class="material-icons text-danger">cancel</span>
+                            <strong>رفض الفكرة</strong>
+                            <span class="ms-auto text-muted small">سبب الرفض مطلوب (10 أحرف على الأقل)</span>
+                        </div>
+                        <div class="card-body">
+                            <textarea name="Reason" id="rejectReason" class="form-control" rows="2"
+                                      minlength="10" maxlength="1000" required
+                                      placeholder="سبب الرفض الفني…"></textarea>
+                            <div class="invalid-feedback" id="rejectFeedback">سبب الرفض يجب ألا يقل عن 10 أحرف.</div>
+                        </div>
+                        <div class="card-footer bg-white d-flex gap-2">
+                            <button type="submit" class="btn btn-danger" id="rejectSubmit">
+                                <span class="material-icons align-middle" style="font-size:16px">check</span>
+                                تأكيد الرفض
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" data-hide-reject>إلغاء</button>
+                        </div>
+                    </div>
+                </form>
+
+                <form id="returnForm" method="post" asp-action="ReturnForDevelopment" class="mt-3 d-none" autocomplete="off">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ideaId" id="returnIdeaId" />
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning">تأكيد إعادة الفكرة للتطوير</button>
+                        <button type="button" class="btn btn-outline-secondary" data-hide-return>إلغاء</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="decisionReadOnly" class="alert alert-light border text-center mb-0 d-none">
+                <span class="material-icons align-middle text-muted">info</span>
+                هذا القرار تم. العرض للتفاصيل فقط.
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    (function () {
+        var modal = document.getElementById('decisionModal');
+        if (!modal) return;
+
+        var isHead = @(isHead ? "true" : "false");
+        var refEl = document.getElementById('decisionReference');
+        var titleEl = document.getElementById('decisionIdeaTitle');
+        var badgeEl = document.getElementById('decisionStatusBadge');
+        var deptEl = document.getElementById('deptPercent');
+        var committeeEl = document.getElementById('committeePercent');
+        var combinedEl = document.getElementById('combinedPercent');
+        var actionsWrap = document.getElementById('decisionActions');
+        var readOnlyWrap = document.getElementById('decisionReadOnly');
+        var hintEl = document.getElementById('decisionHint');
+        var acceptForm = document.getElementById('acceptForm');
+        var rejectForm = document.getElementById('rejectForm');
+        var returnForm = document.getElementById('returnForm');
+        var acceptIdeaId = document.getElementById('acceptIdeaId');
+        var rejectIdeaId = document.getElementById('rejectIdeaId');
+        var returnIdeaId = document.getElementById('returnIdeaId');
+        var acceptExtra = document.getElementById('acceptExtra');
+        var extraWrap = document.getElementById('extraConfirmWrap');
+        var extraCb = document.getElementById('extraConfirmedCb');
+        var rejectReason = document.getElementById('rejectReason');
+
+        function reset() {
+            if (acceptForm) acceptForm.classList.remove('d-none');
+            if (rejectForm) rejectForm.classList.add('d-none');
+            if (returnForm) returnForm.classList.add('d-none');
+            if (extraWrap) extraWrap.classList.add('d-none');
+            if (acceptExtra) acceptExtra.value = 'false';
+            if (extraCb) extraCb.checked = false;
+            if (rejectReason) { rejectReason.value = ''; rejectReason.classList.remove('is-invalid'); }
+            if (actionsWrap) actionsWrap.classList.add('d-none');
+            if (readOnlyWrap) readOnlyWrap.classList.add('d-none');
+        }
+
+        function displayValues(tr) {
+            var dept = tr.getAttribute('data-dept-percent');
+            var committee = tr.getAttribute('data-committee-percent');
+            var combined = tr.getAttribute('data-combined');
+            var band = tr.getAttribute('data-band') || 'secondary';
+            if (deptEl) deptEl.innerHTML = dept ? dept + '%' : '—';
+            if (committeeEl) committeeEl.innerHTML = committee ? committee + '%' : '—';
+            if (combinedEl) {
+                combinedEl.textContent = combined ? combined + '%' : '—';
+                combinedEl.className = 'fs-4 fw-bold text-' + band;
+            }
+        }
+
+        function openFrom(tr) {
+            reset();
+            if (refEl) refEl.textContent = tr.getAttribute('data-reference');
+            if (titleEl) titleEl.textContent = tr.getAttribute('data-title');
+            if (badgeEl) {
+                badgeEl.textContent = tr.getAttribute('data-status-name');
+                badgeEl.style.backgroundColor = tr.getAttribute('data-status-color');
+            }
+            displayValues(tr);
+
+            var isReferred = tr.getAttribute('data-is-referred') === 'true';
+            var ideaId = tr.getAttribute('data-idea');
+            var committee = tr.getAttribute('data-committee-percent');
+            var combined = tr.getAttribute('data-combined');
+
+            if (isReferred && isHead) {
+                actionsWrap.classList.remove('d-none');
+                readOnlyWrap.classList.add('d-none');
+                if (acceptIdeaId) acceptIdeaId.value = ideaId;
+                if (rejectIdeaId) rejectIdeaId.value = ideaId;
+                if (returnIdeaId) returnIdeaId.value = ideaId;
+
+                var needsExtra = combined !== null && combined !== '' && parseInt(combined, 10) < 40;
+                if (needsExtra) {
+                    extraWrap.classList.remove('d-none');
+                    if (acceptExtra) acceptExtra.value = 'false';
+                    if (extraCb) extraCb.checked = false;
+                } else {
+                    extraWrap.classList.add('d-none');
+                    if (acceptExtra) acceptExtra.value = 'false';
+                }
+                hintEl.textContent = needsExtra
+                    ? 'النسبة المجمعة أقل من 40%. قبول الفكرة يتطلب تأكيداً إضافياً من رئيس اللجنة.'
+                    : 'أنت رئيس اللجنة. يمكنك اتخاذ القرار النهائي حسب النسبة المجمعة.';
+            } else {
+                actionsWrap.classList.add('d-none');
+                readOnlyWrap.classList.remove('d-none');
+            }
+
+            var acceptBtn = document.getElementById('acceptSubmit');
+            if (acceptBtn) acceptBtn.disabled = !!needsExtra;
+        }
+
+        document.querySelectorAll('[data-open-decision]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var tr = btn.closest('tr');
+                if (!tr) return;
+                openFrom(tr);
+                modal.hidden = false;
+                modal.setAttribute('data-open', 'true');
+            });
+        });
+
+        function close() {
+            modal.hidden = true;
+            modal.removeAttribute('data-open');
+        }
+        modal.querySelectorAll('[data-close-decision]').forEach(function (el) {
+            el.addEventListener('click', close);
+        });
+
+        if (extraCb) {
+            extraCb.addEventListener('change', function () {
+                if (acceptExtra) acceptExtra.value = extraCb.checked ? 'true' : 'false';
+                var acceptBtn = document.getElementById('acceptSubmit');
+                if (acceptBtn) acceptBtn.disabled = !extraCb.checked;
+            });
+        }
+
+        if (acceptForm) {
+            acceptForm.addEventListener('submit', function (e) {
+                if (!extraWrap || extraWrap.classList.contains('d-none')) return;
+                if (!extraCb.checked && !acceptForm.querySelector('[name="extraConfirmed"]').value === 'true') {
+                    if (extraCb) { extraCb.reportValidity(); }
+                }
+            });
+        }
+
+        if (rejectReason) {
+            rejectReason.addEventListener('input', function () {
+                var v = rejectReason.value.trim();
+                rejectReason.classList.toggle('is-invalid', v.length < 10);
+                var btn = document.getElementById('rejectSubmit');
+                if (btn) btn.disabled = v.length < 10;
+            });
+        }
+
+        document.querySelector('[data-show-reject]').addEventListener('click', function () {
+            acceptForm.classList.add('d-none');
+            returnForm.classList.add('d-none');
+            rejectForm.classList.remove('d-none');
+            if (rejectReason) setTimeout(function () { rejectReason.focus(); }, 50);
+        });
+        document.querySelector('[data-hide-reject]').addEventListener('click', function () {
+            rejectForm.classList.add('d-none');
+            acceptForm.classList.remove('d-none');
+        });
+        document.querySelector('[data-show-return]').addEventListener('click', function () {
+            acceptForm.classList.add('d-none');
+            rejectForm.classList.add('d-none');
+            returnForm.classList.remove('d-none');
+        });
+        document.querySelector('[data-hide-return]').addEventListener('click', function () {
+            returnForm.classList.add('d-none');
+            acceptForm.classList.remove('d-none');
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !modal.hidden) close();
+        });
+    })();
+</script>
+}

@@ -33,11 +33,20 @@ namespace Ibtikar.Repositories
             return new CommitteeDashboardDto(underStudy, underVoting, accepted, rejected);
         }
 
-        public async Task<IReadOnlyList<CommitteeReferralRowDto>> GetReferralsAsync(CancellationToken ct)
+        public async Task<IReadOnlyList<CommitteeReferralRowDto>> GetReferralsAsync(Guid userId, CancellationToken ct)
         {
             var now = DateTime.UtcNow;
+            var queueStatuses = new[]
+            {
+                IdeaStatusCodes.ReferredCommittee,
+                IdeaStatusCodes.Approved,
+                IdeaStatusCodes.Rejected,
+                IdeaStatusCodes.ReturnedForDevelopment,
+                IdeaStatusCodes.InExecution
+            };
+
             var rows = await _db.InnovationIdeas.AsNoTracking()
-                .Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee)
+                .Where(i => i.CurrentStatus != null && queueStatuses.Contains(i.CurrentStatus.Code))
                 .OrderByDescending(i => i.CreatedAt)
                 .Take(100)
                 .Select(i => new CommitteeReferralRowDto(
@@ -54,8 +63,58 @@ namespace Ibtikar.Repositories
                     i.AuditAssignedAt.HasValue && (now - i.AuditAssignedAt.Value) > TimeSpan.FromDays(4)))
                 .ToListAsync(ct);
 
-            return rows;
+            if (rows.Count == 0) return rows;
+
+            var ideaIds = rows.Select(r => r.IdeaId).ToHashSet();
+            var criteriaCount = await CountActiveCriteriaAsync(ct);
+
+            var specializedHeaders = await _db.AssessmentHeaders.AsNoTracking()
+                .Include(h => h.Details)
+                .Where(h => ideaIds.Contains(h.InnovationIdeaId)
+                    && h.Source == AssessmentHeader.SourceSpecialized
+                    && !h.IsDraft)
+                .ToListAsync(ct);
+
+            var committeeHeaders = await _db.AssessmentHeaders.AsNoTracking()
+                .Include(h => h.Details)
+                .Where(h => ideaIds.Contains(h.InnovationIdeaId)
+                    && h.Source == AssessmentHeader.SourceCommittee
+                    && !h.IsDraft)
+                .ToListAsync(ct);
+
+            var myCommitteeHeaders = committeeHeaders
+                .Where(h => h.AssessorUserId == userId)
+                .ToList();
+
+            var deptByIdea = specializedHeaders
+                .GroupBy(h => h.InnovationIdeaId)
+                .Select(g => g.OrderByDescending(h => h.SubmittedAt ?? h.CreatedAt).First())
+                .ToDictionary(h => h.InnovationIdeaId, h => CommitteeReferralPercent(h.Details.Sum(d => d.Score), criteriaCount));
+
+            var committeeByIdea = committeeHeaders
+                .GroupBy(h => h.InnovationIdeaId)
+                .Select(g => g.OrderByDescending(h => h.SubmittedAt ?? h.CreatedAt).First())
+                .ToDictionary(h => h.InnovationIdeaId, h => CommitteeReferralPercent(h.Details.Sum(d => d.Score), criteriaCount));
+
+            var myByIdea = myCommitteeHeaders.ToDictionary(
+                h => h.InnovationIdeaId,
+                h => CommitteeReferralPercent(h.Details.Sum(d => d.Score), criteriaCount));
+
+            var mySubmittedIds = myCommitteeHeaders.Select(h => h.InnovationIdeaId).ToHashSet();
+
+            return rows.Select(r => r with
+            {
+                DepartmentPercent = deptByIdea.TryGetValue(r.IdeaId, out var d) ? d : null,
+                CommitteePercent = committeeByIdea.TryGetValue(r.IdeaId, out var c) ? c : null,
+                MyCommitteePercent = myByIdea.TryGetValue(r.IdeaId, out var m) ? m : null,
+                HasAddedCommitteeAssessment = mySubmittedIds.Contains(r.IdeaId)
+            }).ToList();
         }
+
+        private static int? CommitteeReferralPercent(int scoreSum, int criteriaCount)
+            => criteriaCount <= 0
+                ? null
+                : (int)Math.Round(scoreSum / (criteriaCount * (double)5) * 100, MidpointRounding.AwayFromZero);
 
         public async Task<CommitteeAssessIdeaDto?> GetAssessIdeaAsync(Guid ideaId, CancellationToken ct)
             => await _db.InnovationIdeas.AsNoTracking()

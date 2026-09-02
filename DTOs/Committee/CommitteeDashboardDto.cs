@@ -17,5 +17,9 @@ namespace Ibtikar.DTOs.Committee
         string? ApplicantDepartmentName,
         DateTime? ReferredAt,
         double StayDays,
-        bool IsOverdue);
+        bool IsOverdue,
+        int? DepartmentPercent = null,
+        int? CommitteePercent = null,
+        int? MyCommitteePercent = null,
+        bool HasAddedCommitteeAssessment = false);
 }
