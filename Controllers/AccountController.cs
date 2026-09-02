@@ -110,7 +110,7 @@ namespace Ibtikar.Controllers
             await ClearAllCookiesAndSessionAsync(HttpContext);
 
             _logger.LogInformation("All cookies, session and tokens cleared. Redirecting to Login page.");
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Index", "Home");
         }
 
         private async Task ClearAllCookiesAndSessionAsync(HttpContext context)
