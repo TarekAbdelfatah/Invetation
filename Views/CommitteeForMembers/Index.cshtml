@@ -186,10 +186,19 @@
                                                     }
                                                     else
                                                     {
-                                                        <a class="btn btn-sm btn-outline-primary" asp-action="Vote" asp-route-id="@i.IdeaId">
-                                                            <span class="material-icons align-middle" style="font-size:16px">how_to_vote</span>
-                                                            التصويت
-                                                        </a>
+                                                        if (i.HasVoted)
+                                                        {
+                                                            <button type="button" class="btn btn-sm btn-outline-success" data-open-decision>
+                                                                تفاصيل القرار
+                                                            </button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <a class="btn btn-sm btn-outline-primary" asp-action="Vote" asp-route-id="@i.IdeaId">
+                                                                <span class="material-icons align-middle" style="font-size:16px">how_to_vote</span>
+                                                                التصويت
+                                                            </a>
+                                                        }
                                                     }
                                                 }
                                                 else

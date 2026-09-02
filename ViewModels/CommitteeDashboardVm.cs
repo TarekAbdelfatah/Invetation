@@ -33,7 +33,8 @@ namespace Ibtikar.ViewModels
         int? DepartmentPercent = null,
         int? CommitteePercent = null,
         int? MyCommitteePercent = null,
-        bool HasAddedCommitteeAssessment = false);
+        bool HasAddedCommitteeAssessment = false,
+        bool HasVoted = false);
 
     public class CommitteeAssessVm
     {

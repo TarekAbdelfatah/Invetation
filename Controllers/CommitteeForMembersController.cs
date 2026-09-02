@@ -61,7 +61,7 @@ namespace Ibtikar.Controllers
                         i.ApplicantName, i.ApplicantDepartmentName,
                         i.ReferredAt, i.StayDays, i.IsOverdue,
                         i.DepartmentPercent, i.CommitteePercent,
-                        i.MyCommitteePercent, i.HasAddedCommitteeAssessment)).ToList();
+                        i.MyCommitteePercent, i.HasAddedCommitteeAssessment, i.HasVoted)).ToList();
                     vm.TotalCount = referrals.TotalCount;
                 }
                 return View(vm);
