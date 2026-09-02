@@ -35,7 +35,7 @@ namespace Ibtikar.Controllers
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Committees index fallback: {Message}", ex.Message);
-                ViewBag.DatabaseError = ex.Message;
+                ViewBag.DatabaseError = "تعذر الاتصال بقاعدة البيانات. حاول لاحقاً.";
                 return View(new CommitteesIndexVm());
             }
         }

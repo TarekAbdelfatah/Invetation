@@ -66,7 +66,7 @@ namespace Ibtikar.Services.Implementations
                 Id = Guid.NewGuid(),
                 InnovationIdeaId = ideaId,
                 FileName = file.FileName,
-                ContentType = file.ContentType ?? "application/pdf",
+                ContentType = "application/pdf",
                 SizeBytes = file.Length,
                 StoragePath = storedPath,
                 UploadedAt = DateTime.UtcNow,
@@ -197,9 +197,14 @@ namespace Ibtikar.Services.Implementations
         public bool DeleteDraftFile(Guid userId, Guid draftId, string storedFileName)
         {
             var folder = DraftFolder(userId, draftId);
-            var path = Path.Combine(folder, storedFileName);
-            if (!File.Exists(path)) return false;
-            File.Delete(path);
+            var fullPath = Path.GetFullPath(Path.Combine(folder, storedFileName));
+            if (!fullPath.StartsWith(Path.GetFullPath(folder), StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("Path traversal attempt blocked in DeleteDraftFile: {Path}", fullPath);
+                return false;
+            }
+            if (!File.Exists(fullPath)) return false;
+            File.Delete(fullPath);
             return true;
         }
 

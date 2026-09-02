@@ -20,7 +20,7 @@ namespace Ibtikar.Controllers
             _logger = logger;
         }
 
-        [AllowAnonymous]
+        [Authorize]
         public async Task<IActionResult> Index(CancellationToken ct)
         {
             try
@@ -32,7 +32,7 @@ namespace Ibtikar.Controllers
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Ideas index fallback (database unavailable): {Message}", ex.Message);
-                ViewBag.DatabaseError = ex.Message;
+                ViewBag.DatabaseError = "تعذر الاتصال بقاعدة البيانات. حاول لاحقاً.";
                 return View(Array.Empty<IdeaListItemVm>());
             }
         }
@@ -78,7 +78,7 @@ namespace Ibtikar.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequestSizeLimit(20 * 1024 * 1024)]
+        [RequestSizeLimit(12 * 1024 * 1024)]
         public async Task<IActionResult> Create(IdeaCreateViewModel model, string action, List<IFormFile>? attachments, CancellationToken ct)
         {
             var isSaveDraft = string.Equals(action, "SaveDraft", StringComparison.OrdinalIgnoreCase);

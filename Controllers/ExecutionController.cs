@@ -112,7 +112,8 @@ namespace Ibtikar.Controllers
         }
 
         [HttpPost("Execution/UploadCompletion")]
-        [IgnoreAntiforgeryToken]
+        [ValidateAntiForgeryToken]
+        [RequestSizeLimit(12 * 1024 * 1024)]
         public async Task<IActionResult> UploadCompletion(Guid ideaId, [FromForm] List<IFormFile> files, CancellationToken ct)
         {
             if (files is null || files.Count != 2)

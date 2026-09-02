@@ -10,10 +10,12 @@ namespace Ibtikar.Controllers
     public class AttachmentDownloadController : Controller
     {
         private readonly AttachmentService _attachments;
+        private readonly FileStorageService _storage;
 
-        public AttachmentDownloadController(AttachmentService attachments)
+        public AttachmentDownloadController(AttachmentService attachments, FileStorageService storage)
         {
             _attachments = attachments;
+            _storage = storage;
         }
 
         [HttpGet]
@@ -35,8 +37,12 @@ namespace Ibtikar.Controllers
             if (!System.IO.File.Exists(attachment.StoragePath))
                 return NotFound();
 
+            var fullStoragePath = Path.GetFullPath(attachment.StoragePath);
+            if (!fullStoragePath.StartsWith(Path.GetFullPath(_storage.Root), StringComparison.OrdinalIgnoreCase))
+                return Forbid();
+
             var stream = System.IO.File.OpenRead(attachment.StoragePath);
-            return File(stream, attachment.ContentType ?? "application/pdf", attachment.FileName);
+            return File(stream, "application/pdf", attachment.FileName);
         }
 
         private (Guid UserId, IReadOnlyCollection<string> RoleCodes, Guid? DepartmentId)? ResolveCurrentUser()

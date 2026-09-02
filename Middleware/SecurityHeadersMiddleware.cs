@@ -27,6 +27,9 @@ namespace Ibtikar.Middleware
                         "img-src 'self' data:; " +
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                         "font-src 'self' https://fonts.gstatic.com; " +
+                        // TODO(security-debt): script-src still allows 'unsafe-inline' because
+                        // several Views ship inline <script> blocks. Move scripts to .js files or
+                        // adopt nonces before removing 'unsafe-inline'.
                         "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; " +
                         "connect-src 'self'; " +
                         "frame-ancestors 'none';";

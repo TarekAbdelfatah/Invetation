@@ -25,7 +25,8 @@ namespace Ibtikar.Controllers
         }
 
         [HttpPost("upload")]
-        [RequestSizeLimit(20 * 1024 * 1024)]
+        [ValidateAntiForgeryToken]
+        [RequestSizeLimit(6 * 1024 * 1024)]
         public async Task<IActionResult> Upload(
             [FromForm] Guid ideaId,
             [FromForm] IFormFile file,
@@ -90,7 +91,8 @@ namespace Ibtikar.Controllers
         }
 
         [HttpPost("uploadDraft")]
-        [RequestSizeLimit(20 * 1024 * 1024)]
+        [ValidateAntiForgeryToken]
+        [RequestSizeLimit(6 * 1024 * 1024)]
         public async Task<IActionResult> UploadDraft(
             [FromForm] Guid draftId,
             [FromForm] IFormFile file,
@@ -148,6 +150,7 @@ namespace Ibtikar.Controllers
         }
 
         [HttpPost("deleteDraft")]
+        [ValidateAntiForgeryToken]
         public IActionResult DeleteDraft(
             [FromForm] Guid draftId,
             [FromForm] string fileName,
@@ -165,6 +168,7 @@ namespace Ibtikar.Controllers
         }
 
         [HttpPost("delete/{attachmentId:guid}")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteById(Guid attachmentId, CancellationToken ct)
         {
             var userId = ResolveUserId();
@@ -200,8 +204,15 @@ namespace Ibtikar.Controllers
             if (!System.IO.File.Exists(attachment.StoragePath))
                 return NotFound(new { error = "file not found on disk." });
 
+            var fullStoragePath = Path.GetFullPath(attachment.StoragePath);
+            if (!fullStoragePath.StartsWith(Path.GetFullPath(_storage.Root), StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("StoragePath escape attempt blocked: {Path}", fullStoragePath);
+                return Forbid();
+            }
+
             var stream = System.IO.File.OpenRead(attachment.StoragePath);
-            return File(stream, attachment.ContentType ?? "application/pdf", attachment.FileName);
+            return File(stream, "application/pdf", attachment.FileName);
         }
 
         [HttpGet("downloadDraft")]
@@ -214,11 +225,23 @@ namespace Ibtikar.Controllers
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(new { error = "fileName required." });
 
             var userId = ResolveUserId();
+            if (userId == Guid.Empty)
+                return Challenge();
+
             var folder = Path.Combine(_storage.Root, "_drafts", userId.ToString("N"), draftId.ToString("N"));
-            var path = Path.Combine(folder, fileName);
+            if (!Directory.Exists(folder))
+                return NotFound();
+
+            var path = Path.GetFullPath(Path.Combine(folder, fileName));
+            if (!path.StartsWith(Path.GetFullPath(folder), StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("Path traversal attempt blocked in DownloadDraft: {Path}", path);
+                return Forbid();
+            }
+
             if (!System.IO.File.Exists(path)) return NotFound();
             var stream = System.IO.File.OpenRead(path);
-            return File(stream, "application/pdf", fileName);
+            return File(stream, "application/pdf", Path.GetFileName(fileName));
         }
 
         private Guid ResolveUserId()
