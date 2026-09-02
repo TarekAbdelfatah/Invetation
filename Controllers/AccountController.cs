@@ -4,6 +4,9 @@ using Ibtikar.Models;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Implementations;
 using Ibtikar.ViewModels;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ibtikar.Controllers
@@ -81,29 +84,81 @@ namespace Ibtikar.Controllers
 
         [HttpPost]
         [HttpGet]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             _logger.LogInformation("Processing user logout request.");
-            await _auth.SignOutAsync(HttpContext);
+            var idTokenHint = User.FindFirst("id_token")?.Value
+                ?? await HttpContext.GetTokenAsync("id_token")
+                ?? Request.Cookies["id_token"];
 
+            var postLogoutRedirectUri = $"{Request.Scheme}://{Request.Host}/signout-callback-oidc";
+            var logoutUrl = _ssoService.BuildLogoutUrl(postLogoutRedirectUri, idTokenHint);
+
+            await ClearAllCookiesAndSessionAsync(HttpContext);
+
+            _logger.LogInformation("Local cookies & sessions cleared. Redirecting to IdentityServer end session endpoint: {LogoutUrl}", logoutUrl);
+            return Redirect(logoutUrl);
+        }
+
+        [HttpGet("/signout-callback-oidc")]
+        [HttpGet("/signout-callback")]
+        [HttpGet("Account/SignOutCallback")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SignOutCallback()
+        {
+            _logger.LogInformation("SignOut callback received from IdentityServer.");
+            await ClearAllCookiesAndSessionAsync(HttpContext);
+
+            _logger.LogInformation("All cookies, session and tokens cleared. Redirecting to Login page.");
+            return RedirectToAction("Login", "Account");
+        }
+
+        private async Task ClearAllCookiesAndSessionAsync(HttpContext context)
+        {
             try
             {
-                HttpContext.Session?.Clear();
+                await _auth.SignOutAsync(context);
+                await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Could not clear session during logout.");
+                _logger.LogWarning(ex, "SignOutAsync failed during logout.");
             }
 
-            Response.Cookies.Delete(".Ibtikar.Auth");
-            Response.Cookies.Delete("pkce_verifier");
+            try
+            {
+                context.Session?.Clear();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Session.Clear() failed during logout.");
+            }
 
-            var postLogoutRedirectUri = $"{Request.Scheme}://{Request.Host}/Account/Login";
-            var logoutUrl = _ssoService.BuildLogoutUrl(postLogoutRedirectUri);
+            try
+            {
+                foreach (var cookieKey in context.Request.Cookies.Keys)
+                {
+                    context.Response.Cookies.Delete(cookieKey);
+                    context.Response.Cookies.Delete(cookieKey, new CookieOptions { Path = "/" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete request cookies during logout.");
+            }
 
-            _logger.LogInformation("Local cookie cleared. Redirecting to IdentityServer end session endpoint: {LogoutUrl}", logoutUrl);
-            return Redirect(logoutUrl);
+            var explicitCookies = new[] { ".Ibtikar.Auth", ".AspNetCore.Cookies", ".AspNetCore.Session", "pkce_verifier", "idsvr.session", "ARRAffinity", "ARRAffinitySameSite" };
+            foreach (var name in explicitCookies)
+            {
+                try
+                {
+                    context.Response.Cookies.Delete(name);
+                    context.Response.Cookies.Delete(name, new CookieOptions { Path = "/" });
+                    context.Response.Cookies.Delete(name, new CookieOptions { Path = "/", Secure = true });
+                    context.Response.Cookies.Delete(name, new CookieOptions { Path = "/", HttpOnly = true });
+                }
+                catch { }
+            }
         }
 
         [HttpGet]

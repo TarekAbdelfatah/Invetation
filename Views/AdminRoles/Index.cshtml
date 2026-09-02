@@ -68,7 +68,7 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">الصلاحية <span class="text-danger">*</span></label>
-                            <select class="form-select" asp-for="Input.RoleId" id="roleSelect" required>
+                            <select class="form-select select2-role" asp-for="Input.RoleId" id="roleSelect" required>
                                 <option value="">-- اختر الصلاحية --</option>
                                 @foreach (var role in Model.Roles)
                                 {
@@ -80,7 +80,7 @@
 
                         <div class="mb-3" id="departmentContainer" style="display: none;">
                             <label class="form-label fw-bold">الإدارة المختصة <span class="text-danger">*</span></label>
-                            <select class="form-select" asp-for="Input.DeptId" id="deptSelect">
+                            <select class="form-select select2-dept" asp-for="Input.DeptId" id="deptSelect">
                                 <option value="">-- اختر الإدارة المختصة --</option>
                                 @foreach (var dept in Model.Departments)
                                 {
@@ -195,25 +195,73 @@
                 width: '100%'
             });
 
-            const roleSelect = document.getElementById('roleSelect');
-            const deptContainer = document.getElementById('departmentContainer');
-            const deptSelect = document.getElementById('deptSelect');
+            $('.select2-role').select2({
+                theme: 'bootstrap-5',
+                dir: 'rtl',
+                placeholder: '-- اختر الصلاحية --',
+                allowClear: true,
+                language: 'ar',
+                width: '100%'
+            });
+
+            $('.select2-dept').select2({
+                theme: 'bootstrap-5',
+                dir: 'rtl',
+                placeholder: '-- اختر الإدارة المختصة --',
+                allowClear: true,
+                language: 'ar',
+                width: '100%'
+            });
 
             function toggleDepartmentVisibility() {
-                const selectedOption = roleSelect.options[roleSelect.selectedIndex];
-                const roleCode = selectedOption ? selectedOption.getAttribute('data-code') : '';
+                const roleSelect = document.getElementById('roleSelect');
+                const deptContainer = document.getElementById('departmentContainer');
+                const deptSelect = document.getElementById('deptSelect');
 
-                if (roleCode === '@RoleCodes.SpecializedDepartment') {
-                    deptContainer.style.display = 'block';
+                if (!roleSelect || !deptContainer || !deptSelect) return;
+
+                const selectedIndex = roleSelect.selectedIndex;
+                if (selectedIndex < 0) {
+                    deptContainer.style.setProperty('display', 'none', 'important');
+                    deptSelect.removeAttribute('required');
+                    return;
+                }
+
+                const selectedOption = roleSelect.options[selectedIndex];
+                if (!selectedOption || !selectedOption.value) {
+                    deptContainer.style.setProperty('display', 'none', 'important');
+                    deptSelect.removeAttribute('required');
+                    return;
+                }
+
+                const roleCode = (selectedOption.getAttribute('data-code') || '').toLowerCase().trim();
+                const roleText = (selectedOption.text || '').toLowerCase().trim();
+
+                const isSpecialized = roleCode === '@RoleCodes.SpecializedDepartment'.toLowerCase()
+                                   || roleCode === 'specializeddepartment'
+                                   || roleCode.includes('specialized')
+                                   || roleCode.includes('partner')
+                                   || roleText.includes('مختص')
+                                   || roleText.includes('مختصة');
+
+                if (isSpecialized) {
+                    deptContainer.style.setProperty('display', 'block', 'important');
                     deptSelect.setAttribute('required', 'required');
                 } else {
-                    deptContainer.style.display = 'none';
+                    deptContainer.style.setProperty('display', 'none', 'important');
                     deptSelect.removeAttribute('required');
                 }
             }
 
-            roleSelect.addEventListener('change', toggleDepartmentVisibility);
+            $('#roleSelect').on('change select2:select select2:clear', toggleDepartmentVisibility);
+            const roleEl = document.getElementById('roleSelect');
+            if (roleEl) {
+                roleEl.addEventListener('change', toggleDepartmentVisibility);
+            }
+
             toggleDepartmentVisibility();
+            setTimeout(toggleDepartmentVisibility, 100);
+            setTimeout(toggleDepartmentVisibility, 500);
         });
     </script>
 }

@@ -53,12 +53,13 @@ namespace Ibtikar.Services.Implementations
         /// <summary>
         /// Builds the end-session (logout) URL using IdentityModel's RequestUrl builder.
         /// </summary>
-        public string BuildLogoutUrl(string postLogoutRedirectUri)
+        public string BuildLogoutUrl(string postLogoutRedirectUri, string? idTokenHint = null)
         {
             var endSessionEndpoint = $"{_settings.Authority.TrimEnd('/')}/{_settings.EndSessionEndpoint.TrimStart('/')}";
 
             var ru = new RequestUrl(endSessionEndpoint);
             return ru.CreateEndSessionUrl(
+                idTokenHint: idTokenHint,
                 postLogoutRedirectUri: postLogoutRedirectUri,
                 extra: new Parameters(new[] { KeyValuePair.Create("client_id", _settings.ClientId) }));
         }

@@ -148,7 +148,19 @@ namespace Ibtikar.Controllers
                 var (user, roleCode) = await _authService.SyncSsoUserAsync(userInfo);
 
                 _logger.LogInformation("[TraceId:{TraceId}] User synced in Users table with Role:{RoleCode}. Signing in user to local auth cookie...", traceId, roleCode);
-                await _authService.SignInAsync(HttpContext, user, roleCode);
+                
+                if (!string.IsNullOrWhiteSpace(tokenResult.IdentityToken))
+                {
+                    Response.Cookies.Append("id_token", tokenResult.IdentityToken, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = Request.IsHttps,
+                        SameSite = SameSiteMode.Lax,
+                        Expires = DateTimeOffset.UtcNow.AddHours(8)
+                    });
+                }
+
+                await _authService.SignInAsync(HttpContext, user, roleCode, tokenResult.IdentityToken);
 
                 // Store access_token in AuthenticationProperties for the session if needed
                 var props = new AuthenticationProperties();
@@ -181,22 +193,71 @@ namespace Ibtikar.Controllers
             }
         }
 
-        /// <summary>
-        /// Step 5: Logout handler that clears local auth cookie and redirects to IdentityServer end-session endpoint.
-        /// </summary>
         [HttpGet("/Logout")]
+        [HttpGet("/SSO/Logout")]
         public async Task<IActionResult> Logout()
         {
             var traceId = HttpContext.TraceIdentifier;
             _logger.LogInformation("[TraceId:{TraceId}] Initiating logout workflow.", traceId);
 
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            var idTokenHint = User.FindFirst("id_token")?.Value
+                ?? await HttpContext.GetTokenAsync("id_token")
+                ?? Request.Cookies["id_token"];
 
-            var postLogoutRedirectUri = $"{Request.Scheme}://{Request.Host}/";
-            var logoutUrl = _ssoService.BuildLogoutUrl(postLogoutRedirectUri);
+            var postLogoutRedirectUri = $"{Request.Scheme}://{Request.Host}/signout-callback-oidc";
+            var logoutUrl = _ssoService.BuildLogoutUrl(postLogoutRedirectUri, idTokenHint);
 
-            _logger.LogInformation("[TraceId:{TraceId}] Local cookie cleared. Redirecting to IdentityServer logout URL: {LogoutUrl}", traceId, logoutUrl);
+            await ClearAllCookiesAndSessionAsync(HttpContext);
+
+            _logger.LogInformation("[TraceId:{TraceId}] Local cookies & sessions cleared. Redirecting to IdentityServer logout URL: {LogoutUrl}", traceId, logoutUrl);
             return Redirect(logoutUrl);
+        }
+
+        private async Task ClearAllCookiesAndSessionAsync(HttpContext context)
+        {
+            try
+            {
+                await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "SignOutAsync failed during logout.");
+            }
+
+            try
+            {
+                context.Session?.Clear();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Session.Clear() failed during logout.");
+            }
+
+            try
+            {
+                foreach (var cookieKey in context.Request.Cookies.Keys)
+                {
+                    context.Response.Cookies.Delete(cookieKey);
+                    context.Response.Cookies.Delete(cookieKey, new CookieOptions { Path = "/" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete request cookies during logout.");
+            }
+
+            var explicitCookies = new[] { ".Ibtikar.Auth", ".AspNetCore.Cookies", ".AspNetCore.Session", "pkce_verifier", "idsvr.session", "ARRAffinity", "ARRAffinitySameSite" };
+            foreach (var name in explicitCookies)
+            {
+                try
+                {
+                    context.Response.Cookies.Delete(name);
+                    context.Response.Cookies.Delete(name, new CookieOptions { Path = "/" });
+                    context.Response.Cookies.Delete(name, new CookieOptions { Path = "/", Secure = true });
+                    context.Response.Cookies.Delete(name, new CookieOptions { Path = "/", HttpOnly = true });
+                }
+                catch { }
+            }
         }
 
         private string BuildCallbackUrl()

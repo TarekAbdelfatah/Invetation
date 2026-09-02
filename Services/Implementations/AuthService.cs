@@ -43,7 +43,7 @@ namespace Ibtikar.Services.Implementations
             return LoginResult.Success(user!);
         }
 
-        public async Task SignInAsync(HttpContext httpContext, User user, string roleCode = "", CancellationToken ct = default)
+        public async Task SignInAsync(HttpContext httpContext, User user, string roleCode = "", string? idToken = null, CancellationToken ct = default)
         {
             if (httpContext is null) throw new ArgumentNullException(nameof(httpContext));
             if (user is null) throw new ArgumentNullException(nameof(user));
@@ -58,6 +58,11 @@ namespace Ibtikar.Services.Implementations
                 new(RoleCodes.UserIdClaim, user.Id.ToString()),
                 new(RoleCodes.FullNameClaim, user.FullName)
             };
+
+            if (!string.IsNullOrWhiteSpace(idToken))
+            {
+                claims.Add(new Claim("id_token", idToken));
+            }
 
             if (user.DepartmentId.HasValue)
             {
@@ -77,17 +82,28 @@ namespace Ibtikar.Services.Implementations
             var identity = new ClaimsIdentity(claims, CookieAuthExtensions.Scheme);
             var principal = new ClaimsPrincipal(identity);
 
+            var authProps = new AuthenticationProperties
+            {
+                IsPersistent = false,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+            };
+
+            if (!string.IsNullOrWhiteSpace(idToken))
+            {
+                authProps.StoreTokens(new[]
+                {
+                    new AuthenticationToken { Name = "id_token", Value = idToken }
+                });
+            }
+
             await httpContext.SignInAsync(
                 CookieAuthExtensions.Scheme,
                 principal,
-                new AuthenticationProperties
-                {
-                    IsPersistent = false,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(2)
-                });
+                authProps);
 
             user.LastLoginAt = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);
+
             await _audit.WriteAsync(
                 action: "login",
                 entityName: nameof(User),
