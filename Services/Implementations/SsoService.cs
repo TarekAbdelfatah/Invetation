@@ -5,6 +5,8 @@ using IdentityModel.Client;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Ibtikar.Services.Implementations
 {
@@ -62,7 +64,7 @@ namespace Ibtikar.Services.Implementations
         }
 
         /// <summary>
-        /// Retrieves user profile from the OIDC userinfo endpoint.
+        /// Retrieves user profile from the OIDC userinfo endpoint safely with case-insensitive JSON deserialization.
         /// </summary>
         public async Task<SSoUserInfo?> GetSSOUserInfoAsync(string token)
         {
@@ -75,13 +77,15 @@ namespace Ibtikar.Services.Implementations
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Trim());
 
             var response = await _httpClient.SendAsync(request);
+            var content = await response.Content.ReadAsStringAsync();
+
             if (!response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
                 throw new Exception($"SSO Response Status: {response.StatusCode}, Details: {content}");
             }
 
-            return await response.Content.ReadFromJsonAsync<SSoUserInfo>();
+
+            return JsonSerializer.Deserialize<SSoUserInfo>(content);
         }
 
         /// <summary>

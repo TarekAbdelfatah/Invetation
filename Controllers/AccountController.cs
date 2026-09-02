@@ -11,11 +11,16 @@ namespace Ibtikar.Controllers
     public class AccountController : Controller
     {
         private readonly AuthService _auth;
+        private readonly SsoService _ssoService;
         private readonly ILogger<AccountController> _logger;
 
-        public AccountController(AuthService auth, ILogger<AccountController> logger)
+        public AccountController(
+            AuthService auth,
+            SsoService ssoService,
+            ILogger<AccountController> logger)
         {
             _auth = auth;
+            _ssoService = ssoService;
             _logger = logger;
         }
 
@@ -41,7 +46,7 @@ namespace Ibtikar.Controllers
             if (ViewData.ContainsKey("DemoUsers")) return;
             var demoUsers = await _auth.GetDemoUsersAsync(ct);
             ViewData["DemoUsers"] = demoUsers
-                .Select(d => new DemoUser(d.Username, d.FullName, d.RoleName))
+                .Select(d => new DemoUser(d.Username, d.FullName, "مستخدم"))
                 .ToList();
         }
 
@@ -49,54 +54,56 @@ namespace Ibtikar.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginVm vm)
         {
-            ViewData["ReturnUrl"] = vm.ReturnUrl;
-            if (!ModelState.IsValid)
+            if (string.IsNullOrWhiteSpace(vm.Username) || string.IsNullOrWhiteSpace(vm.Password))
             {
-                var viewVm = new LoginVm
-                {
-                    Username = vm.Username,
-                    Password = vm.Password,
-                    ReturnUrl = vm.ReturnUrl
-                };
-                await PopulateDemoUsersAsync(HttpContext.RequestAborted);
-                return View(viewVm);
-            }
-
-            try
-            {
-                var result = await _auth.LoginAsync(vm.Username, vm.Password, HttpContext.RequestAborted);
-                if (!result.IsSuccess || result.User is null)
-                {
-                    _logger.LogWarning("Login failed for {Username}", vm.Username);
-                    ViewData["Error"] = result.ErrorMessage;
-                    await PopulateDemoUsersAsync(HttpContext.RequestAborted);
-                    return View(vm);
-                }
-
-                await _auth.SignInAsync(HttpContext, result.User, HttpContext.RequestAborted);
-
-                var returnUrl = vm.ReturnUrl;
-                var home = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
-                    ? returnUrl
-                    : (RoleRedirect.ResolveHomeFor(result.User.UserRoles.Select(ur => ur.Role!.Code).ToList()) ?? "/Ideas");
-
-                return Redirect(home);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Login error");
-                ViewData["Error"] = "حدث خطأ أثناء تسجيل الدخول. حاول مرة أخرى.";
+                ModelState.AddModelError(string.Empty, "يرجى أدخال اسم المستخدم وكلمة المرور.");
                 await PopulateDemoUsersAsync(HttpContext.RequestAborted);
                 return View(vm);
             }
+
+            var result = await _auth.LoginAsync(vm.Username, vm.Password, HttpContext.RequestAborted);
+            if (!result.IsSuccess || result.User == null)
+            {
+                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "بيانات الدخول غير صحيحة.");
+                await PopulateDemoUsersAsync(HttpContext.RequestAborted);
+                return View(vm);
+            }
+
+            await _auth.SignInAsync(HttpContext, result.User);
+
+            if (!string.IsNullOrEmpty(vm.ReturnUrl) && Url.IsLocalUrl(vm.ReturnUrl))
+            {
+                return Redirect(vm.ReturnUrl);
+            }
+
+            return RedirectToAction("Index", "MyRequests");
         }
 
         [HttpPost]
+        [HttpGet]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
+            _logger.LogInformation("Processing user logout request.");
             await _auth.SignOutAsync(HttpContext);
-            return RedirectToAction(nameof(Login));
+
+            try
+            {
+                HttpContext.Session?.Clear();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not clear session during logout.");
+            }
+
+            Response.Cookies.Delete(".Ibtikar.Auth");
+            Response.Cookies.Delete("pkce_verifier");
+
+            var postLogoutRedirectUri = $"{Request.Scheme}://{Request.Host}/Account/Login";
+            var logoutUrl = _ssoService.BuildLogoutUrl(postLogoutRedirectUri);
+
+            _logger.LogInformation("Local cookie cleared. Redirecting to IdentityServer end session endpoint: {LogoutUrl}", logoutUrl);
+            return Redirect(logoutUrl);
         }
 
         [HttpGet]

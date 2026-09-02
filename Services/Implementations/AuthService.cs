@@ -1,22 +1,26 @@
 using System.Security.Claims;
-using Ibtikar.DTOs.Account;
+using Ibtikar.Data;
+using Ibtikar.DTOs;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
 using Ibtikar.Services;
 using Ibtikar.Services.Helpers;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Services.Implementations
 {
     public sealed class AuthService
     {
         private readonly IUserRepository _users;
+        private readonly IbtikarDbContext _db;
         private readonly Pbkdf2PasswordHasher _hasher;
         private readonly AuditLogService _audit;
 
-        public AuthService(IUserRepository users, Pbkdf2PasswordHasher hasher, AuditLogService audit)
+        public AuthService(IUserRepository users, IbtikarDbContext db, Pbkdf2PasswordHasher hasher, AuditLogService audit)
         {
             _users = users;
+            _db = db;
             _hasher = hasher;
             _audit = audit;
         }
@@ -28,7 +32,9 @@ namespace Ibtikar.Services.Implementations
             if (string.IsNullOrEmpty(password))
                 return LoginResult.Failed("اسم المستخدم أو كلمة المرور غير صحيحة.");
 
-            var user = await _users.GetActiveByUsernameWithRolesAsync(username, ct);
+            var user = await _db.Users
+                .Include(u => u.Department)
+                .FirstOrDefaultAsync(u => u.Username == username && u.IsActive, ct);
 
             var ok = user is not null && _hasher.Verify(password, user.PasswordSalt, user.PasswordHash);
             if (!ok)
@@ -37,10 +43,7 @@ namespace Ibtikar.Services.Implementations
             return LoginResult.Success(user!);
         }
 
-        public Task<IReadOnlyList<DemoUserDto>> GetDemoUsersAsync(CancellationToken ct = default)
-            => _users.GetDemoUsersAsync(ct);
-
-        public async Task SignInAsync(HttpContext httpContext, User user, CancellationToken ct = default)
+        public async Task SignInAsync(HttpContext httpContext, User user, string roleCode = "", CancellationToken ct = default)
         {
             if (httpContext is null) throw new ArgumentNullException(nameof(httpContext));
             if (user is null) throw new ArgumentNullException(nameof(user));
@@ -50,6 +53,7 @@ namespace Ibtikar.Services.Implementations
                 new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new(ClaimTypes.Name, user.Username),
                 new("preferred_username", user.Username),
+                new("networkUser", user.Username),
                 new("NetworkUser", user.Username),
                 new(RoleCodes.UserIdClaim, user.Id.ToString()),
                 new(RoleCodes.FullNameClaim, user.FullName)
@@ -64,10 +68,8 @@ namespace Ibtikar.Services.Implementations
                 }
             }
 
-            foreach (var ur in user.UserRoles)
+            if (!string.IsNullOrEmpty(roleCode))
             {
-                var roleCode = ur.Role?.Code;
-                if (string.IsNullOrEmpty(roleCode) || ur.Role is not { IsActive: true }) continue;
                 claims.Add(new Claim(RoleCodes.ClaimType, roleCode));
                 claims.Add(new Claim(ClaimTypes.Role, roleCode));
             }
@@ -81,11 +83,11 @@ namespace Ibtikar.Services.Implementations
                 new AuthenticationProperties
                 {
                     IsPersistent = false,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(20)
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(2)
                 });
 
             user.LastLoginAt = DateTime.UtcNow;
-            await _users.SaveChangesAsync(ct);
+            await _db.SaveChangesAsync(ct);
             await _audit.WriteAsync(
                 action: "login",
                 entityName: nameof(User),
@@ -108,26 +110,34 @@ namespace Ibtikar.Services.Implementations
                 ct: httpContext.RequestAborted);
         }
 
-        public async Task<User> SyncSsoUserAsync(DTOs.SSoUserInfo userInfo, CancellationToken ct = default)
+        /// <summary>
+        /// Syncs SSO user into Users table and resolves effective role without UserRole table dependency.
+        /// 1. Internal User: Checks Admins table for Admin Role. If not found -> InternalBeneficiary.
+        /// 2. External User: ExternalBeneficiary.
+        /// 3. Saves/updates user info in Users table.
+        /// </summary>
+        public async Task<(User User, string RoleCode)> SyncSsoUserAsync(SSoUserInfo userInfo, CancellationToken ct = default)
         {
             if (userInfo is null) throw new ArgumentNullException(nameof(userInfo));
 
-            var username = !string.IsNullOrWhiteSpace(userInfo.PreferredUsername)
-                ? userInfo.PreferredUsername
-                : (!string.IsNullOrWhiteSpace(userInfo.Email) ? userInfo.Email : userInfo.Sub);
+            var rawUsername = userInfo.GetEffectiveUsername();
+
+            // 1. Strip @bog.gov.sa from username if present
+            var username = rawUsername;
+            if (!string.IsNullOrWhiteSpace(username) && username.EndsWith("@bog.gov.sa", StringComparison.OrdinalIgnoreCase))
+            {
+                username = username.Substring(0, username.Length - "@bog.gov.sa".Length);
+            }
 
             var user = await _db.Users
-                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
                 .Include(u => u.Department)
                 .FirstOrDefaultAsync(u => u.Username == username, ct);
 
+            var fullName = userInfo.GetEffectiveFullName();
+
+            // Save/Update in Users table
             if (user is null)
             {
-                var fullName = !string.IsNullOrWhiteSpace(userInfo.Name)
-                    ? userInfo.Name
-                    : $"{userInfo.GivenName} {userInfo.FamilyName}".Trim();
-                if (string.IsNullOrWhiteSpace(fullName)) fullName = username;
-
                 user = new User
                 {
                     Id = Guid.NewGuid(),
@@ -138,42 +148,65 @@ namespace Ibtikar.Services.Implementations
                     CreatedAt = DateTime.UtcNow
                 };
 
-                // Assign default role (Beneficiary / Employee)
-                var defaultRole = await _db.Roles.FirstOrDefaultAsync(r => r.Code == RoleCodes.ExternalBeneficiary || r.Code == RoleCodes.InternalBeneficiary, ct);
-                if (defaultRole is not null)
-                {
-                    user.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = defaultRole.Id });
-                }
-
                 _db.Users.Add(user);
             }
             else
             {
-                if (!string.IsNullOrWhiteSpace(userInfo.Name) && user.FullName != userInfo.Name)
-                    user.FullName = userInfo.Name;
+                if (!string.IsNullOrWhiteSpace(fullName) && user.FullName != fullName)
+                    user.FullName = fullName;
                 if (!string.IsNullOrWhiteSpace(userInfo.Email) && user.Email != userInfo.Email)
                     user.Email = userInfo.Email;
             }
 
-            var adminUser = await _db.Admins.FirstOrDefaultAsync(a => a.NetworkUser == username, ct);
-            if (adminUser is null)
+            // Match department if provided
+            if (!string.IsNullOrWhiteSpace(userInfo.DepartmentCode) || !string.IsNullOrWhiteSpace(userInfo.DepartmentName))
             {
-                var defaultRole = await _db.Roles.FirstOrDefaultAsync(r => r.Code == RoleCodes.AuditEmployee || r.Code == RoleCodes.Admin, ct);
-                if (defaultRole is not null)
+                var dept = await _db.Departments.FirstOrDefaultAsync(d =>
+                    (!string.IsNullOrEmpty(userInfo.DepartmentCode) && d.Code == userInfo.DepartmentCode) ||
+                    (!string.IsNullOrEmpty(userInfo.DepartmentName) && d.Name == userInfo.DepartmentName), ct);
+                if (dept is not null)
                 {
-                    _db.Admins.Add(new Admin
-                    {
-                        NetworkUser = username,
-                        RoleId = defaultRole.Id,
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow
-                    });
+                    user.DepartmentId = dept.Id;
+                }
+            }
+
+            // 2. Role Determination without UserRole table dependency:
+            string roleCode;
+            if (userInfo.IsExternalUser)
+            {
+                // External User -> ExternalBeneficiary
+                roleCode = RoleCodes.ExternalBeneficiary;
+            }
+            else
+            {
+                // Internal User -> Check Admins Table for admin Role
+                var adminUser = await _db.Admins
+                    .Include(a => a.Role)
+                    .FirstOrDefaultAsync(a => a.NetworkUser == username && a.IsActive, ct);
+
+                if (adminUser is not null && adminUser.Role is { IsActive: true })
+                {
+                    roleCode = adminUser.Role.Code;
+                }
+                else
+                {
+                    // If not found in Admins table, role is InternalBeneficiary
+                    roleCode = RoleCodes.InternalBeneficiary;
                 }
             }
 
             user.LastLoginAt = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);
-            return user;
+            return (user, roleCode);
+        }
+
+        public async Task<List<User>> GetDemoUsersAsync(CancellationToken ct = default)
+        {
+            return await _db.Users
+                .Include(u => u.Department)
+                .Where(u => u.IsActive)
+                .OrderBy(u => u.Username)
+                .ToListAsync(ct);
         }
 
         public readonly record struct LoginResult(bool IsSuccess, string? ErrorMessage, User? User)

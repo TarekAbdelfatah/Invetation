@@ -1,4 +1,4 @@
-﻿using Ibtikar.DTOs.Committee;
+using Ibtikar.DTOs.Committee;
 using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Helpers;
 using Ibtikar.ViewModels;
@@ -13,12 +13,12 @@ namespace Ibtikar.Controllers
     {
         private readonly ICommitteeDashboardService _dashboardService;
         private readonly IDelegationService _delegations;
-        private readonly ILogger<CommitteeForMembersController> _logger;
+        private readonly ILogger<CommitteeDashboardController> _logger;
 
-        public CommitteeForMembersController(
+        public CommitteeDashboardController(
             ICommitteeDashboardService dashboardService,
             IDelegationService delegations,
-            ILogger<CommitteeForMembersController> logger)
+            ILogger<CommitteeDashboardController> logger)
         {
             _dashboardService = dashboardService;
             _delegations = delegations;

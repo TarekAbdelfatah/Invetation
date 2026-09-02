@@ -1,0 +1,191 @@
+@model Ibtikar.ViewModels.AdminRoleIndexVm
+@using Ibtikar.Services.Helpers
+@{
+    ViewData["Title"] = "إسناد وإدارة الصلاحيات الإدارية";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <span class="material-icons text-primary align-middle me-1">admin_panel_settings</span>
+                إسناد وإدارة الصلاحيات الإدارية
+            </h2>
+            <p class="text-muted mb-0">تحديد أدوار الموظفين وتخصيص الإدارات المختصة في النظام</p>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <span class="material-icons align-middle me-2">check_circle</span>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="إغلاق"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Form Card -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 border-bottom-0">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <span class="material-icons text-primary align-middle me-1">person_add</span>
+                        إسناد صلاحية لموظف
+                    </h5>
+                </div>
+                <div class="card-body pt-0">
+                    <form asp-controller="AdminRoles" asp-action="Assign" method="post" id="assignRoleForm">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">الموظف <span class="text-danger">*</span></label>
+                            <select class="form-select select2" asp-for="Input.NetworkUser" required>
+                                <option value="">-- اختر الموظف (اسم المستخدم / الاسم الكامل) --</option>
+                                @foreach (var emp in Model.Employees)
+                                {
+                                    <option value="@emp.NetworkUser">@emp.FullName (@emp.NetworkUser)</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Input.NetworkUser" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">الصلاحية <span class="text-danger">*</span></label>
+                            <select class="form-select" asp-for="Input.RoleId" id="roleSelect" required>
+                                <option value="">-- اختر الصلاحية --</option>
+                                @foreach (var role in Model.Roles)
+                                {
+                                    <option value="@role.RoleId" data-code="@role.Code">@role.Name</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Input.RoleId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3" id="departmentContainer" style="display: none;">
+                            <label class="form-label fw-bold">الإدارة المختصة <span class="text-danger">*</span></label>
+                            <select class="form-select" asp-for="Input.DeptId" id="deptSelect">
+                                <option value="">-- اختر الإدارة المختصة --</option>
+                                @foreach (var dept in Model.Departments)
+                                {
+                                    <option value="@dept.DeptId">@dept.DeptName</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Input.DeptId" class="text-danger small"></span>
+                            <small class="form-text text-muted">هذا الحقل مطلوب عند اختيار صلاحية (الإدارة المختصة).</small>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold">
+                                <span class="material-icons align-middle me-1">save</span>
+                                حفظ الصلاحية
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignments Table Card -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <span class="material-icons text-primary align-middle me-1">list_alt</span>
+                        قائمة الصلاحيات المسندة حالياً
+                    </h5>
+                    <span class="badge bg-primary rounded-pill fs-6">@Model.AssignedAdmins.Count حساب</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.AssignedAdmins.Count == 0)
+                    {
+                        <div class="text-center py-5 text-muted">
+                            <span class="material-icons display-4 d-block mb-2 text-secondary">no_accounts</span>
+                            لا توجد صلاحيات إدارية مسندة حالياً
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>الموظف</th>
+                                        <th>اسم المستخدم</th>
+                                        <th>الصلاحية</th>
+                                        <th>الإدارة</th>
+                                        <th>الحالة</th>
+                                        <th class="text-center">الإجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var admin in Model.AssignedAdmins)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="fw-bold">@admin.FullName</div>
+                                            </td>
+                                            <td>
+                                                <code>@admin.NetworkUser</code>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info text-dark">@admin.RoleName</span>
+                                            </td>
+                                            <td>
+                                                @(string.IsNullOrEmpty(admin.DeptName) ? "-" : admin.DeptName)
+                                            </td>
+                                            <td>
+                                                @if (admin.IsActive)
+                                                {
+                                                    <span class="badge bg-success">نشط</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">معطل</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <form asp-controller="AdminRoles" asp-action="ToggleStatus" asp-route-id="@admin.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm @(admin.IsActive ? "btn-outline-danger" : "btn-outline-success")" title="@(admin.IsActive ? "تعطيل" : "تفعيل")">
+                                                        <span class="material-icons align-middle fs-6">@(admin.IsActive ? "block" : "check_circle")</span>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const roleSelect = document.getElementById('roleSelect');
+            const deptContainer = document.getElementById('departmentContainer');
+            const deptSelect = document.getElementById('deptSelect');
+
+            function toggleDepartmentVisibility() {
+                const selectedOption = roleSelect.options[roleSelect.selectedIndex];
+                const roleCode = selectedOption ? selectedOption.getAttribute('data-code') : '';
+
+                if (roleCode === '@RoleCodes.SpecializedDepartment') {
+                    deptContainer.style.display = 'block';
+                    deptSelect.setAttribute('required', 'required');
+                } else {
+                    deptContainer.style.display = 'none';
+                    deptSelect.removeAttribute('required');
+                }
+            }
+
+            roleSelect.addEventListener('change', toggleDepartmentVisibility);
+            toggleDepartmentVisibility();
+        });
+    </script>
+}

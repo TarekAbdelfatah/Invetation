@@ -5,6 +5,8 @@ using Ibtikar.Data;
 using Ibtikar.Data.Seed;
 using Ibtikar.Middleware;
 using Ibtikar.Repositories;
+using Ibtikar.Repositories.Interfaces;
+using Ibtikar.Repositories.Implementations;
 using Ibtikar.Services;
 using Ibtikar.Services.Implementations;
 using Ibtikar.Services.Interfaces;
@@ -73,6 +75,8 @@ namespace Ibtikar
             builder.Services.AddScoped<IPartnerDashboardService, PartnerDashboardService>();
             builder.Services.AddScoped<ICommitteeFormationService, CommitteeFormationService>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+            builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
             builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
             builder.Services.AddScoped<ICommitteeRepository, CommitteeRepository>();
@@ -141,11 +145,12 @@ namespace Ibtikar
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapStaticAssets();
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}")
                 .WithStaticAssets();
+
+            ApplyPendingMigrations(app);
 
             app.Run();
         }

@@ -98,12 +98,20 @@ namespace Ibtikar.Services.Helpers
 
         private static string? ExtractNetworkUserClaim(ClaimsPrincipal principal)
         {
-            return principal.FindFirst("preferred_username")?.Value
+            var raw = principal.FindFirst("networkUser")?.Value
                 ?? principal.FindFirst("NetworkUser")?.Value
+                ?? principal.FindFirst("preferred_username")?.Value
                 ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
                 ?? principal.FindFirst("sub")?.Value
                 ?? principal.FindFirst("upn")?.Value
                 ?? principal.Identity?.Name;
+
+            if (!string.IsNullOrWhiteSpace(raw) && raw.EndsWith("@bog.gov.sa", StringComparison.OrdinalIgnoreCase))
+            {
+                return raw.Substring(0, raw.Length - "@bog.gov.sa".Length);
+            }
+
+            return raw;
         }
     }
 }
