@@ -1,11 +1,12 @@
 @model Ibtikar.ViewModels.ReportsChallengesVm
 @using Ibtikar.ViewModels
 @using static Ibtikar.Services.Helpers.KsaTime
+@using System.Globalization
 @{
     ViewData["Title"] = "تقرير التحديات";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var fromStr = Model.From.ToString("yyyy-MM-dd");
-    var toStr = Model.To.ToString("yyyy-MM-dd");
+    var fromStr = Model.From.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    var toStr = Model.To.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 }
 
 <div class="bog-main">

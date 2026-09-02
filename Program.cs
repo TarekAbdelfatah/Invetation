@@ -151,6 +151,7 @@ namespace Ibtikar
         private static RequestLocalizationOptions BuildArabicRequestLocalizationOptions()
         {
             var arabicCulture = new CultureInfo("ar-SA");
+            arabicCulture.DateTimeFormat.Calendar = new GregorianCalendar();
             return new RequestLocalizationOptions
             {
                 DefaultRequestCulture = new RequestCulture(arabicCulture),

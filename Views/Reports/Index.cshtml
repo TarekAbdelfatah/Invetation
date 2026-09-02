@@ -1,10 +1,11 @@
 @model Ibtikar.ViewModels.ReportsVm
 @using Ibtikar.ViewModels
+@using System.Globalization
 @{
     ViewData["Title"] = "تقرير الفترة الزمنية";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var fromStr = Model.From.ToString("yyyy-MM-dd");
-    var toStr = Model.To.ToString("yyyy-MM-dd");
+    var fromStr = Model.From.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    var toStr = Model.To.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 }
 
 <div class="bog-main">

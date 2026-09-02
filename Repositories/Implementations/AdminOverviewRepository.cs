@@ -1,5 +1,6 @@
 using Ibtikar.Data;
 using Ibtikar.DTOs.AdminOverview;
+using Ibtikar.Services.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Repositories
@@ -29,6 +30,9 @@ namespace Ibtikar.Repositories
 
             var recent = await _db.InnovationIdeas
                 .AsNoTracking()
+                .Where(i => i.CurrentStatus != null
+                    && !i.IsDraft
+                    && RecentAfterAuditCodes.Contains(i.CurrentStatus.Code))
                 .OrderByDescending(i => i.CreatedAt)
                 .Take(recentTake)
                 .Select(i => new AdminOverviewRecentIdeaDto(
@@ -43,7 +47,20 @@ namespace Ibtikar.Repositories
             return new AdminOverviewDto(totalIdeas, drafts, submitted, totalUsers, byStatus, recent);
         }
 
-        public async Task<AdminOverviewListDto> GetIdeasAsync(string? statusFilter, int take, CancellationToken ct)
+        private static readonly HashSet<string> RecentAfterAuditCodes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            IdeaStatusCodes.UnderStudy,
+            IdeaStatusCodes.UnderAssessment,
+            IdeaStatusCodes.ReferredCommittee,
+            IdeaStatusCodes.Approved,
+            IdeaStatusCodes.Rejected,
+            IdeaStatusCodes.InExecution,
+            IdeaStatusCodes.Completed,
+            IdeaStatusCodes.Cancelled,
+            IdeaStatusCodes.ReturnedForDevelopment
+        };
+
+        public async Task<AdminOverviewListDto> GetIdeasAsync(string? statusFilter, int page, int pageSize, CancellationToken ct)
         {
             var query = _db.InnovationIdeas.AsNoTracking();
 
@@ -53,7 +70,8 @@ namespace Ibtikar.Repositories
             var total = await query.CountAsync(ct);
             var rows = await query
                 .OrderByDescending(i => i.CreatedAt)
-                .Take(take)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(i => new AdminOverviewIdeaRowDto(
                     i.Id,
                     i.ReferenceNumber,

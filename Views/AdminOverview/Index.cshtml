@@ -1,5 +1,6 @@
 @using Ibtikar.Controllers
 @using Ibtikar.ViewModels
+@using static Ibtikar.Services.Helpers.KsaTime
 @model AdminOverviewVm
 @{
     ViewData["Title"] = "نظرة عامة على النظام";
@@ -11,7 +12,7 @@
         <div class="bog-page-header">
             <h1>
                 <span class="bog-page-icon" aria-hidden="true">
-                    <span class="material-icons">monitoring</span>
+                    <span class="material-icons">assessment</span>
                 </span>
                 <span class="bog-page-title">نظرة عامة على النظام</span>
                 <span class="bog-page-role">
@@ -28,6 +29,14 @@
                     <span class="material-icons align-middle" style="font-size:18px">report_problem</span>
                     <span>تقرير التحديات</span>
                 </a>
+            </div>
+        </div>
+
+        <div class="alert alert-light border d-flex align-items-start gap-2 mb-4" data-testid="admin-readonly-note">
+            <span class="material-icons text-muted">info</span>
+            <div class="text-muted small">
+                <strong>ملاحظة:</strong> لوحة مدير النظام للقراءة فقط. لا توجد إجراءات تعديل من هذه الصفحة.
+                للوصول إلى الإحصاءات التفصيلية، استخدم التقارير في الأعلى.
             </div>
         </div>
 
@@ -71,7 +80,7 @@
         </div>
 
         <div class="row g-3 mb-4">
-            <div class="col-lg-7">
+            <div class="col-lg-8">
                 <div class="card bog-section">
                     <div class="card-header bg-white d-flex align-items-center gap-2">
                         <span class="material-icons text-primary">history</span>
@@ -100,7 +109,7 @@
                                             </small>
                                             <small class="bog-idea-card__date">
                                                 <span class="material-icons" style="font-size:14px">event</span>
-                                                @r.CreatedAt.ToString("yyyy-MM-dd")
+                                                @r.CreatedAt.FormatDate()
                                             </small>
                                         </div>
                                     </div>
@@ -126,7 +135,7 @@
                                                 <td data-label="العنوان"><span title="@r.Title">@Display.Title(r.Title)</span></td>
                                                 <td data-label="المجال"><small>@r.Domain</small></td>
                                                 <td data-label="الحالة"><span class="badge rounded-pill" style="background-color:@r.StatusColor">@r.StatusName</span></td>
-                                                <td data-label="التاريخ"><small>@r.CreatedAt.ToString("yyyy-MM-dd")</small></td>
+                                                <td data-label="التاريخ"><small>@r.CreatedAt.FormatDate()</small></td>
                                             </tr>
                                         }
                                     </tbody>
@@ -140,22 +149,31 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-5">
+            <div class="col-lg-4">
                 <div class="card bog-section">
                     <div class="card-header bg-white d-flex align-items-center gap-2">
                         <span class="material-icons text-primary">donut_large</span>
                         <strong>توزيع الأفكار حسب الحالة</strong>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-0">
+                        <a asp-action="Index" class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body" style="@(string.IsNullOrEmpty(currentStatus) ? "background-color:var(--brand-50,#F3FCF6);font-weight:600" : null)">
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="bog-status-dot" style="background-color:#0d6efd"></span>
+                                الكل
+                            </span>
+                            <span class="fw-semibold">@Model.TotalIdeas</span>
+                        </a>
                         @foreach (var s in Model.ByStatus)
                         {
-                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            var isActive = string.Equals(currentStatus, s.Code, StringComparison.OrdinalIgnoreCase);
+                            <a asp-action="Index" asp-route-status="@s.Code"
+                               class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body" style="@(isActive ? "background-color:var(--brand-50,#F3FCF6);font-weight:600" : null)">
                                 <span class="d-flex align-items-center gap-2">
                                     <span class="bog-status-dot" style="background-color:@s.Color"></span>
                                     @s.Name
                                 </span>
                                 <span class="fw-semibold">@s.Count</span>
-                            </div>
+                            </a>
                         }
                     </div>
                 </div>
@@ -250,7 +268,7 @@
                                         <td data-label="المُقدِّم"><small>@i.ApplicantName<br />@i.ApplicantDepartmentName</small></td>
                                         <td data-label="الإدارة المحالة"><small>@(i.AssignedDepartmentName ?? "—")</small></td>
                                         <td data-label="الحالة"><span class="badge rounded-pill" style="background-color:@i.StatusColor">@i.StatusName</span></td>
-                                        <td data-label="التاريخ"><small>@i.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
+                                        <td data-label="التاريخ"><small>@i.CreatedAt.FormatDateTime()</small></td>
                                         <td class="bog-card-list__actions" data-label="">
                                             <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@i.Id">
                                                 <span class="material-icons align-middle" style="font-size:14px">visibility</span>
@@ -263,14 +281,18 @@
                         </table>
                     </div>
                 }
-            </div>
-        </div>
-
-        <div class="alert alert-light border mt-3 d-flex align-items-start gap-2">
-            <span class="material-icons text-muted">info</span>
-            <div class="text-muted small">
-                <strong>ملاحظة:</strong> لوحة مدير النظام للقراءة فقط. لا توجد إجراءات تعديل من هذه الصفحة.
-                للوصول إلى الإحصاءات التفصيلية، استخدم التقارير في الأعلى.
+                @if (Model.Ideas.Any())
+                {
+                    <div class="p-2 border-top bg-white">
+                        @await Html.PartialAsync("_Pagination", null,
+                            new ViewDataDictionary(ViewData)
+                            {
+                                { "Page", Model.Page },
+                                { "PageSize", Model.PageSize },
+                                { "TotalCount", Model.IdeasTotalCount }
+                            })
+                    </div>
+                }
             </div>
         </div>
     </div>
