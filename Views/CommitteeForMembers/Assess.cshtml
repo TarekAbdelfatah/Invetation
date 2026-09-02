@@ -48,6 +48,19 @@
             </div>
         </div>
 
+        @if (Model.Idea is not null)
+        {
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white">
+                    <span class="material-icons text-primary align-middle">visibility</span>
+                    <strong class="ms-2">بيانات الفكرة</strong>
+                </div>
+                <div class="card-body p-0">
+                    @await Html.PartialAsync("_IdeaReadOnly", Model.Idea)
+                </div>
+            </div>
+        }
+
         @if (Model.CombinedAverage.HasValue)
         {
             <div class="card bog-section mb-3">

@@ -1,4 +1,5 @@
 using Ibtikar.DTOs.Committee;
+using Ibtikar.DTOs.MyRequests;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
 using Ibtikar.Services.Helpers;
@@ -59,6 +60,8 @@ namespace Ibtikar.Services.Implementations
             var idea = await _repo.GetAssessIdeaAsync(ideaId, ct);
             if (idea is null) return null;
 
+            var ideaReadOnly = await _repo.GetIdeaReadOnlyAsync(ideaId, ct);
+
             var criteria = await _repo.GetActiveCriteriaAsync(ct);
 
             var draft = await _repo.GetLatestCommitteeHeaderAsync(ideaId, userId, ct);
@@ -87,7 +90,11 @@ namespace Ibtikar.Services.Implementations
                 draft?.Id, draft?.CreatedAt,
                 draft?.TotalScore, draft?.Comment,
                 criteria, lines,
-                departmentPercent, committeePercent, combined);
+                departmentPercent, committeePercent, combined,
+                ideaReadOnly ?? new CommitteeIdeaReadOnlyDto(
+                    idea.Title, string.Empty, null, null, null, null,
+                    null, null, null, null, null, false, null,
+                    DateTime.UtcNow, null, new List<MyRequestAttachmentDto>()));
         }
 
         public async Task<CommitteeAssessOutcomeDto> SaveAssessmentAsync(
@@ -178,7 +185,9 @@ namespace Ibtikar.Services.Implementations
                 i.IdeaId, i.Reference, i.Title,
                 i.StatusCode, i.StatusName, i.StatusColor,
                 myVotes.ContainsKey(i.IdeaId),
-                myVotes.TryGetValue(i.IdeaId, out var d) ? d : null)).ToList();
+                myVotes.TryGetValue(i.IdeaId, out var d) ? d : null,
+                i.Description, i.ProblemStatement, i.ProposedSolution, i.ExpectedBenefits,
+                i.Idea)).ToList();
 
             return new CommitteeVotesDto(items);
         }

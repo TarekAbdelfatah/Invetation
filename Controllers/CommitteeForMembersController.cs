@@ -52,7 +52,7 @@ namespace Ibtikar.Controllers
                 if (referrals is not null)
                 {
                     vm.Items = referrals.Select(i => new CommitteeReferralRowVm(
-                        i.IdeaId, i.Reference, i.Title,
+                        i.IdeaId, i.Reference, i.Title, i.TitleDisplay,
                         i.StatusCode, i.StatusName, i.StatusColor,
                         i.ApplicantName, i.ApplicantDepartmentName,
                         i.ReferredAt, i.StayDays, i.IsOverdue,
@@ -91,6 +91,7 @@ namespace Ibtikar.Controllers
                 DepartmentPercent = dto.DepartmentPercent,
                 CommitteePercent = dto.CommitteePercent,
                 CombinedAverage = dto.CombinedAverage,
+                Idea = dto.Idea is null ? null : ToIdeaReadOnlyVm(dto.Idea),
                 Criteria = dto.Criteria.Select(c => new CommitteeCriterionVm(c.Id, c.Code, c.Name, c.Description, c.DisplayOrder)).ToList(),
                 Lines = dto.Lines.Select(l => new CommitteeAssessLineVm(l.CriterionId, l.CriterionCode, l.CriterionName, l.Score, l.Comment)).ToList()
             };
@@ -105,10 +106,13 @@ namespace Ibtikar.Controllers
 
             var vm = new CommitteeVotesVm
             {
+                IsHead = (await _delegations.GetCommitteeIdForHeadAsync(ResolveUserId(), ct)).HasValue,
                 Items = dto.Items.Select(i => new CommitteeVoteRowVm(
                     i.IdeaId, i.Reference, i.Title,
                     i.StatusCode, i.StatusName, i.StatusColor,
-                    i.HasVoted, i.MyVote)).ToList()
+                    i.HasVoted, i.MyVote,
+                    i.Description, i.ProblemStatement, i.ProposedSolution, i.ExpectedBenefits,
+                    ToIdeaReadOnlyVm(i.Idea))).ToList()
             };
             return View(vm);
         }
@@ -277,6 +281,25 @@ namespace Ibtikar.Controllers
 
         private static DelegationRowVm ToDelegationRowVm(DelegationRowDto d)
             => new(d.Id, d.DelegateName, d.StartAt, d.EndAt, d.IsActive);
+
+        private static IdeaReadOnlyVm ToIdeaReadOnlyVm(CommitteeIdeaReadOnlyDto d)
+            => new(
+                d.Title,
+                d.Description,
+                d.ProblemStatement,
+                d.ProposedSolution,
+                d.ExpectedBenefits,
+                d.RequiredResources,
+                d.DomainName,
+                d.ExpectedImpactName,
+                d.ExpectedImpactOther,
+                d.TargetAudienceName,
+                d.TargetAudienceOther,
+                d.UsesEmergingTech,
+                d.TechnologyOther,
+                d.CreatedAt,
+                d.SubmittedAt,
+                d.Attachments.Select(a => new MyRequestAttachmentVm(a.Id, a.FileName, a.SizeBytes, a.UploadedAt)).ToList());
 
         private Guid ResolveUserId()
         {

@@ -18,6 +18,7 @@ namespace Ibtikar.ViewModels
         Guid IdeaId,
         string Reference,
         string Title,
+        string TitleDisplay,
         string StatusCode,
         string StatusName,
         string StatusColor,
@@ -49,6 +50,7 @@ namespace Ibtikar.ViewModels
         public int? DepartmentPercent { get; set; }
         public int? CommitteePercent { get; set; }
         public int? CombinedAverage { get; set; }
+        public IdeaReadOnlyVm? Idea { get; set; }
     }
 
     public sealed record CommitteeCriterionVm(Guid Id, string Code, string Name, string? Description, int DisplayOrder);
@@ -62,11 +64,17 @@ namespace Ibtikar.ViewModels
         string StatusName,
         string StatusColor,
         bool HasVoted,
-        string? MyVote);
+        string? MyVote,
+        string Description,
+        string? ProblemStatement,
+        string? ProposedSolution,
+        string? ExpectedBenefits,
+        IdeaReadOnlyVm Idea);
 
     public class CommitteeVotesVm
     {
         public List<CommitteeVoteRowVm> Items { get; set; } = new();
+        public bool IsHead { get; set; }
     }
 
     public class CommitteeDecisionVm

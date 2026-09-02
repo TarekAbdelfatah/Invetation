@@ -6,7 +6,12 @@ namespace Ibtikar.DTOs.Committee
         string Title,
         string StatusCode,
         string StatusName,
-        string StatusColor);
+        string StatusColor,
+        string Description,
+        string? ProblemStatement,
+        string? ProposedSolution,
+        string? ExpectedBenefits,
+        CommitteeIdeaReadOnlyDto Idea);
 
     public sealed record CommitteeVoteRowDto(
         Guid IdeaId,
@@ -16,7 +21,12 @@ namespace Ibtikar.DTOs.Committee
         string StatusName,
         string StatusColor,
         bool HasVoted,
-        string? MyVote);
+        string? MyVote,
+        string Description,
+        string? ProblemStatement,
+        string? ProposedSolution,
+        string? ExpectedBenefits,
+        CommitteeIdeaReadOnlyDto Idea);
 
     public sealed record CommitteeVotesDto(
         IReadOnlyList<CommitteeVoteRowDto> Items);

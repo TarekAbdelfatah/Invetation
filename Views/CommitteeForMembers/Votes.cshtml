@@ -61,6 +61,10 @@
                                 </div>
                                 <h5 class="card-title">@i.Title</h5>
 
+                                <div class="idea-readonly">
+                                    @await Html.PartialAsync("_IdeaReadOnly", i.Idea)
+                                </div>
+
                                 @if (i.HasVoted)
                                 {
                                     var label = voteLabels.TryGetValue(i.MyVote ?? "", out var l) ? l : i.MyVote;
@@ -78,10 +82,13 @@
                                                 data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
                                             أوافق
                                         </button>
-                                        <button type="submit" name="decision" value="NeedsDevelopment" class="btn btn-warning btn-sm"
-                                                data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
-                                            تحتاج تطوير
-                                        </button>
+                                        @if (Model.IsHead)
+                                        {
+                                            <button type="submit" name="decision" value="NeedsDevelopment" class="btn btn-warning btn-sm"
+                                                    data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
+                                                تحتاج تطوير
+                                            </button>
+                                        }
                                         <button type="submit" name="decision" value="Disagree" class="btn btn-danger btn-sm"
                                                 data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
                                             لا أوافق

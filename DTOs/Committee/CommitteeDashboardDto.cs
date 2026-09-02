@@ -10,6 +10,7 @@ namespace Ibtikar.DTOs.Committee
         Guid IdeaId,
         string Reference,
         string Title,
+        string TitleDisplay,
         string StatusCode,
         string StatusName,
         string StatusColor,

@@ -138,7 +138,7 @@
                                         data-band="@band"
                                         data-is-referred="@(isReferred ? "true" : "false")">
                                         <td class="text-muted small">@i.Reference</td>
-                                        <td class="fw-semibold">@i.Title</td>
+                                        <td class="fw-semibold"><span title="@i.Title">@i.TitleDisplay</span></td>
                                         <td>@(i.ApplicantName ?? "—")</td>
                                         <td>@(i.ApplicantDepartmentName ?? "—")</td>
                                         <td>
@@ -168,9 +168,12 @@
                                         </td>
                                         <td>
                                             <div class="d-flex gap-1">
-                                                <a class="btn btn-sm btn-outline-primary" asp-action="Assess" asp-route-id="@i.IdeaId">
-                                                    تقييم
-                                                </a>
+                                                @if (isReferred)
+                                                {
+                                                    <a class="btn btn-sm btn-outline-primary" asp-action="Assess" asp-route-id="@i.IdeaId">
+                                                        تقييم
+                                                    </a>
+                                                }
                                                 <button type="button" class="btn btn-sm btn-outline-success" data-open-decision>
                                                     @(isReferred ? "قرار" : "تفاصيل القرار")
                                                 </button>
@@ -201,7 +204,7 @@
                     <code id="decisionReference" class="fs-6"></code>
                     <span id="decisionStatusBadge" class="badge"></span>
                 </div>
-                <div id="decisionIdeaTitle" class="h6 mt-2 mb-0"></div>
+                <div id="decisionIdeaTitle" class="h6 mt-2 mb-0 text-break"></div>
             </div>
 
             <div class="row g-2 text-center mb-3">

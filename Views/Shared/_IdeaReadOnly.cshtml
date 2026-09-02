@@ -1,0 +1,129 @@
+@model Ibtikar.ViewModels.IdeaReadOnlyVm
+@using Ibtikar.ViewModels
+@using static Ibtikar.Services.Helpers.KsaTime
+@{
+    var idea = Model;
+}
+
+<div class="card bog-section mb-3">
+    <div class="card-body">
+        <h3 class="mb-3">@idea.Title</h3>
+        <dl class="row mb-0">
+            <dt class="col-sm-3">المجال</dt>
+            <dd class="col-sm-9">@(idea.DomainName ?? "—")</dd>
+
+            <dt class="col-sm-3">التأثير المتوقع</dt>
+            <dd class="col-sm-9">
+                @(idea.ExpectedImpactName ?? "—")
+                @if (!string.IsNullOrWhiteSpace(idea.ExpectedImpactOther))
+                {
+                    <span class="text-muted">(تفصيل: @idea.ExpectedImpactOther)</span>
+                }
+            </dd>
+
+            <dt class="col-sm-3">الفئة المستهدفة</dt>
+            <dd class="col-sm-9">
+                @(idea.TargetAudienceName ?? "—")
+                @if (!string.IsNullOrWhiteSpace(idea.TargetAudienceOther))
+                {
+                    <span class="text-muted">(تفصيل: @idea.TargetAudienceOther)</span>
+                }
+            </dd>
+
+            <dt class="col-sm-3">تقنية حديثة</dt>
+            <dd class="col-sm-9">
+                @(idea.UsesEmergingTech
+                    ? (string.IsNullOrWhiteSpace(idea.TechnologyOther) ? "نعم" : "نعم — " + idea.TechnologyOther)
+                    : "لا")
+            </dd>
+
+            <dt class="col-sm-3">تاريخ التقديم</dt>
+            <dd class="col-sm-9" dir="ltr">
+                @((idea.SubmittedAt ?? idea.CreatedAt).FormatDateTime())
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<div class="card bog-section mb-3">
+    <div class="card-header bg-white"><strong>وصف الفكرة</strong></div>
+    <div class="card-body">
+        <p class="mb-0" style="white-space:pre-line">@idea.Description</p>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(idea.ProblemStatement))
+{
+    <div class="card bog-section mb-3">
+        <div class="card-header bg-white"><strong>المشكلة</strong></div>
+        <div class="card-body">
+            <p class="mb-0" style="white-space:pre-line">@idea.ProblemStatement</p>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(idea.ProposedSolution))
+{
+    <div class="card bog-section mb-3">
+        <div class="card-header bg-white"><strong>الحل المقترح</strong></div>
+        <div class="card-body">
+            <p class="mb-0" style="white-space:pre-line">@idea.ProposedSolution</p>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(idea.ExpectedBenefits))
+{
+    <div class="card bog-section mb-3">
+        <div class="card-header bg-white"><strong>الفوائد المتوقعة</strong></div>
+        <div class="card-body">
+            <p class="mb-0" style="white-space:pre-line">@idea.ExpectedBenefits</p>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(idea.RequiredResources))
+{
+    <div class="card bog-section mb-3">
+        <div class="card-header bg-white"><strong>الموارد المطلوبة</strong></div>
+        <div class="card-body">
+            <p class="mb-0" style="white-space:pre-line">@idea.RequiredResources</p>
+        </div>
+    </div>
+}
+
+<div class="card bog-section mb-3">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <strong>المرفقات</strong>
+        <span class="badge bg-secondary">@idea.Attachments.Count</span>
+    </div>
+    <div class="card-body p-0">
+        @if (idea.Attachments.Any())
+        {
+            <ul class="list-group list-group-flush">
+                @foreach (var a in idea.Attachments)
+                {
+                    <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <span class="d-inline-flex align-items-center gap-2">
+                            <span class="material-icons align-middle text-danger" style="font-size:18px">picture_as_pdf</span>
+                            @a.FileName
+                        </span>
+                        <span class="d-inline-flex align-items-center gap-2">
+                            <small class="text-muted" dir="ltr">@(a.SizeBytes / 1024) KB · @a.UploadedAt.FormatDateTime()</small>
+                            <a class="btn btn-sm btn-outline-primary"
+                               href="@Url.Action("Download", "AttachmentDownload", new { attachmentId = a.Id })"
+                               download="@a.FileName" target="_blank" rel="noopener noreferrer">
+                                <span class="material-icons align-middle" style="font-size:16px">download</span>
+                                تحميل
+                            </a>
+                        </span>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <div class="text-muted text-center p-4">لا توجد مرفقات.</div>
+        }
+    </div>
+</div>

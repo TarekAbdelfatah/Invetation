@@ -21,6 +21,7 @@ namespace Ibtikar.Repositories
         Task<Guid?> GetStatusIdByCodeAsync(string code, CancellationToken ct);
         Task<InnovationIdea?> GetIdeaWithStatusAsync(Guid ideaId, CancellationToken ct);
         Task<IReadOnlyList<CommitteeVoteIdeaDto>> GetVoteIdeasAsync(CancellationToken ct);
+        Task<CommitteeIdeaReadOnlyDto?> GetIdeaReadOnlyAsync(Guid ideaId, CancellationToken ct);
         Task<IReadOnlyDictionary<Guid, string>> GetVotesByUserAsync(Guid userId, IReadOnlyCollection<Guid> ideaIds, CancellationToken ct);
         Task<bool> HasVotedAsync(Guid ideaId, Guid userId, CancellationToken ct);
         Task AddVoteAsync(CommitteeVote vote, CancellationToken ct);
