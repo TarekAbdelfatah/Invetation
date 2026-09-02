@@ -18,6 +18,12 @@ namespace Ibtikar.Data
                         ALTER TABLE [InnovationIdeas] ADD [AuditEmployeeId] uniqueidentifier NULL;
                     IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[InnovationIdeas]') AND name = N'AuditAssignedAt')
                         ALTER TABLE [InnovationIdeas] ADD [AuditAssignedAt] datetime2 NULL;
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[InnovationIdeas]') AND name = N'RequiredResources')
+                        ALTER TABLE [InnovationIdeas] ADD [RequiredResources] nvarchar(3000) NULL;
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[InnovationIdeas]') AND name = N'IsDeleted')
+                        ALTER TABLE [InnovationIdeas] ADD [IsDeleted] bit NOT NULL DEFAULT 0;
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[InnovationIdeas]') AND name = N'DeletedAt')
+                        ALTER TABLE [InnovationIdeas] ADD [DeletedAt] datetime2 NULL;
 
                     IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID(N'[AuditActionItems]') AND type in (N'U'))
                     BEGIN
@@ -68,7 +74,10 @@ namespace Ibtikar.Data
                 db.Database.ExecuteSqlRaw(
                     "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"AssignedDepartmentId\" uuid NULL; " +
                     "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"AuditEmployeeId\" uuid NULL; " +
-                    "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"AuditAssignedAt\" timestamp with time zone NULL;");
+                    "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"AuditAssignedAt\" timestamp with time zone NULL; " +
+                    "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"RequiredResources\" text NULL; " +
+                    "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"IsDeleted\" boolean NOT NULL DEFAULT FALSE; " +
+                    "ALTER TABLE \"InnovationIdeas\" ADD COLUMN IF NOT EXISTS \"DeletedAt\" timestamp with time zone NULL;");
 
                 db.Database.ExecuteSqlRaw(
                     "CREATE TABLE IF NOT EXISTS \"AuditActionItems\" (" +

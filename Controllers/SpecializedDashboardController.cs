@@ -1,10 +1,14 @@
+using Ibtikar.Data;
 using Ibtikar.DTOs.PartnerDashboard;
 using Ibtikar.DTOs.SpecializedDashboard;
+using Ibtikar.Models;
+using Ibtikar.Repositories.Interfaces;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Interfaces;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Ibtikar.Controllers
@@ -27,6 +31,7 @@ namespace Ibtikar.Controllers
         public async Task<IActionResult> Index(CancellationToken ct)
         {
             var departmentId = ResolveDepartmentId();
+            var departmentName = await ResolveDepartmentNameAsync(ct);
             var dto = await _service.GetSnapshotAsync(departmentId, ct);
             var advisoryDto = await _partnerService.GetSnapshotAsync(departmentId, ct);
             var advisoryInbox = await _partnerService.GetInboxAsync(departmentId, ct);
@@ -40,7 +45,7 @@ namespace Ibtikar.Controllers
                 AdvisoryPending = advisoryDto?.PendingAssignments ?? 0,
                 AdvisoryLate = advisoryDto?.OverdueLate ?? 0,
                 AdvisorySubmitted = advisoryDto?.SubmittedThisCycle ?? 0,
-                DepartmentName = ResolveDepartmentName(),
+                DepartmentName = departmentName,
                 AdvisoryItems = (advisoryInbox?.Items ?? new List<PartnerAssignmentRowDto>())
                     .Select(i => new PartnerAssignmentRowVm(
                         i.AssignmentId, i.IdeaId, i.IdeaReference, i.IdeaTitle,
@@ -56,6 +61,7 @@ namespace Ibtikar.Controllers
         public async Task<IActionResult> Referrals(string? status, int? page, int? pageSize, CancellationToken ct)
         {
             var departmentId = ResolveDepartmentId();
+            var departmentName = await ResolveDepartmentNameAsync(ct);
             var (p, ps) = PagedRequest.Normalize(page, pageSize);
             var dto = await _service.GetReferralsAsync(departmentId, status, p, ps, ct);
             if (dto is null) return Forbid();
@@ -63,7 +69,7 @@ namespace Ibtikar.Controllers
             var vm = new SpecializedReferralsVm
             {
                 StatusFilter = dto.StatusFilter ?? string.Empty,
-                DepartmentName = ResolveDepartmentName(),
+                DepartmentName = departmentName,
                 Page = dto.Page,
                 PageSize = dto.PageSize,
                 TotalCount = dto.TotalCount,
@@ -320,8 +326,59 @@ namespace Ibtikar.Controllers
             return Guid.TryParse(raw, out var id) ? id : null;
         }
 
-        private string? ResolveDepartmentName()
-            => User.FindFirst(RoleCodes.DepartmentNameClaim)?.Value;
+        private async Task<string?> ResolveDepartmentNameAsync(CancellationToken ct = default)
+        {
+            if (HttpContext.Items.TryGetValue("DepartmentName", out var deptObj) && deptObj is string deptName && !string.IsNullOrWhiteSpace(deptName))
+            {
+                return deptName;
+            }
+
+            if (HttpContext.Items.TryGetValue("CommonDepartment", out var commonObj) && commonObj is ErpHrDepartment hrDept && !string.IsNullOrWhiteSpace(hrDept.DeptName))
+            {
+                return hrDept.DeptName;
+            }
+
+            var claimDeptName = User.FindFirst(RoleCodes.DepartmentNameClaim)?.Value;
+            if (!string.IsNullOrWhiteSpace(claimDeptName))
+            {
+                return claimDeptName;
+            }
+
+            // Try resolving directly via IDepartmentRepository using AdminUser DeptId
+            var adminUser = HttpContext.Items["AdminUser"] as Admin;
+            if (adminUser == null)
+            {
+                var username = User.Identity?.Name;
+                if (!string.IsNullOrWhiteSpace(username))
+                {
+                    if (username.EndsWith("@bog.gov.sa", StringComparison.OrdinalIgnoreCase))
+                    {
+                        username = username.Substring(0, username.Length - "@bog.gov.sa".Length);
+                    }
+                    var db = HttpContext.RequestServices.GetService<IbtikarDbContext>();
+                    if (db != null)
+                    {
+                        adminUser = await db.Admins.AsNoTracking().FirstOrDefaultAsync(a => a.NetworkUser == username, ct);
+                    }
+                }
+            }
+
+            if (adminUser?.DeptId.HasValue == true)
+            {
+                var deptRepo = HttpContext.RequestServices.GetService<IDepartmentRepository>();
+                if (deptRepo != null)
+                {
+                    var hrDepts = await deptRepo.GetHrDepartmentsAsync(ct);
+                    var match = hrDepts.FirstOrDefault(d => d.DeptId == adminUser.DeptId.Value);
+                    if (match != null)
+                    {
+                        return match.DeptName;
+                    }
+                }
+            }
+
+            return null;
+        }
 
         private Guid ResolveUserId()
         {

@@ -80,12 +80,20 @@ namespace Ibtikar.Services.Helpers
                 var commonDb = context.HttpContext.RequestServices.GetService<CommonSysDbContext>();
                 if (commonDb is not null)
                 {
-                    var commonDept = await commonDb.Departments
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(d => d.Id == adminUser.DeptId.Value && d.IsActive);
-                    if (commonDept is not null)
+                    try
                     {
-                        context.HttpContext.Items["CommonDepartment"] = commonDept;
+                        var hrDept = await commonDb.HrDepartments
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(d => d.DeptId == adminUser.DeptId.Value);
+                        if (hrDept is not null)
+                        {
+                            context.HttpContext.Items["CommonDepartment"] = hrDept;
+                            context.HttpContext.Items["DepartmentName"] = hrDept.DeptName;
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore department resolution if HrDepartments table is unreachable
                     }
                 }
             }

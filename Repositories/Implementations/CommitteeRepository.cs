@@ -45,9 +45,9 @@ namespace Ibtikar.Repositories
         public async Task<CommitteeMemberOptionDto[]> GetMemberCandidatesAsync(Guid? excludeCommitteeId, CancellationToken ct)
         {
             var roleCode = RoleCodes.InnovationCommitteeMember;
-            var users = await _db.UserRoles.AsNoTracking()
-                .Where(ur => ur.Role.Code == roleCode && ur.User.IsActive)
-                .Select(ur => new { ur.UserId, ur.User.FullName, ur.User.Username, ur.User.Id })
+            var users = await _db.Admins.AsNoTracking()
+                .Where(a => a.Role != null && a.Role.Code == roleCode && a.IsActive)
+                .Join(_db.Users.AsNoTracking(), a => a.NetworkUser, u => u.Username, (a, u) => new { u.Id, u.FullName, u.Username })
                 .ToListAsync(ct);
 
             var alreadyOnCommittee = await _db.CommitteeMembers.AsNoTracking()
