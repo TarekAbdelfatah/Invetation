@@ -36,17 +36,14 @@ namespace Ibtikar.Repositories
         public async Task<IReadOnlyList<CommitteeReferralRowDto>> GetReferralsAsync(Guid userId, CancellationToken ct)
         {
             var now = DateTime.UtcNow;
-            var queueStatuses = new[]
-            {
-                IdeaStatusCodes.ReferredCommittee,
-                IdeaStatusCodes.Approved,
-                IdeaStatusCodes.Rejected,
-                IdeaStatusCodes.ReturnedForDevelopment,
-                IdeaStatusCodes.InExecution
-            };
 
             var rows = await _db.InnovationIdeas.AsNoTracking()
-                .Where(i => i.CurrentStatus != null && queueStatuses.Contains(i.CurrentStatus.Code))
+                .Where(i => i.CurrentStatus != null
+                    && (i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee
+                        || i.CurrentStatus.Code == IdeaStatusCodes.Approved
+                        || i.CurrentStatus.Code == IdeaStatusCodes.Rejected
+                        || i.CurrentStatus.Code == IdeaStatusCodes.ReturnedForDevelopment
+                        || i.CurrentStatus.Code == IdeaStatusCodes.InExecution))
                 .OrderByDescending(i => i.CreatedAt)
                 .Take(100)
                 .Select(i => new CommitteeReferralRowDto(
