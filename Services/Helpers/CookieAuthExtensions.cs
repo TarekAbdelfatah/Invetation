@@ -56,12 +56,12 @@ namespace Ibtikar.Services.Helpers
                     options.CallbackPath = "/signin-callback";
 
                     options.CorrelationCookie.Name = ".Ibtikar.Correlation";
-                    options.CorrelationCookie.SameSite = SameSiteMode.None;
-                    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 
                     options.NonceCookie.Name = ".Ibtikar.Nonce";
-                    options.NonceCookie.SameSite = SameSiteMode.None;
-                    options.NonceCookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.NonceCookie.SameSite = SameSiteMode.Lax;
+                    options.NonceCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 
                     options.Scope.Clear();
                     options.Scope.Add("openid");

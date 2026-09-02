@@ -49,6 +49,8 @@ namespace Ibtikar.Services.Implementations
             {
                 new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new(ClaimTypes.Name, user.Username),
+                new("preferred_username", user.Username),
+                new("NetworkUser", user.Username),
                 new(RoleCodes.UserIdClaim, user.Id.ToString()),
                 new(RoleCodes.FullNameClaim, user.FullName)
             };

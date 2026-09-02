@@ -98,7 +98,8 @@ namespace Ibtikar.Services.Helpers
 
         private static string? ExtractNetworkUserClaim(ClaimsPrincipal principal)
         {
-            return principal.FindFirst("NetworkUser")?.Value
+            return principal.FindFirst("preferred_username")?.Value
+                ?? principal.FindFirst("NetworkUser")?.Value
                 ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
                 ?? principal.FindFirst("sub")?.Value
                 ?? principal.FindFirst("upn")?.Value

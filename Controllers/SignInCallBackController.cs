@@ -38,6 +38,49 @@ namespace Ibtikar.Controllers
         }
 
         /// <summary>
+        /// Explicit action handler for /signin-callback endpoint.
+        /// Handles direct calls or fallback processing for the OIDC sign-in callback.
+        /// </summary>
+        [HttpGet("/signin-callback")]
+        [HttpPost("/signin-callback")]
+        public async Task<IActionResult> SignInCallback()
+        {
+            var traceId = HttpContext.TraceIdentifier;
+            _logger.LogInformation("[TraceId:{TraceId}] Entering /signin-callback action handler.", traceId);
+
+            try
+            {
+                var authResult = await HttpContext.AuthenticateAsync("Cookies");
+                if (!authResult.Succeeded)
+                {
+                    authResult = await HttpContext.AuthenticateAsync("oidc");
+                }
+
+                if (authResult.Succeeded && authResult.Principal != null)
+                {
+                    var accessToken = authResult.Properties?.GetTokenValue("access_token")
+                        ?? await HttpContext.GetTokenAsync("access_token");
+
+                    if (!string.IsNullOrWhiteSpace(accessToken))
+                    {
+                        var userInfo = await _ssoService.GetSSOUserInfoAsync(accessToken);
+                        if (userInfo != null)
+                        {
+                            var user = await _authService.SyncSsoUserAsync(userInfo);
+                            await _authService.SignInAsync(HttpContext, user);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TraceId:{TraceId}] Error in /signin-callback action handler.", traceId);
+            }
+
+            return RedirectToAction(nameof(SigninComplete));
+        }
+
+        /// <summary>
         /// Called after the OIDC middleware has processed the SSO callback (/signin-callback) and signed the user in.
         /// Fetches user info from SSO, saves or updates the user in DB, and establishes local cookie session.
         /// </summary>
