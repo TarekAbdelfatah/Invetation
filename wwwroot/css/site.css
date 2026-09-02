@@ -823,9 +823,6 @@ body {
 }
 
 @media (max-width: 575.98px) {
-  .bog-brand-text {
-    display: none;
-  }
   .bog-brand img {
     height: 36px;
   }
