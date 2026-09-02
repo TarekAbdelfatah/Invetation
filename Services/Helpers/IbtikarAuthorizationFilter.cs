@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Ibtikar.Data;
+using Ibtikar.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -26,56 +27,64 @@ namespace Ibtikar.Services.Helpers
 
             var userPrincipal = context.HttpContext.User;
 
-            // 2. Check if user is authenticated via IdentityServer
+            // 2. Check if user is authenticated via IdentityServer / Auth Cookie
             if (userPrincipal.Identity is not { IsAuthenticated: true })
             {
                 context.Result = new UnauthorizedResult();
                 return;
             }
 
-            // 3. Extract Network User Claim from Token
+            // 3. For external or internal users (beneficiaries): check only if user is logged in
+            bool containsBeneficiaryRole = _requiredRoles.Length == 0 || _requiredRoles.Any(r =>
+                string.Equals(r, RoleCodes.ExternalBeneficiary, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(r, RoleCodes.InternalBeneficiary, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(r, "External-user", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(r, "Internal-user", StringComparison.OrdinalIgnoreCase));
+
+            // Extract Network User Claim from Token/Cookie
             var networkUser = ExtractNetworkUserClaim(userPrincipal);
-            if (string.IsNullOrWhiteSpace(networkUser))
-            {
-                context.Result = new ForbidResult();
-                return;
-            }
 
             // 4. Resolve Database Context & Query Admins Table for Network User
             var db = context.HttpContext.RequestServices.GetRequiredService<IbtikarDbContext>();
-            var adminUser = await db.Admins
-                .AsNoTracking()
-                .Include(a => a.Role)
-                .FirstOrDefaultAsync(a => a.NetworkUser == networkUser && a.IsActive);
-
-            if (adminUser is null)
+            Admin? adminUser = null;
+            if (!string.IsNullOrWhiteSpace(networkUser))
             {
-                // User does not exist in Admins table or is deactivated
-                context.Result = new ForbidResult();
-                return;
+                adminUser = await db.Admins
+                    .AsNoTracking()
+                    .Include(a => a.Role)
+                    .FirstOrDefaultAsync(a => a.NetworkUser == networkUser && a.IsActive);
             }
 
-            // 5. Extract Role Code from Admin's Role
-            var adminRoleCode = adminUser.Role is { IsActive: true } ? adminUser.Role.Code : string.Empty;
+            // 5. Collect Role Codes from Admin record & User Claims
             var roleCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (!string.IsNullOrEmpty(adminRoleCode))
+            if (adminUser?.Role is { IsActive: true })
             {
-                roleCodes.Add(adminRoleCode);
+                roleCodes.Add(adminUser.Role.Code);
             }
 
-            // 6. Validate Required Roles on Endpoint against Admin Role
+            foreach (var claim in userPrincipal.FindAll(RoleCodes.ClaimType).Concat(userPrincipal.FindAll(ClaimTypes.Role)))
+            {
+                if (!string.IsNullOrWhiteSpace(claim.Value))
+                {
+                    roleCodes.Add(claim.Value);
+                }
+            }
+
+            // 6. Role Authorization Check
             if (_requiredRoles.Length > 0)
             {
-                bool hasPermission = _requiredRoles.Any(r => roleCodes.Contains(r));
-                if (!hasPermission)
+                // If endpoint accepts external or internal users and the user is logged in, allow access
+                bool hasExplicitRole = _requiredRoles.Any(r => roleCodes.Contains(r));
+                if (!containsBeneficiaryRole && !hasExplicitRole)
                 {
+                    // User does not have the required administrative role
                     context.Result = new ForbidResult();
                     return;
                 }
             }
 
             // 7. Retrieve Department from CommonSysDB schema if DeptId is present
-            if (adminUser.DeptId.HasValue)
+            if (adminUser?.DeptId.HasValue == true)
             {
                 var commonDb = context.HttpContext.RequestServices.GetService<CommonSysDbContext>();
                 if (commonDb is not null)
@@ -99,8 +108,11 @@ namespace Ibtikar.Services.Helpers
             }
 
             // 8. Store resolved Admin, DeptId, and Role info in HttpContext.Items
-            context.HttpContext.Items["AdminUser"] = adminUser;
-            context.HttpContext.Items["DeptId"] = adminUser.DeptId;
+            if (adminUser is not null)
+            {
+                context.HttpContext.Items["AdminUser"] = adminUser;
+                context.HttpContext.Items["DeptId"] = adminUser.DeptId;
+            }
             context.HttpContext.Items["DbUserRoles"] = roleCodes;
         }
 

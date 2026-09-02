@@ -1,6 +1,7 @@
 using Ibtikar.Data;
 using Ibtikar.DTOs.Audit;
 using Ibtikar.Models;
+using Ibtikar.Repositories.Interfaces;
 using Ibtikar.Services.Helpers;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,8 +10,15 @@ namespace Ibtikar.Repositories
     public sealed class AuditRepository : IAuditRepository
     {
         private readonly IbtikarDbContext _db;
+        private readonly IDepartmentRepository _departmentRepository;
 
-        public AuditRepository(IbtikarDbContext db) => _db = db;
+        public AuditRepository(
+            IbtikarDbContext db,
+            IDepartmentRepository departmentRepository)
+        {
+            _db = db;
+            _departmentRepository = departmentRepository;
+        }
 
         public async Task<AuditInboxDto> GetInboxRowsAsync(
             string applicantTypeFilter,
@@ -61,40 +69,7 @@ namespace Ibtikar.Repositories
                     null))
                 .ToListAsync(ct);
 
-            if (rows.Count > 0)
-            {
-                var ideaIds = rows.Select(r => r.Id).ToList();
-                var returns = await _db.AuditActionItems
-                    .AsNoTracking()
-                    .Where(a => a.Decision == "not_competent_return" && ideaIds.Contains(a.IdeaId))
-                    .GroupBy(a => a.IdeaId)
-                    .Select(g => new
-                    {
-                        IdeaId = g.Key,
-                        Reason = g.OrderByDescending(x => x.AuditDate).First().DecisionText,
-                        At = g.OrderByDescending(x => x.AuditDate).First().AuditDate,
-                        DepartmentName = g.OrderByDescending(x => x.AuditDate).First().TargetDepartment != null
-                            ? g.OrderByDescending(x => x.AuditDate).First().TargetDepartment!.Name
-                            : null
-                    })
-                    .ToListAsync(ct);
-
-                var returnMap = returns.ToDictionary(r => r.IdeaId);
-                for (var i = 0; i < rows.Count; i++)
-                {
-                    if (returnMap.TryGetValue(rows[i].Id, out var info))
-                    {
-                        rows[i] = rows[i] with
-                        {
-                            IsReturnedBySpecialist = true,
-                            ReturnedReason = info.Reason,
-                            ReturnedAt = info.At
-                        };
-                    }
-                }
-            }
-
-            return new AuditInboxDto(rows, applicantTypeFilter, string.Empty, page, pageSize, totalCount);
+            return new AuditInboxDto(rows, applicantTypeFilter ?? string.Empty, string.Join(",", statusCodes), page, pageSize, totalCount);
         }
 
         public async Task<AuditDetailsDto?> GetDetailsAsync(Guid id, CancellationToken ct)
@@ -159,12 +134,57 @@ namespace Ibtikar.Repositories
                     h.Note))
                 .ToListAsync(ct);
 
-            var departments = await _db.Departments
-                .AsNoTracking()
-                .Where(d => d.IsActive)
-                .OrderBy(d => d.Name)
-                .Select(d => new AuditDepartmentOptionDto(d.Id, d.Name))
-                .ToListAsync(ct);
+            // Fetch departments directly from CommonSysDB (HR_DEPARTMENT)
+            var departments = new List<AuditDepartmentOptionDto>();
+            try
+            {
+                var hrDepts = await _departmentRepository.GetHrDepartmentsAsync(ct);
+                var existingDepts = await _db.Departments.ToListAsync(ct);
+                var existingByName = existingDepts.ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
+
+                bool needSave = false;
+                foreach (var hr in hrDepts)
+                {
+                    if (string.IsNullOrWhiteSpace(hr.DeptName)) continue;
+                    var nameClean = hr.DeptName.Trim();
+
+                    if (!existingByName.TryGetValue(nameClean, out var dbDept))
+                    {
+                        dbDept = new Department
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = nameClean,
+                            Code = hr.DeptId.ToString(),
+                            IsActive = true,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _db.Departments.Add(dbDept);
+                        existingByName[nameClean] = dbDept;
+                        needSave = true;
+                    }
+
+                    departments.Add(new AuditDepartmentOptionDto(dbDept.Id, dbDept.Name));
+                }
+
+                if (needSave)
+                {
+                    await _db.SaveChangesAsync(ct);
+                }
+            }
+            catch
+            {
+                // Fallback to local _db.Departments if CommonSysDB is unavailable
+            }
+
+            if (departments.Count == 0)
+            {
+                departments = await _db.Departments
+                    .AsNoTracking()
+                    .Where(d => d.IsActive)
+                    .OrderBy(d => d.Name)
+                    .Select(d => new AuditDepartmentOptionDto(d.Id, d.Name))
+                    .ToListAsync(ct);
+            }
 
             var actionableStatuses = new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted };
             var isUnderStudy = header.StatusCode == IdeaStatusCodes.UnderStudy;

@@ -4,6 +4,22 @@
     ViewData["Title"] = "إسناد وإدارة الصلاحيات الإدارية";
 }
 
+@section Styles {
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <style>
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: 45px;
+            padding: 8px 12px;
+            font-family: inherit;
+            border-radius: 0.375rem;
+        }
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            line-height: 26px;
+        }
+    </style>
+}
+
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -40,8 +56,8 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">الموظف <span class="text-danger">*</span></label>
-                            <select class="form-select select2" asp-for="Input.NetworkUser" required>
-                                <option value="">-- اختر الموظف (اسم المستخدم / الاسم الكامل) --</option>
+                            <select class="form-select select2-employee" asp-for="Input.NetworkUser" id="employeeSelect" required>
+                                <option value="">-- ابحث عن موظف (الاسم أو اسم المستخدم) --</option>
                                 @foreach (var emp in Model.Employees)
                                 {
                                     <option value="@emp.NetworkUser">@emp.FullName (@emp.NetworkUser)</option>
@@ -165,8 +181,20 @@
 </div>
 
 @section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ar.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        $(document).ready(function () {
+            $('.select2-employee').select2({
+                theme: 'bootstrap-5',
+                dir: 'rtl',
+                placeholder: '-- ابحث عن موظف (الاسم أو اسم المستخدم) --',
+                allowClear: true,
+                language: 'ar',
+                width: '100%'
+            });
+
             const roleSelect = document.getElementById('roleSelect');
             const deptContainer = document.getElementById('departmentContainer');
             const deptSelect = document.getElementById('deptSelect');
