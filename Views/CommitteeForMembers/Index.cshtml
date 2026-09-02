@@ -25,10 +25,12 @@
         @if (TempData["AlertMessage"] is string ok)
         {
             <div class="alert alert-success">@ok</div>
+            TempData.Remove("AlertMessage");
         }
         @if (TempData["AlertError"] is string err)
         {
             <div class="alert alert-danger">@err</div>
+            TempData.Remove("AlertError");
         }
 
         @if (isHead)

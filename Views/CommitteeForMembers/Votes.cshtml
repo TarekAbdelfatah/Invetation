@@ -29,10 +29,12 @@
         @if (TempData["AlertMessage"] is string ok)
         {
             <div class="alert alert-success">@ok</div>
+            TempData.Remove("AlertMessage");
         }
         @if (TempData["AlertError"] is string err)
         {
             <div class="alert alert-danger">@err</div>
+            TempData.Remove("AlertError");
         }
 
         @if (Model.Items.Count == 0)
@@ -68,7 +70,7 @@
                                 @if (i.HasVoted)
                                 {
                                     var label = voteLabels.TryGetValue(i.MyVote ?? "", out var l) ? l : i.MyVote;
-                                    <div class="alert alert-success mb-0 d-flex align-items-center gap-2">
+                                    <div class="alert @(i.MyVote == "Disagree" ? "alert-danger" : "alert-success") mb-0 d-flex align-items-center gap-2">
                                         <span class="material-icons">check_circle</span>
                                         تم التصويت: <strong>@label</strong>
                                     </div>

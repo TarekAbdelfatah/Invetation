@@ -26,6 +26,7 @@ namespace Ibtikar.Controllers
         }
 
         [HttpGet("CommitteeForMembers")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> Index(int? page, int? pageSize, CancellationToken ct)
         {
             try
@@ -122,6 +123,7 @@ namespace Ibtikar.Controllers
         }
 
         [HttpGet("CommitteeForMembers/Vote/{id:guid}")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> Vote(Guid id, CancellationToken ct)
         {
             var dto = await _dashboardService.GetSingleVoteAsync(ResolveUserId(), id, ct);
