@@ -133,6 +133,7 @@ namespace Ibtikar.Services.Implementations
             var techs = await _repo.GetDraftTechnologyIdsAsync(ideaId, ct);
             return new IdeaDetailsForEditDto(
                 idea.Id,
+                idea.ReferenceNumber,
                 idea.Title,
                 idea.Description,
                 idea.ProblemStatement,

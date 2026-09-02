@@ -58,6 +58,7 @@ namespace Ibtikar.Controllers
                     }
                     CopyFromDraft(model, draft);
                     model.IsResumingDraft = true;
+                    model.IsAlreadySubmitted = !string.IsNullOrWhiteSpace(draft.ReferenceNumber);
                 }
 
                 var currentUser = await _ideaService.GetUserSummaryAsync(userId, ct);

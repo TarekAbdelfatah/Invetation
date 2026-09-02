@@ -37,10 +37,6 @@
                 <strong><i class="bi bi-paperclip"></i>
                     @(isReadOnly ? "المرفقات" : "المرفقات (PDF فقط، حتى ملفين، 5 ميجا لكل ملف)")
                 </strong>
-                @if (!string.IsNullOrEmpty(title))
-                {
-                    <small class="text-muted ms-2">الفكرة: @title</small>
-                }
             </div>
             <div class="card-body">
                 @if (!isReadOnly)

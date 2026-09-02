@@ -7,8 +7,8 @@ namespace Ibtikar.ViewModels
         public const int TitleMax = 200;
         public const int DescriptionMax = 3000;
         public const int ProblemMax = 3000;
-        public const int SolutionMax = 300;
-        public const int BenefitsMax = 2000;
+        public const int SolutionMax = 3000;
+        public const int BenefitsMax = 3000;
         public const int OtherImpactMax = 200;
         public const int OtherAudienceMax = 200;
         public const int OtherTechMax = 200;
@@ -30,12 +30,12 @@ namespace Ibtikar.ViewModels
         [DataType(DataType.MultilineText)]
         public string? ProblemStatement { get; set; }
 
-        [StringLength(SolutionMax, ErrorMessage = "الحل المقترح حتى 300 حرف")]
+        [StringLength(SolutionMax, ErrorMessage = "الحل المقترح حتى 3000 حرف")]
         [Display(Name = "الحل المقترح")]
         [DataType(DataType.MultilineText)]
         public string? ProposedSolution { get; set; }
 
-        [StringLength(BenefitsMax, ErrorMessage = "الفوائد حتى 2000 حرف")]
+        [StringLength(BenefitsMax, ErrorMessage = "الفوائد حتى 3000 حرف")]
         [Display(Name = "الفوائد المتوقعة")]
         [DataType(DataType.MultilineText)]
         public string? ExpectedBenefits { get; set; }
@@ -91,6 +91,8 @@ namespace Ibtikar.ViewModels
         public string? ApplicantDepartmentName { get; set; }
 
         public bool IsInternalApplicant { get; set; }
+
+        public bool IsAlreadySubmitted { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

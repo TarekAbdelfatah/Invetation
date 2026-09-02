@@ -191,11 +191,14 @@
                         <hr />
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end bog-form-actions-mobile">
-                            <button type="submit" name="action" value="SaveDraft" class="btn btn-outline-secondary"
-                                    data-loading="true" data-loading-text="جارٍ حفظ المسودة...">
-                                <span class="material-icons align-middle" style="font-size:18px">save</span>
-                                حفظ المسودة
-                            </button>
+                            @if (!Model.IsAlreadySubmitted)
+                            {
+                                <button type="submit" name="action" value="SaveDraft" class="btn btn-outline-secondary"
+                                        data-loading="true" data-loading-text="جارٍ حفظ المسودة...">
+                                    <span class="material-icons align-middle" style="font-size:18px">save</span>
+                                    حفظ المسودة
+                                </button>
+                            }
                             <button type="submit" name="action" value="Submit" class="btn btn-primary"
                                     data-loading="true" data-loading-text="جارٍ إرسال الفكرة...">
                                 <span class="material-icons align-middle" style="font-size:18px">send</span>

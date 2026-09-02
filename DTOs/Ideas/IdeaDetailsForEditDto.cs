@@ -2,6 +2,7 @@ namespace Ibtikar.DTOs.Ideas
 {
     public sealed record IdeaDetailsForEditDto(
         Guid Id,
+        string? ReferenceNumber,
         string Title,
         string Description,
         string? ProblemStatement,

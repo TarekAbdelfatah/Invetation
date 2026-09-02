@@ -124,7 +124,10 @@
         var submitMode = 'draft';
         var submitBtn = form.querySelector('button[value="Submit"]');
         var draftBtn = form.querySelector('button[value="SaveDraft"]');
-        if (!submitBtn || !draftBtn) { return; }
+        if (!submitBtn) { return; }
+
+        // If there is no draft button (idea already submitted), always validate as submit.
+        if (!draftBtn) { submitMode = 'submit'; }
 
         var summaryEl = document.getElementById('ideaFormSummary');
 
@@ -158,7 +161,7 @@
         }
 
         submitBtn.addEventListener('click', function () { submitMode = 'submit'; });
-        draftBtn.addEventListener('click', function () {
+        if (draftBtn) draftBtn.addEventListener('click', function () {
             submitMode = 'draft';
             clearAllSubmitErrors();
         });
