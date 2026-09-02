@@ -160,6 +160,13 @@
                                                 <span class="badge text-bg-@(band)">@(combined?.ToString() ?? "—")%</span>
                                                 <span class="small text-muted d-block">بانتظار قرار رئيس اللجنة</span>
                                             }
+                                            else if (isHead)
+                                            {
+                                                <span class="text-muted small">
+                                                    <span class="material-icons align-middle" style="font-size:14px">schedule</span>
+                                                    في انتظار تقييمك
+                                                </span>
+                                            }
                                             else
                                             {
                                                 <span class="text-muted small">
@@ -177,9 +184,12 @@
                                                         <a class="btn btn-sm btn-outline-primary" asp-action="Assess" asp-route-id="@i.IdeaId">
                                                             تقييم
                                                         </a>
-                                                        <button type="button" class="btn btn-sm btn-outline-success" data-open-decision>
-                                                            قرار
-                                                        </button>
+                                                        @if (i.HasAddedCommitteeAssessment)
+                                                        {
+                                                            <button type="button" class="btn btn-sm btn-outline-success" data-open-decision>
+                                                                قرار
+                                                            </button>
+                                                        }
                                                     }
                                                     else
                                                     {

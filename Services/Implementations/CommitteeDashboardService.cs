@@ -290,6 +290,9 @@ namespace Ibtikar.Services.Implementations
             if (idea.CurrentStatus?.Code != IdeaStatusCodes.ReferredCommittee)
                 return new(false, "الفكرة ليست في حالة (محوّلة للجنة) للقبول.");
 
+            if (!await _repo.HasSubmittedAssessmentAsync(ideaId, userId, ct))
+                return new(false, "لا يمكن اتخاذ القرار قبل إرسال تقييمك للفكرة.");
+
             var combined = await GetCombinedPercentAsync(ideaId, ct);
             if (combined < 40 && !extraConfirmed)
                 return new(false, "النسبة المجمعة أقل من 40%. يلزم تأكيد إضافي لقبول الفكرة.");
@@ -343,6 +346,9 @@ namespace Ibtikar.Services.Implementations
             if (idea.CurrentStatus?.Code != IdeaStatusCodes.ReferredCommittee)
                 return new(false, "الفكرة ليست في حالة (محوّلة للجنة) للرفض.");
 
+            if (!await _repo.HasSubmittedAssessmentAsync(ideaId, userId, ct))
+                return new(false, "لا يمكن اتخاذ القرار قبل إرسال تقييمك للفكرة.");
+
             var rejectedId = await _repo.GetStatusIdByCodeAsync(IdeaStatusCodes.Rejected, ct);
             if (rejectedId is null)
                 return new(false, "لم يتم إعداد حالة (مرفوض) بعد.");
@@ -386,6 +392,9 @@ namespace Ibtikar.Services.Implementations
 
             if (idea.CurrentStatus?.Code != IdeaStatusCodes.ReferredCommittee)
                 return new(false, "الفكرة ليست في حالة (محوّلة للجنة) للإعادة للتطوير.");
+
+            if (!await _repo.HasSubmittedAssessmentAsync(ideaId, userId, ct))
+                return new(false, "لا يمكن اتخاذ القرار قبل إرسال تقييمك للفكرة.");
 
             var combined = await GetCombinedPercentAsync(ideaId, ct);
             if (combined < 61 || combined > 79)

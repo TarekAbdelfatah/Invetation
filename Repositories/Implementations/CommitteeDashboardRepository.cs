@@ -251,6 +251,13 @@ namespace Ibtikar.Repositories
         public async Task<bool> IdeaExistsAsync(Guid ideaId, CancellationToken ct)
             => await _db.InnovationIdeas.AsNoTracking().AnyAsync(i => i.Id == ideaId, ct);
 
+        public async Task<bool> HasSubmittedAssessmentAsync(Guid ideaId, Guid userId, CancellationToken ct)
+            => await _db.AssessmentHeaders.AsNoTracking()
+                .AnyAsync(h => h.InnovationIdeaId == ideaId
+                    && h.AssessorUserId == userId
+                    && h.Source == AssessmentHeader.SourceCommittee
+                    && !h.IsDraft, ct);
+
         public async Task<Guid?> GetIdeaCurrentStatusIdAsync(Guid ideaId, CancellationToken ct)
             => await _db.InnovationIdeas.AsNoTracking()
                 .Where(i => i.Id == ideaId)
