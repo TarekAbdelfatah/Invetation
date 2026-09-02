@@ -1,5 +1,6 @@
 using Ibtikar.Models;
 using Ibtikar.Repositories;
+using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Interfaces;
 
 namespace Ibtikar.Services.Implementations
@@ -27,6 +28,9 @@ namespace Ibtikar.Services.Implementations
             DateTime endAt,
             CancellationToken ct)
         {
+            startAt = startAt.FromKsaLocal();
+            endAt = endAt.FromKsaLocal();
+
             if (startAt >= endAt)
             {
                 return DelegationValidationResult.Fail("يجب أن يكون تاريخ النهاية بعد تاريخ البداية.");
@@ -92,7 +96,7 @@ namespace Ibtikar.Services.Implementations
             if (!isHead)
                 return new(false, "أنت لست رئيس اللجنة ولا يمكنك التفويض.");
 
-            var existingActive = await _delegations.HasCommitteeOverlapAsync(committeeId, startAt, endAt, ct);
+            var existingActive = await _delegations.HasCommitteeOverlapAsync(committeeId, startAt.FromKsaLocal(), endAt.FromKsaLocal(), ct);
             if (existingActive)
                 return new(false, "يوجد تفويض قائم متداخل مع هذه الفترة. لا يمكن إنشاء أكثر من تفويض واحد للجنة.");
 
@@ -100,14 +104,17 @@ namespace Ibtikar.Services.Implementations
             if (!validation.Ok)
                 return new(false, validation.Error ?? "تعذر التحقق من التفويض.");
 
+            var utcStart = startAt.FromKsaLocal();
+            var utcEnd = endAt.FromKsaLocal();
+
             await _delegations.AddAsync(new CommitteeDelegation
             {
                 Id = Guid.NewGuid(),
                 InnovationCommitteeId = committeeId,
                 HeadUserId = headUserId,
                 DelegateMemberUserId = delegateMemberUserId,
-                StartAt = startAt,
-                EndAt = endAt,
+                StartAt = utcStart,
+                EndAt = utcEnd,
                 CreatedAt = DateTime.UtcNow
             }, ct);
 

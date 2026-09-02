@@ -16,6 +16,16 @@ namespace Ibtikar.Services.Helpers
         public static DateTime? ToKsa(this DateTime? utc)
             => utc.HasValue ? utc.Value.ToKsa() : (DateTime?)null;
 
+        public static DateTime FromKsaLocal(this DateTime local)
+        {
+            if (local.Kind == DateTimeKind.Utc) return local;
+            var unspecified = DateTime.SpecifyKind(local, DateTimeKind.Unspecified);
+            return TimeZoneInfo.ConvertTimeToUtc(unspecified, RiyadhTz);
+        }
+
+        public static DateTime? FromKsaLocal(this DateTime? local)
+            => local.HasValue ? local.Value.FromKsaLocal() : (DateTime?)null;
+
         public static string FormatDateTime(this DateTime utc)
             => utc.ToKsa().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 
