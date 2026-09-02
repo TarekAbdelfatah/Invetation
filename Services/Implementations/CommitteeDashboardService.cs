@@ -41,12 +41,12 @@ namespace Ibtikar.Services.Implementations
             return await _repo.GetSnapshotCountsAsync(ct);
         }
 
-        public async Task<IReadOnlyList<CommitteeReferralRowDto>?> GetReferralsAsync(Guid userId, CancellationToken ct)
+        public async Task<CommitteeReferralListDto?> GetReferralsAsync(Guid userId, int page, int pageSize, CancellationToken ct)
         {
             var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
             if (committeeId is null) return null;
 
-            return await _repo.GetReferralsAsync(userId, ct);
+            return await _repo.GetReferralsAsync(userId, page, pageSize, ct);
         }
 
         public async Task<bool> IsActiveCommitteeMemberAsync(Guid userId, CancellationToken ct)

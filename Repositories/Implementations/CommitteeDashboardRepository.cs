@@ -33,19 +33,24 @@ namespace Ibtikar.Repositories
             return new CommitteeDashboardDto(underStudy, underVoting, accepted, rejected);
         }
 
-        public async Task<IReadOnlyList<CommitteeReferralRowDto>> GetReferralsAsync(Guid userId, CancellationToken ct)
+        public async Task<CommitteeReferralListDto> GetReferralsAsync(Guid userId, int page, int pageSize, CancellationToken ct)
         {
             var now = DateTime.UtcNow;
 
-            var rows = await _db.InnovationIdeas.AsNoTracking()
+            var baseQuery = _db.InnovationIdeas.AsNoTracking()
                 .Where(i => i.CurrentStatus != null
                     && (i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee
                         || i.CurrentStatus.Code == IdeaStatusCodes.Approved
                         || i.CurrentStatus.Code == IdeaStatusCodes.Rejected
                         || i.CurrentStatus.Code == IdeaStatusCodes.ReturnedForDevelopment
-                        || i.CurrentStatus.Code == IdeaStatusCodes.InExecution))
+                        || i.CurrentStatus.Code == IdeaStatusCodes.InExecution));
+
+            var totalCount = await baseQuery.CountAsync(ct);
+
+            var rows = await baseQuery
                 .OrderByDescending(i => i.CreatedAt)
-                .Take(100)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(i => new CommitteeReferralRowDto(
                     i.Id,
                     i.ReferenceNumber,
@@ -63,7 +68,8 @@ namespace Ibtikar.Repositories
                     i.AuditAssignedAt.HasValue && (now - i.AuditAssignedAt.Value) > TimeSpan.FromDays(4)))
                 .ToListAsync(ct);
 
-            if (rows.Count == 0) return rows;
+            if (rows.Count == 0)
+                return new CommitteeReferralListDto(rows, page, pageSize, totalCount);
 
             var ideaIds = rows.Select(r => r.IdeaId).ToHashSet();
             var criteriaCount = await CountActiveCriteriaAsync(ct);
@@ -102,13 +108,15 @@ namespace Ibtikar.Repositories
 
             var mySubmittedIds = myCommitteeHeaders.Select(h => h.InnovationIdeaId).ToHashSet();
 
-            return rows.Select(r => r with
+            var paged = rows.Select(r => r with
             {
                 DepartmentPercent = deptByIdea.TryGetValue(r.IdeaId, out var d) ? d : null,
                 CommitteePercent = committeeByIdea.TryGetValue(r.IdeaId, out var c) ? c : null,
                 MyCommitteePercent = myByIdea.TryGetValue(r.IdeaId, out var m) ? m : null,
                 HasAddedCommitteeAssessment = mySubmittedIds.Contains(r.IdeaId)
             }).ToList();
+
+            return new CommitteeReferralListDto(paged, page, pageSize, totalCount);
         }
 
         private static int? CommitteeReferralPercent(int scoreSum, int criteriaCount)

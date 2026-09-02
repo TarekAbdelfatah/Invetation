@@ -67,6 +67,7 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="ideaId" value="@Model.IdeaId" />
                 <input type="hidden" name="returnUrl" value="@Url.Action("Vote", new { id = Model.IdeaId })" />
+                <input type="hidden" name="decision" value="" />
                 <button type="submit" name="decision" value="Agree" class="btn btn-success"
                         data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
                     <span class="material-icons align-middle" style="font-size:18px">thumb_up</span>

@@ -203,6 +203,14 @@
                             </tbody>
                         </table>
                     </div>
+
+                    @await Html.PartialAsync("_Pagination", null,
+                        new ViewDataDictionary(ViewData)
+                        {
+                            { "Page", Model.Page },
+                            { "PageSize", Model.PageSize },
+                            { "TotalCount", Model.TotalCount }
+                        })
                 }
             </div>
         </div>

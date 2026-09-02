@@ -26,7 +26,7 @@ namespace Ibtikar.Controllers
         }
 
         [HttpGet("CommitteeForMembers")]
-        public async Task<IActionResult> Index(CancellationToken ct)
+        public async Task<IActionResult> Index(int? page, int? pageSize, CancellationToken ct)
         {
             try
             {
@@ -36,6 +36,7 @@ namespace Ibtikar.Controllers
                     return Forbid();
                 }
 
+                var (p, ps) = PagedRequest.Normalize(page, pageSize);
                 var dto = await _dashboardService.GetSnapshotAsync(userId, ct);
                 var isHead = (await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue;
                 var vm = new CommitteeDashboardVm
@@ -45,19 +46,22 @@ namespace Ibtikar.Controllers
                     Accepted = dto.Accepted,
                     Rejected = dto.Rejected,
                     CommitteeName = ResolveCommitteeName(),
-                    IsHead = isHead
+                    IsHead = isHead,
+                    Page = p,
+                    PageSize = ps
                 };
 
-                var referrals = await _dashboardService.GetReferralsAsync(userId, ct);
+                var referrals = await _dashboardService.GetReferralsAsync(userId, p, ps, ct);
                 if (referrals is not null)
                 {
-                    vm.Items = referrals.Select(i => new CommitteeReferralRowVm(
+                    vm.Items = referrals.Items.Select(i => new CommitteeReferralRowVm(
                         i.IdeaId, i.Reference, i.Title, i.TitleDisplay,
                         i.StatusCode, i.StatusName, i.StatusColor,
                         i.ApplicantName, i.ApplicantDepartmentName,
                         i.ReferredAt, i.StayDays, i.IsOverdue,
                         i.DepartmentPercent, i.CommitteePercent,
                         i.MyCommitteePercent, i.HasAddedCommitteeAssessment)).ToList();
+                    vm.TotalCount = referrals.TotalCount;
                 }
                 return View(vm);
             }

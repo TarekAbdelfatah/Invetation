@@ -6,6 +6,12 @@ namespace Ibtikar.DTOs.Committee
         int Accepted,
         int Rejected);
 
+    public sealed record CommitteeReferralListDto(
+        IReadOnlyList<CommitteeReferralRowDto> Items,
+        int Page,
+        int PageSize,
+        int TotalCount);
+
     public sealed record CommitteeReferralRowDto(
         Guid IdeaId,
         string Reference,

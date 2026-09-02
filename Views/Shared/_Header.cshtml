@@ -23,6 +23,7 @@
                              || roleClaims.Contains(RoleCodes.InternalBeneficiary)
                              || !hasAnyRoleClaim);
     var showAudit = isAuth && roleClaims.Contains(RoleCodes.AuditEmployee);
+    var showCommittee = isAuth && roleClaims.Contains(RoleCodes.InnovationCommitteeMember);
 
     string HomeController()
     {
@@ -30,7 +31,7 @@
         if (roleClaims.Contains(RoleCodes.SystemAdmin)) return "AdminOverview";
         if (roleClaims.Contains(RoleCodes.AuditEmployee)) return "Audit";
         if (roleClaims.Contains(RoleCodes.SpecializedDepartment) || roleClaims.Contains(RoleCodes.PartnerDepartment)) return "SpecializedDashboard";
-        if (roleClaims.Contains(RoleCodes.InnovationCommitteeMember)) return "Committee";
+        if (roleClaims.Contains(RoleCodes.InnovationCommitteeMember)) return "CommitteeForMembers";
         return "MyRequests";
     }
     var homeController = HomeController();
@@ -94,6 +95,13 @@
                             <a class="bog-nav-link @IsActive("Audit")" asp-controller="Audit" asp-action="Inbox">
                                 <span class="material-icons" aria-hidden="true">fact_check</span>
                                 صندوق التدقيق
+                            </a>
+                        }
+                        @if (showCommittee)
+                        {
+                            <a class="bog-nav-link @IsActive("CommitteeForMembers")" asp-controller="CommitteeForMembers" asp-action="Index">
+                                <span class="material-icons" aria-hidden="true">groups</span>
+                                لجنة الابتكار
                             </a>
                         }
                     </nav>
