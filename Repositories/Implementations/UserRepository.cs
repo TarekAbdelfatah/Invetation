@@ -34,11 +34,9 @@ namespace Ibtikar.Repositories
             => await _db.Users
                 .AsNoTracking()
                 .Where(u => u.IsActive)
-                .SelectMany(u => u.UserRoles, (u, ur) => new DemoUserDto(
-                    u.Username,
-                    u.FullName,
-                    ur.Role!.Name))
+                .SelectMany(u => u.UserRoles, (u, ur) => new { u.Username, u.FullName, RoleName = ur.Role!.Name })
                 .OrderBy(x => x.Username)
+                .Select(x => new DemoUserDto(x.Username, x.FullName, x.RoleName))
                 .ToListAsync(ct);
 
         public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
