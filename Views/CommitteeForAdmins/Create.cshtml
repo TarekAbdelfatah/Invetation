@@ -36,7 +36,7 @@
             @await Html.PartialAsync("_Alert", err)
         }
 
-        <form asp-action="Create" method="post" id="committeeForm">
+        <form asp-action="Create" method="post" id="committeeForm" data-loading="false">
             @Html.AntiForgeryToken()
 
             <div class="card mb-3">
@@ -96,11 +96,43 @@
     </div>
 </div>
 
+<div id="committeeValidationModal" class="bog-modal" hidden role="dialog" aria-modal="true"
+     aria-labelledby="committeeValidationTitle" aria-describedby="committeeValidationMessage">
+    <div class="bog-modal-backdrop" data-close-committee-validation></div>
+    <div class="bog-modal-dialog bog-modal-dialog-centered" role="document">
+        <div class="bog-modal-content">
+            <h5 id="committeeValidationTitle" class="bog-modal-title">
+                <span class="material-icons align-middle text-warning" aria-hidden="true">warning</span>
+                تنبيه
+            </h5>
+            <p id="committeeValidationMessage" class="bog-modal-body text-secondary"></p>
+            <div class="bog-modal-actions">
+                <button type="button" class="btn btn-primary" data-close-committee-validation>حسناً</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var form = document.getElementById('committeeForm');
         var head = document.getElementById('HeadUserId');
         var memberChecks = Array.prototype.slice.call(document.querySelectorAll('.member-check'));
+        var modal = document.getElementById('committeeValidationModal');
+        var messageEl = modal ? modal.querySelector('#committeeValidationMessage') : null;
+
+        function showValidation(message) {
+            if (!modal || !messageEl) { alert(message); return; }
+            messageEl.textContent = message;
+            modal.hidden = false;
+            modal.setAttribute('data-open', 'true');
+        }
+
+        function closeValidation() {
+            if (!modal) return;
+            modal.hidden = true;
+            modal.removeAttribute('data-open');
+        }
 
         function syncHeadExclusion() {
             var headValue = head.value;
@@ -121,23 +153,34 @@
         head.addEventListener('change', syncHeadExclusion);
         syncHeadExclusion();
 
+        if (modal) {
+            modal.querySelectorAll('[data-close-committee-validation]').forEach(function (el) {
+                el.addEventListener('click', closeValidation);
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && !modal.hidden) closeValidation();
+            });
+        }
+
         form.addEventListener('submit', function (e) {
             var checked = Array.prototype.slice.call(document.querySelectorAll('.member-check:checked'));
             var headValue = head.value;
+            var message = null;
             if (!headValue) {
+                message = 'يرجى اختيار رئيس اللجنة.';
+            } else if (checked.length < 1) {
+                message = 'يرجى إضافة عضو واحد على الأقل من غير رئيس اللجنة.';
+            } else if (checked.some(function (c) { return c.value === headValue; })) {
+                message = 'لا يمكن اختيار رئيس اللجنة ضمن الأعضاء؛ يُضاف تلقائياً كعضو.';
+            }
+            if (message) {
                 e.preventDefault();
-                alert('يرجى اختيار رئيس اللجنة.');
+                e.stopPropagation();
+                showValidation(message);
                 return;
             }
-            if (checked.length < 1) {
-                e.preventDefault();
-                alert('يرجى إضافة عضو واحد على الأقل من غير رئيس اللجنة.');
-                return;
-            }
-            var headSelectedAsMember = checked.some(function (c) { return c.value === headValue; });
-            if (headSelectedAsMember) {
-                e.preventDefault();
-                alert('لا يمكن اختيار رئيس اللجنة ضمن الأعضاء؛ يُضاف تلقائياً كعضو.');
+            if (window.BogLoading && BogLoading.show) {
+                BogLoading.show('جارٍ إنشاء اللجنة...');
             }
         });
     });
