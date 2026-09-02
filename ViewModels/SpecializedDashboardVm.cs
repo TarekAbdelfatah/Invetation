@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Ibtikar.Validation;
 
 namespace Ibtikar.ViewModels
 {
@@ -116,6 +117,7 @@ namespace Ibtikar.ViewModels
         public Guid PartnerId { get; set; }
 
         [MaxLength(2000, ErrorMessage = "الملاحظة يجب ألا تتجاوز 2000 حرف.")]
+        [NoHtml]
         public string? Note { get; set; }
     }
 

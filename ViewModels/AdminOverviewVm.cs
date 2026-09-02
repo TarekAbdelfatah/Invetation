@@ -11,6 +11,8 @@ namespace Ibtikar.ViewModels
         public string? StatusFilter { get; set; }
         public List<IdeaRow> Ideas { get; set; } = new();
         public int IdeasTotalCount { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
 
         public record StatusCount(string Code, string Name, string Color, int Count);
         public record RecentIdea(string Reference, string Title, string StatusName, string StatusColor, string Domain, DateTime CreatedAt);

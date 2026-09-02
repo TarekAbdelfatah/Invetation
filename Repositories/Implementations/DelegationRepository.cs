@@ -1,5 +1,6 @@
 using Ibtikar.Data;
 using Ibtikar.Models;
+using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,14 +16,14 @@ namespace Ibtikar.Repositories
             => await _db.CommitteeDelegations.AsNoTracking()
                 .AnyAsync(d => d.InnovationCommitteeId == committeeId
                                && d.DelegateMemberUserId == delegateMemberUserId
-                               && d.StartAt < endAt
-                               && d.EndAt > startAt, ct);
+                               && d.StartAt < endAt.FromKsaLocal()
+                               && d.EndAt > startAt.FromKsaLocal(), ct);
 
         public async Task<bool> HasCommitteeOverlapAsync(Guid committeeId, DateTime startAt, DateTime endAt, CancellationToken ct)
             => await _db.CommitteeDelegations.AsNoTracking()
                 .AnyAsync(d => d.InnovationCommitteeId == committeeId
-                               && d.StartAt <= endAt
-                               && d.EndAt >= startAt, ct);
+                               && d.StartAt <= endAt.FromKsaLocal()
+                               && d.EndAt >= startAt.FromKsaLocal(), ct);
 
         public async Task<CommitteeDelegation?> GetActiveAsync(Guid committeeId, CancellationToken ct)
         {
@@ -43,8 +44,8 @@ namespace Ibtikar.Repositories
         public async Task<bool> HasActiveDelegationAsync(Guid delegateMemberUserId, DateTime startAt, DateTime endAt, CancellationToken ct)
             => await _db.CommitteeDelegations.AsNoTracking()
                 .AnyAsync(d => d.DelegateMemberUserId == delegateMemberUserId
-                               && d.StartAt < endAt
-                               && d.EndAt > startAt, ct);
+                               && d.StartAt < endAt.FromKsaLocal()
+                               && d.EndAt > startAt.FromKsaLocal(), ct);
 
         public async Task<IReadOnlyList<DelegationRowDto>> GetDelegationsAsync(Guid committeeId, CancellationToken ct)
         {

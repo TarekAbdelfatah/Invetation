@@ -29,10 +29,12 @@
         @if (TempData["AlertMessage"] is string ok)
         {
             <div class="alert alert-success">@ok</div>
+            TempData.Remove("AlertMessage");
         }
         @if (TempData["AlertError"] is string err)
         {
             <div class="alert alert-danger">@err</div>
+            TempData.Remove("AlertError");
         }
 
         @if (Model.Items.Count == 0)
@@ -61,10 +63,14 @@
                                 </div>
                                 <h5 class="card-title">@i.Title</h5>
 
+                                <div class="idea-readonly">
+                                    @await Html.PartialAsync("_IdeaReadOnly", i.Idea)
+                                </div>
+
                                 @if (i.HasVoted)
                                 {
                                     var label = voteLabels.TryGetValue(i.MyVote ?? "", out var l) ? l : i.MyVote;
-                                    <div class="alert alert-success mb-0 d-flex align-items-center gap-2">
+                                    <div class="alert @(i.MyVote == "Disagree" ? "alert-danger" : "alert-success") mb-0 d-flex align-items-center gap-2">
                                         <span class="material-icons">check_circle</span>
                                         تم التصويت: <strong>@label</strong>
                                     </div>
@@ -78,10 +84,13 @@
                                                 data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
                                             أوافق
                                         </button>
-                                        <button type="submit" name="decision" value="NeedsDevelopment" class="btn btn-warning btn-sm"
-                                                data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
-                                            تحتاج تطوير
-                                        </button>
+                                        @if (Model.IsHead)
+                                        {
+                                            <button type="submit" name="decision" value="NeedsDevelopment" class="btn btn-warning btn-sm"
+                                                    data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
+                                                تحتاج تطوير
+                                            </button>
+                                        }
                                         <button type="submit" name="decision" value="Disagree" class="btn btn-danger btn-sm"
                                                 data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
                                             لا أوافق

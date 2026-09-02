@@ -1,6 +1,7 @@
 @using Ibtikar.Controllers
 @using Ibtikar.ViewModels
 @using Microsoft.AspNetCore.Mvc.ViewFeatures
+@using Ibtikar.Services.Helpers
 @using static Ibtikar.Services.Helpers.KsaTime
 @model AuditInboxVm
 @{
@@ -95,7 +96,7 @@
                                 </span>
                             }
                         </div>
-                        <h3 class="bog-idea-card__title">@i.Title</h3>
+                        <h3 class="bog-idea-card__title" title="@i.Title">@Display.Title(i.Title)</h3>
                         <div class="bog-idea-card__foot">
                             <small class="bog-idea-card__date">
                                 <span class="material-icons" style="font-size:14px">event</span>
@@ -142,6 +143,5 @@
 </div>
 
 @section Scripts {
-    <script src="~/js/inbox-poll.js" asp-append-version="true"></script>
     <script src="~/js/inbox-search.js" asp-append-version="true"></script>
 }

@@ -30,7 +30,8 @@ namespace Ibtikar.DTOs.Committee
         IReadOnlyList<CommitteeAssessLineDto> Lines,
         int? DepartmentPercent,
         int? CommitteePercent,
-        int? CombinedAverage);
+        int? CombinedAverage,
+        CommitteeIdeaReadOnlyDto Idea);
 
     public sealed record CommitteeScoreInputDto(Guid CriterionId, int Score, string? Comment);
 

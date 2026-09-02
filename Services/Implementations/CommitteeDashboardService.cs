@@ -1,4 +1,5 @@
 using Ibtikar.DTOs.Committee;
+using Ibtikar.DTOs.MyRequests;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
 using Ibtikar.Services.Helpers;
@@ -40,12 +41,12 @@ namespace Ibtikar.Services.Implementations
             return await _repo.GetSnapshotCountsAsync(ct);
         }
 
-        public async Task<IReadOnlyList<CommitteeReferralRowDto>?> GetReferralsAsync(Guid userId, CancellationToken ct)
+        public async Task<CommitteeReferralListDto?> GetReferralsAsync(Guid userId, int page, int pageSize, CancellationToken ct)
         {
             var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
             if (committeeId is null) return null;
 
-            return await _repo.GetReferralsAsync(ct);
+            return await _repo.GetReferralsAsync(userId, page, pageSize, ct);
         }
 
         public async Task<bool> IsActiveCommitteeMemberAsync(Guid userId, CancellationToken ct)
@@ -59,11 +60,14 @@ namespace Ibtikar.Services.Implementations
             var idea = await _repo.GetAssessIdeaAsync(ideaId, ct);
             if (idea is null) return null;
 
+            var ideaReadOnly = await _repo.GetIdeaReadOnlyAsync(ideaId, ct);
+
             var criteria = await _repo.GetActiveCriteriaAsync(ct);
 
             var draft = await _repo.GetLatestCommitteeHeaderAsync(ideaId, userId, ct);
-            var draftIsLatest = draft is { IsDraft: true, IsLocked: false };
-            var lineMap = draftIsLatest && draft is not null
+            var hasSaved = draft is not null;
+            var isEditableDraft = draft is { IsDraft: true, IsLocked: false };
+            var lineMap = hasSaved && draft is not null
                 ? draft.Details.ToDictionary(d => d.CriterionId, d => (d.Score, d.Comment))
                 : new Dictionary<Guid, (int, string?)>();
 
@@ -73,7 +77,7 @@ namespace Ibtikar.Services.Implementations
                 .ToList();
 
             var departmentPercent = await GetSpecializedPercentAsync(ideaId, ct);
-            var committeePercent = draftIsLatest && draft is { Details.Count: > 0 }
+            var committeePercent = hasSaved && draft is { Details.Count: > 0 }
                 ? CalculatePercent(draft.Details.Sum(d => d.Score), criteria.Count)
                 : (int?)null;
             var combined = departmentPercent.HasValue && committeePercent.HasValue
@@ -83,11 +87,15 @@ namespace Ibtikar.Services.Implementations
             return new CommitteeAssessDto(
                 idea.IdeaId, idea.Reference, idea.Title,
                 idea.StatusName, idea.StatusColor,
-                draftIsLatest, draft?.IsLocked ?? false,
+                isEditableDraft, draft?.IsLocked ?? false,
                 draft?.Id, draft?.CreatedAt,
                 draft?.TotalScore, draft?.Comment,
                 criteria, lines,
-                departmentPercent, committeePercent, combined);
+                departmentPercent, committeePercent, combined,
+                ideaReadOnly ?? new CommitteeIdeaReadOnlyDto(
+                    idea.Title, string.Empty, null, null, null, null,
+                    null, null, null, null, null, false, null,
+                    DateTime.UtcNow, null, new List<MyRequestAttachmentDto>()));
         }
 
         public async Task<CommitteeAssessOutcomeDto> SaveAssessmentAsync(
@@ -178,9 +186,38 @@ namespace Ibtikar.Services.Implementations
                 i.IdeaId, i.Reference, i.Title,
                 i.StatusCode, i.StatusName, i.StatusColor,
                 myVotes.ContainsKey(i.IdeaId),
-                myVotes.TryGetValue(i.IdeaId, out var d) ? d : null)).ToList();
+                myVotes.TryGetValue(i.IdeaId, out var d) ? d : null,
+                i.Description, i.ProblemStatement, i.ProposedSolution, i.ExpectedBenefits,
+                i.Idea)).ToList();
 
             return new CommitteeVotesDto(items);
+        }
+
+        public async Task<CommitteeVoteRowDto?> GetSingleVoteAsync(Guid userId, Guid ideaId, CancellationToken ct)
+        {
+            var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
+            if (committeeId is null) return null;
+
+            var idea = await _repo.GetAssessIdeaAsync(ideaId, ct);
+            if (idea is null) return null;
+
+            var ideaReadOnly = await _repo.GetIdeaReadOnlyAsync(ideaId, ct);
+            var myVote = await _repo.GetVotesByUserAsync(userId, new[] { ideaId }, ct);
+            var hasVoted = myVote.ContainsKey(ideaId);
+
+            return new CommitteeVoteRowDto(
+                idea.IdeaId, idea.Reference, idea.Title,
+                StatusCode: string.Empty, idea.StatusName, idea.StatusColor,
+                hasVoted,
+                hasVoted ? myVote[ideaId] : null,
+                ideaReadOnly?.Description ?? string.Empty,
+                ideaReadOnly?.ProblemStatement,
+                ideaReadOnly?.ProposedSolution,
+                ideaReadOnly?.ExpectedBenefits,
+                ideaReadOnly ?? new CommitteeIdeaReadOnlyDto(
+                    idea.Title, string.Empty, null, null, null, null,
+                    null, null, null, null, null, false, null,
+                    DateTime.UtcNow, null, new List<MyRequestAttachmentDto>()));
         }
 
         public async Task<CommitteeVoteOutcomeDto> SubmitVoteAsync(Guid userId, CommitteeVoteSubmitDto submission, CancellationToken ct)
@@ -253,6 +290,9 @@ namespace Ibtikar.Services.Implementations
             if (idea.CurrentStatus?.Code != IdeaStatusCodes.ReferredCommittee)
                 return new(false, "الفكرة ليست في حالة (محوّلة للجنة) للقبول.");
 
+            if (!await _repo.HasSubmittedAssessmentAsync(ideaId, userId, ct))
+                return new(false, "لا يمكن اتخاذ القرار قبل إرسال تقييمك للفكرة.");
+
             var combined = await GetCombinedPercentAsync(ideaId, ct);
             if (combined < 40 && !extraConfirmed)
                 return new(false, "النسبة المجمعة أقل من 40%. يلزم تأكيد إضافي لقبول الفكرة.");
@@ -306,6 +346,9 @@ namespace Ibtikar.Services.Implementations
             if (idea.CurrentStatus?.Code != IdeaStatusCodes.ReferredCommittee)
                 return new(false, "الفكرة ليست في حالة (محوّلة للجنة) للرفض.");
 
+            if (!await _repo.HasSubmittedAssessmentAsync(ideaId, userId, ct))
+                return new(false, "لا يمكن اتخاذ القرار قبل إرسال تقييمك للفكرة.");
+
             var rejectedId = await _repo.GetStatusIdByCodeAsync(IdeaStatusCodes.Rejected, ct);
             if (rejectedId is null)
                 return new(false, "لم يتم إعداد حالة (مرفوض) بعد.");
@@ -349,6 +392,9 @@ namespace Ibtikar.Services.Implementations
 
             if (idea.CurrentStatus?.Code != IdeaStatusCodes.ReferredCommittee)
                 return new(false, "الفكرة ليست في حالة (محوّلة للجنة) للإعادة للتطوير.");
+
+            if (!await _repo.HasSubmittedAssessmentAsync(ideaId, userId, ct))
+                return new(false, "لا يمكن اتخاذ القرار قبل إرسال تقييمك للفكرة.");
 
             var combined = await GetCombinedPercentAsync(ideaId, ct);
             if (combined < 61 || combined > 79)

@@ -78,7 +78,7 @@
                             {
                                 <tr class="@(i.IsOverdue ? "table-danger" : null)">
                                     <td data-label="المرجع"><code>@i.Reference</code></td>
-                                    <td data-label="العنوان">@i.Title</td>
+                                    <td data-label="العنوان"><span title="@i.Title">@Display.Title(i.Title)</span></td>
                                     <td data-label="الحالة">
                                         <span class="status-badge badge rounded-pill" style="background-color:@i.StatusColor">@i.StatusName</span>
                                     </td>

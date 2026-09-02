@@ -26,7 +26,8 @@ namespace Ibtikar.Controllers
         }
 
         [HttpGet("CommitteeForMembers")]
-        public async Task<IActionResult> Index(CancellationToken ct)
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> Index(int? page, int? pageSize, CancellationToken ct)
         {
             try
             {
@@ -36,24 +37,33 @@ namespace Ibtikar.Controllers
                     return Forbid();
                 }
 
+                var (p, ps) = PagedRequest.Normalize(page, pageSize);
                 var dto = await _dashboardService.GetSnapshotAsync(userId, ct);
+                var isHead = (await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue;
                 var vm = new CommitteeDashboardVm
                 {
                     UnderStudy = dto.UnderStudy,
                     UnderVoting = dto.UnderVoting,
                     Accepted = dto.Accepted,
                     Rejected = dto.Rejected,
-                    CommitteeName = ResolveCommitteeName()
+                    CommitteeName = ResolveCommitteeName(),
+                    IsHead = isHead,
+                    Page = p,
+                    PageSize = ps
                 };
 
-                var referrals = await _dashboardService.GetReferralsAsync(userId, ct);
+                var referrals = await _dashboardService.GetReferralsAsync(userId, p, ps, ct);
                 if (referrals is not null)
                 {
-                    vm.Items = referrals.Select(i => new CommitteeReferralRowVm(
-                        i.IdeaId, i.Reference, i.Title,
+                    vm.Items = referrals.Items.Select(i => new CommitteeReferralRowVm(
+                        i.IdeaId, i.Reference, i.Title, i.TitleDisplay,
                         i.StatusCode, i.StatusName, i.StatusColor,
                         i.ApplicantName, i.ApplicantDepartmentName,
-                        i.ReferredAt, i.StayDays, i.IsOverdue)).ToList();
+                        i.ReferredAt, i.StayDays, i.IsOverdue,
+                        i.DepartmentPercent, i.CommitteePercent,
+                        i.MyCommitteePercent, i.HasAddedCommitteeAssessment, i.HasVoted,
+                        i.DecisionNote)).ToList();
+                    vm.TotalCount = referrals.TotalCount;
                 }
                 return View(vm);
             }
@@ -87,6 +97,7 @@ namespace Ibtikar.Controllers
                 DepartmentPercent = dto.DepartmentPercent,
                 CommitteePercent = dto.CommitteePercent,
                 CombinedAverage = dto.CombinedAverage,
+                Idea = dto.Idea is null ? null : ToIdeaReadOnlyVm(dto.Idea),
                 Criteria = dto.Criteria.Select(c => new CommitteeCriterionVm(c.Id, c.Code, c.Name, c.Description, c.DisplayOrder)).ToList(),
                 Lines = dto.Lines.Select(l => new CommitteeAssessLineVm(l.CriterionId, l.CriterionCode, l.CriterionName, l.Score, l.Comment)).ToList()
             };
@@ -96,61 +107,92 @@ namespace Ibtikar.Controllers
         [HttpGet("CommitteeForMembers/Votes")]
         public async Task<IActionResult> Votes(CancellationToken ct)
         {
-            var dto = await _dashboardService.GetVotesAsync(ResolveUserId(), ct);
+            var userId = ResolveUserId();
+            if ((await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var dto = await _dashboardService.GetVotesAsync(userId, ct);
             if (dto is null) return Forbid();
 
             var vm = new CommitteeVotesVm
             {
+                IsHead = false,
                 Items = dto.Items.Select(i => new CommitteeVoteRowVm(
                     i.IdeaId, i.Reference, i.Title,
                     i.StatusCode, i.StatusName, i.StatusColor,
-                    i.HasVoted, i.MyVote)).ToList()
+                    i.HasVoted, i.MyVote,
+                    i.Description, i.ProblemStatement, i.ProposedSolution, i.ExpectedBenefits,
+                    ToIdeaReadOnlyVm(i.Idea))).ToList()
             };
+            return View(vm);
+        }
+
+        [HttpGet("CommitteeForMembers/Vote/{id:guid}")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> Vote(Guid id, CancellationToken ct)
+        {
+            var userId = ResolveUserId();
+            if ((await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var dto = await _dashboardService.GetSingleVoteAsync(userId, id, ct);
+            if (dto is null) return Forbid();
+
+            var vm = new CommitteeVoteRowVm(
+                dto.IdeaId, dto.Reference, dto.Title,
+                dto.StatusCode, dto.StatusName, dto.StatusColor,
+                dto.HasVoted, dto.MyVote,
+                dto.Description, dto.ProblemStatement, dto.ProposedSolution, dto.ExpectedBenefits,
+                ToIdeaReadOnlyVm(dto.Idea));
             return View(vm);
         }
 
         [HttpPost("CommitteeForMembers/Votes")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitVote(Guid ideaId, string decision, CancellationToken ct)
+        public async Task<IActionResult> SubmitVote(Guid ideaId, string decision, string? returnUrl, CancellationToken ct)
         {
+            var userId = ResolveUserId();
+            if ((await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
             var submission = new CommitteeVoteSubmitDto(ideaId, decision);
-            var result = await _dashboardService.SubmitVoteAsync(ResolveUserId(), submission, ct);
+            var result = await _dashboardService.SubmitVoteAsync(userId, submission, ct);
 
             TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
             TempData["AlertType"] = result.Success ? "success" : "danger";
 
-            return RedirectToAction(nameof(Votes));
-        }
-
-        [HttpGet("CommitteeForMembers/Decision/{id:guid}")]
-        public async Task<IActionResult> Decision(Guid id, CancellationToken ct)
-        {
-            var dto = await _dashboardService.GetDecisionAsync(ResolveUserId(), id, ct);
-            if (dto is null) return Forbid();
-
-            var vm = new CommitteeDecisionVm
+            if (!string.IsNullOrWhiteSpace(returnUrl))
             {
-                IdeaId = dto.IdeaId,
-                Reference = dto.Reference,
-                Title = dto.Title,
-                CombinedAverage = dto.CombinedAverage,
-                CanAccept = dto.CanAccept,
-                ExtraConfirmWarning = dto.ExtraConfirmWarning
-            };
-            return View(vm);
+                return Redirect(returnUrl);
+            }
+
+            return RedirectToAction(nameof(Votes));
         }
 
         [HttpPost("CommitteeForMembers/Accept")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Accept(Guid ideaId, bool extraConfirmed, CancellationToken ct)
         {
-            var result = await _dashboardService.AcceptAsync(ResolveUserId(), ideaId, extraConfirmed, ct);
+            var userId = ResolveUserId();
+            if (!(await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue)
+            {
+                TempData["AlertError"] = "قرار اللجنة النهائي متاح لرئيس اللجنة فقط.";
+                return RedirectToAction("Index", "CommitteeForMembers");
+            }
+
+            var result = await _dashboardService.AcceptAsync(userId, ideaId, extraConfirmed, ct);
 
             if (!result.Success)
             {
                 TempData["AlertError"] = result.Message;
                 TempData["AlertType"] = "danger";
-                return RedirectToAction(nameof(Decision), new { id = ideaId });
+                return RedirectToAction("Index", "CommitteeForMembers");
             }
 
             TempData["AlertMessage"] = result.Message;
@@ -162,30 +204,23 @@ namespace Ibtikar.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reject(CommitteeRejectVm vm, CancellationToken ct)
         {
-            if (!ModelState.IsValid)
+            var userId = ResolveUserId();
+            if (!(await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue)
             {
-                var dto = await _dashboardService.GetDecisionAsync(ResolveUserId(), vm.IdeaId, ct);
-                if (dto is null) return Forbid();
-                return View("Decision", new CommitteeDecisionVm
-                {
-                    IdeaId = dto.IdeaId,
-                    Reference = dto.Reference,
-                    Title = dto.Title,
-                    CombinedAverage = dto.CombinedAverage,
-                    CanAccept = dto.CanAccept,
-                    ExtraConfirmWarning = dto.ExtraConfirmWarning,
-                    Reason = vm.Reason,
-                    ShowRejectBox = true
-                });
+                TempData["AlertError"] = "قرار اللجنة النهائي متاح لرئيس اللجنة فقط.";
+                return RedirectToAction("Index", "CommitteeForMembers");
             }
 
-            var result = await _dashboardService.RejectAsync(ResolveUserId(), vm.IdeaId, vm.Reason ?? string.Empty, ct);
+            if (!ModelState.IsValid)
+            {
+                TempData["AlertError"] = "سبب الرفض يجب ألا يقل عن 10 أحرف.";
+                return RedirectToAction("Index", "CommitteeForMembers");
+            }
+
+            var result = await _dashboardService.RejectAsync(userId, vm.IdeaId, vm.Reason ?? string.Empty, ct);
 
             TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
             TempData["AlertType"] = result.Success ? "success" : "danger";
-
-            if (!result.Success)
-                return RedirectToAction(nameof(Decision), new { id = vm.IdeaId });
 
             return RedirectToAction("Index", "CommitteeForMembers");
         }
@@ -194,13 +229,17 @@ namespace Ibtikar.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReturnForDevelopment(Guid ideaId, CancellationToken ct)
         {
-            var result = await _dashboardService.ReturnForDevelopmentAsync(ResolveUserId(), ideaId, ct);
+            var userId = ResolveUserId();
+            if (!(await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue)
+            {
+                TempData["AlertError"] = "قرار اللجنة النهائي متاح لرئيس اللجنة فقط.";
+                return RedirectToAction("Index", "CommitteeForMembers");
+            }
+
+            var result = await _dashboardService.ReturnForDevelopmentAsync(userId, ideaId, ct);
 
             TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
             TempData["AlertType"] = result.Success ? "success" : "danger";
-
-            if (!result.Success)
-                return RedirectToAction(nameof(Decision), new { id = ideaId });
 
             return RedirectToAction("Index", "CommitteeForMembers");
         }
@@ -287,6 +326,25 @@ namespace Ibtikar.Controllers
 
         private static DelegationRowVm ToDelegationRowVm(DelegationRowDto d)
             => new(d.Id, d.DelegateName, d.StartAt, d.EndAt, d.IsActive);
+
+        private static IdeaReadOnlyVm ToIdeaReadOnlyVm(CommitteeIdeaReadOnlyDto d)
+            => new(
+                d.Title,
+                d.Description,
+                d.ProblemStatement,
+                d.ProposedSolution,
+                d.ExpectedBenefits,
+                d.RequiredResources,
+                d.DomainName,
+                d.ExpectedImpactName,
+                d.ExpectedImpactOther,
+                d.TargetAudienceName,
+                d.TargetAudienceOther,
+                d.UsesEmergingTech,
+                d.TechnologyOther,
+                d.CreatedAt,
+                d.SubmittedAt,
+                d.Attachments.Select(a => new MyRequestAttachmentVm(a.Id, a.FileName, a.SizeBytes, a.UploadedAt)).ToList());
 
         private Guid ResolveUserId()
         {

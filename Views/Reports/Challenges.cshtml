@@ -1,11 +1,12 @@
 @model Ibtikar.ViewModels.ReportsChallengesVm
 @using Ibtikar.ViewModels
 @using static Ibtikar.Services.Helpers.KsaTime
+@using System.Globalization
 @{
     ViewData["Title"] = "تقرير التحديات";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var fromStr = Model.From.ToString("yyyy-MM-dd");
-    var toStr = Model.To.ToString("yyyy-MM-dd");
+    var fromStr = Model.From.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    var toStr = Model.To.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 }
 
 <div class="bog-main">
@@ -114,7 +115,7 @@
                             {
                                 <tr>
                                     <td data-label="المرجع"><code>@r.Reference</code></td>
-                                    <td data-label="العنوان">@r.Title</td>
+                                    <td data-label="العنوان"><span title="@r.Title">@Display.Title(r.Title)</span></td>
                                     <td data-label="المجال"><span class="badge bg-light text-dark">@r.DomainName</span></td>
                                     <td data-label="المُقدِّم">@r.ApplicantName<br /><small class="text-muted">@r.ApplicantDepartmentName</small></td>
                                     <td data-label="التحدي" style="max-width: 260px;">

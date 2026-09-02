@@ -15,12 +15,15 @@ namespace Ibtikar.Controllers
 
         public AdminOverviewController(IAdminOverviewService service) => _service = service;
 
-        public async Task<IActionResult> Index(string? status, CancellationToken ct)
+        public async Task<IActionResult> Index(string? status, int page = 1, int pageSize = 10, CancellationToken ct = default)
         {
-            var snapshot = await _service.GetSnapshotAsync(ct);
-            var ideas = await _service.GetIdeasAsync(status, 200, ct);
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 5, 50);
 
-            return View(ToVm(snapshot, ideas));
+            var snapshot = await _service.GetSnapshotAsync(ct);
+            var ideas = await _service.GetIdeasAsync(status, page, pageSize, ct);
+
+            return View(ToVm(snapshot, ideas, page, pageSize));
         }
 
         public async Task<IActionResult> Details(Guid id, CancellationToken ct)
@@ -66,7 +69,7 @@ namespace Ibtikar.Controllers
             return View(vm);
         }
 
-        private static AdminOverviewVm ToVm(AdminOverviewDto dto, AdminOverviewListDto ideas)
+        private static AdminOverviewVm ToVm(AdminOverviewDto dto, AdminOverviewListDto ideas, int page, int pageSize)
             => new()
             {
                 TotalIdeas = dto.TotalIdeas,
@@ -90,7 +93,9 @@ namespace Ibtikar.Controllers
                     i.Id, i.Reference, i.Title, i.DomainName, i.ApplicantName,
                     i.ApplicantDepartmentName, i.AssignedDepartmentName,
                     i.StatusCode, i.StatusName, i.StatusColor, i.CreatedAt, i.IsDraft)).ToList(),
-                IdeasTotalCount = ideas.TotalCount
+                IdeasTotalCount = ideas.TotalCount,
+                Page = page,
+                PageSize = pageSize
             };
     }
 }

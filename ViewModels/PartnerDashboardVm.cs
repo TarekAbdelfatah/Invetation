@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Ibtikar.Validation;
 
 namespace Ibtikar.ViewModels
 {
@@ -68,6 +69,7 @@ public class PartnerDetailsVm
 
         [Required(ErrorMessage = "سبب الإعادة مطلوب.")]
         [MaxLength(2000, ErrorMessage = "سبب الإعادة يجب ألا يتجاوز 2000 حرف.")]
+        [NoHtml]
         public string? NotCompetentReason { get; set; }
     }
 

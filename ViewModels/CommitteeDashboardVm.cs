@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Ibtikar.Validation;
 
 namespace Ibtikar.ViewModels
 {
@@ -9,13 +10,18 @@ namespace Ibtikar.ViewModels
         public int Accepted { get; set; }
         public int Rejected { get; set; }
         public string? CommitteeName { get; set; }
+        public bool IsHead { get; set; }
         public List<CommitteeReferralRowVm> Items { get; set; } = new();
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalCount { get; set; }
     }
 
     public sealed record CommitteeReferralRowVm(
         Guid IdeaId,
         string Reference,
         string Title,
+        string TitleDisplay,
         string StatusCode,
         string StatusName,
         string StatusColor,
@@ -23,7 +29,13 @@ namespace Ibtikar.ViewModels
         string? ApplicantDepartmentName,
         DateTime? ReferredAt,
         double StayDays,
-        bool IsOverdue);
+        bool IsOverdue,
+        int? DepartmentPercent = null,
+        int? CommitteePercent = null,
+        int? MyCommitteePercent = null,
+        bool HasAddedCommitteeAssessment = false,
+        bool HasVoted = false,
+        string? DecisionNote = null);
 
     public class CommitteeAssessVm
     {
@@ -43,6 +55,7 @@ namespace Ibtikar.ViewModels
         public int? DepartmentPercent { get; set; }
         public int? CommitteePercent { get; set; }
         public int? CombinedAverage { get; set; }
+        public IdeaReadOnlyVm? Idea { get; set; }
     }
 
     public sealed record CommitteeCriterionVm(Guid Id, string Code, string Name, string? Description, int DisplayOrder);
@@ -56,11 +69,17 @@ namespace Ibtikar.ViewModels
         string StatusName,
         string StatusColor,
         bool HasVoted,
-        string? MyVote);
+        string? MyVote,
+        string Description,
+        string? ProblemStatement,
+        string? ProposedSolution,
+        string? ExpectedBenefits,
+        IdeaReadOnlyVm Idea);
 
     public class CommitteeVotesVm
     {
         public List<CommitteeVoteRowVm> Items { get; set; } = new();
+        public bool IsHead { get; set; }
     }
 
     public class CommitteeDecisionVm
@@ -81,6 +100,7 @@ namespace Ibtikar.ViewModels
 
         [Required(ErrorMessage = "سبب الرفض مطلوب.")]
         [MinLength(10, ErrorMessage = "سبب الرفض يجب ألا يقل عن 10 أحرف.")]
+        [NoHtml]
         public string? Reason { get; set; }
     }
 

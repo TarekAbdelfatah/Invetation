@@ -1,5 +1,6 @@
 using Ibtikar.Data;
 using Ibtikar.DTOs.Committee;
+using Ibtikar.DTOs.MyRequests;
 using Ibtikar.Models;
 using Ibtikar.Services.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -19,8 +20,7 @@ namespace Ibtikar.Repositories
 
             var underVoting = await _db.InnovationIdeas.AsNoTracking()
                 .CountAsync(i => i.CurrentStatus != null
-                    && (i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee
-                        || i.CurrentStatus.Code == IdeaStatusCodes.UnderAssessment), ct);
+                    && i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee, ct);
 
             var accepted = await _db.InnovationIdeas.AsNoTracking()
                 .CountAsync(i => i.CurrentStatus != null
@@ -33,17 +33,31 @@ namespace Ibtikar.Repositories
             return new CommitteeDashboardDto(underStudy, underVoting, accepted, rejected);
         }
 
-        public async Task<IReadOnlyList<CommitteeReferralRowDto>> GetReferralsAsync(CancellationToken ct)
+        public async Task<CommitteeReferralListDto> GetReferralsAsync(Guid userId, int page, int pageSize, CancellationToken ct)
         {
             var now = DateTime.UtcNow;
-            var rows = await _db.InnovationIdeas.AsNoTracking()
-                .Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee)
+
+            var baseQuery = _db.InnovationIdeas.AsNoTracking()
+                .Where(i => i.CurrentStatus != null
+                    && (i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee
+                        || i.CurrentStatus.Code == IdeaStatusCodes.Approved
+                        || i.CurrentStatus.Code == IdeaStatusCodes.Rejected
+                        || i.CurrentStatus.Code == IdeaStatusCodes.ReturnedForDevelopment
+                        || i.CurrentStatus.Code == IdeaStatusCodes.InExecution));
+
+            var totalCount = await baseQuery.CountAsync(ct);
+
+            var rows = await baseQuery
                 .OrderByDescending(i => i.CreatedAt)
-                .Take(100)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(i => new CommitteeReferralRowDto(
                     i.Id,
                     i.ReferenceNumber,
                     i.Title,
+                    i.Title != null && i.Title.Length > 50
+                        ? i.Title.Substring(0, 50) + "…"
+                        : i.Title,
                     i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty,
                     i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
                     i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d",
@@ -54,8 +68,77 @@ namespace Ibtikar.Repositories
                     i.AuditAssignedAt.HasValue && (now - i.AuditAssignedAt.Value) > TimeSpan.FromDays(4)))
                 .ToListAsync(ct);
 
-            return rows;
+            if (rows.Count == 0)
+                return new CommitteeReferralListDto(rows, page, pageSize, totalCount);
+
+            var ideaIds = rows.Select(r => r.IdeaId).ToHashSet();
+            var criteriaCount = await CountActiveCriteriaAsync(ct);
+
+            var specializedHeaders = await _db.AssessmentHeaders.AsNoTracking()
+                .Include(h => h.Details)
+                .Where(h => ideaIds.Contains(h.InnovationIdeaId)
+                    && h.Source == AssessmentHeader.SourceSpecialized
+                    && !h.IsDraft)
+                .ToListAsync(ct);
+
+            var committeeHeaders = await _db.AssessmentHeaders.AsNoTracking()
+                .Include(h => h.Details)
+                .Where(h => ideaIds.Contains(h.InnovationIdeaId)
+                    && h.Source == AssessmentHeader.SourceCommittee
+                    && !h.IsDraft)
+                .ToListAsync(ct);
+
+            var myCommitteeHeaders = committeeHeaders
+                .Where(h => h.AssessorUserId == userId)
+                .ToList();
+
+            var deptByIdea = specializedHeaders
+                .GroupBy(h => h.InnovationIdeaId)
+                .Select(g => g.OrderByDescending(h => h.SubmittedAt ?? h.CreatedAt).First())
+                .ToDictionary(h => h.InnovationIdeaId, h => CommitteeReferralPercent(h.Details.Sum(d => d.Score), criteriaCount));
+
+            var committeeByIdea = committeeHeaders
+                .GroupBy(h => h.InnovationIdeaId)
+                .Select(g => g.OrderByDescending(h => h.SubmittedAt ?? h.CreatedAt).First())
+                .ToDictionary(h => h.InnovationIdeaId, h => CommitteeReferralPercent(h.Details.Sum(d => d.Score), criteriaCount));
+
+            var myByIdea = myCommitteeHeaders.ToDictionary(
+                h => h.InnovationIdeaId,
+                h => CommitteeReferralPercent(h.Details.Sum(d => d.Score), criteriaCount));
+
+            var mySubmittedIds = myCommitteeHeaders.Select(h => h.InnovationIdeaId).ToHashSet();
+
+            var myVotedIds = (await _db.CommitteeVotes.AsNoTracking()
+                .Where(v => v.MemberUserId == userId && ideaIds.Contains(v.InnovationIdeaId))
+                .Select(v => v.InnovationIdeaId)
+                .ToListAsync(ct))
+                .ToHashSet();
+
+            var decisionNotes = (await _db.IdeaStatusHistories.AsNoTracking()
+                .Where(h => ideaIds.Contains(h.InnovationIdeaId))
+                .OrderByDescending(h => h.ChangedAt)
+                .Select(h => new { h.InnovationIdeaId, h.Note })
+                .ToListAsync(ct))
+                .GroupBy(h => h.InnovationIdeaId)
+                .ToDictionary(g => g.Key, g => g.First().Note);
+
+            var paged = rows.Select(r => r with
+            {
+                DepartmentPercent = deptByIdea.TryGetValue(r.IdeaId, out var d) ? d : null,
+                CommitteePercent = committeeByIdea.TryGetValue(r.IdeaId, out var c) ? c : null,
+                MyCommitteePercent = myByIdea.TryGetValue(r.IdeaId, out var m) ? m : null,
+                HasAddedCommitteeAssessment = mySubmittedIds.Contains(r.IdeaId),
+                HasVoted = myVotedIds.Contains(r.IdeaId),
+                DecisionNote = decisionNotes.TryGetValue(r.IdeaId, out var n) ? n : null
+            }).ToList();
+
+            return new CommitteeReferralListDto(paged, page, pageSize, totalCount);
         }
+
+        private static int? CommitteeReferralPercent(int scoreSum, int criteriaCount)
+            => criteriaCount <= 0
+                ? null
+                : (int)Math.Round(scoreSum / (criteriaCount * (double)5) * 100, MidpointRounding.AwayFromZero);
 
         public async Task<CommitteeAssessIdeaDto?> GetAssessIdeaAsync(Guid ideaId, CancellationToken ct)
             => await _db.InnovationIdeas.AsNoTracking()
@@ -67,6 +150,57 @@ namespace Ibtikar.Repositories
                     i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
                     i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d"))
                 .FirstOrDefaultAsync(ct);
+
+        public async Task<CommitteeIdeaReadOnlyDto?> GetIdeaReadOnlyAsync(Guid ideaId, CancellationToken ct)
+        {
+            var idea = await _db.InnovationIdeas.AsNoTracking()
+                .Where(i => i.Id == ideaId)
+                .Select(i => new
+                {
+                    i.Title,
+                    i.Description,
+                    i.ProblemStatement,
+                    i.ProposedSolution,
+                    i.ExpectedBenefits,
+                    i.RequiredResources,
+                    DomainName = i.InnovationDomain != null ? i.InnovationDomain.Name : (string?)null,
+                    ExpectedImpactName = i.ExpectedImpact != null ? i.ExpectedImpact.Name : (string?)null,
+                    i.ExpectedImpactOther,
+                    TargetAudienceName = i.TargetAudience != null ? i.TargetAudience.Name : (string?)null,
+                    i.TargetAudienceOther,
+                    i.UsesEmergingTech,
+                    i.TechnologyOther,
+                    i.CreatedAt,
+                    i.SubmittedAt
+                })
+                .FirstOrDefaultAsync(ct);
+
+            if (idea is null) return null;
+
+            var attachments = await _db.IdeaAttachments.AsNoTracking()
+                .Where(a => a.InnovationIdeaId == ideaId)
+                .OrderBy(a => a.UploadedAt)
+                .Select(a => new MyRequestAttachmentDto(a.Id, a.FileName, a.SizeBytes, a.UploadedAt))
+                .ToListAsync(ct);
+
+            return new CommitteeIdeaReadOnlyDto(
+                idea.Title,
+                idea.Description,
+                idea.ProblemStatement,
+                idea.ProposedSolution,
+                idea.ExpectedBenefits,
+                idea.RequiredResources,
+                idea.DomainName,
+                idea.ExpectedImpactName,
+                idea.ExpectedImpactOther,
+                idea.TargetAudienceName,
+                idea.TargetAudienceOther,
+                idea.UsesEmergingTech,
+                idea.TechnologyOther,
+                idea.CreatedAt,
+                idea.SubmittedAt,
+                attachments);
+        }
 
         public async Task<IReadOnlyList<CommitteeCriterionDto>> GetActiveCriteriaAsync(CancellationToken ct)
             => await _db.AssessmentCriteria.AsNoTracking()
@@ -117,6 +251,13 @@ namespace Ibtikar.Repositories
         public async Task<bool> IdeaExistsAsync(Guid ideaId, CancellationToken ct)
             => await _db.InnovationIdeas.AsNoTracking().AnyAsync(i => i.Id == ideaId, ct);
 
+        public async Task<bool> HasSubmittedAssessmentAsync(Guid ideaId, Guid userId, CancellationToken ct)
+            => await _db.AssessmentHeaders.AsNoTracking()
+                .AnyAsync(h => h.InnovationIdeaId == ideaId
+                    && h.AssessorUserId == userId
+                    && h.Source == AssessmentHeader.SourceCommittee
+                    && !h.IsDraft, ct);
+
         public async Task<Guid?> GetIdeaCurrentStatusIdAsync(Guid ideaId, CancellationToken ct)
             => await _db.InnovationIdeas.AsNoTracking()
                 .Where(i => i.Id == ideaId)
@@ -142,19 +283,76 @@ namespace Ibtikar.Repositories
                 .FirstOrDefaultAsync(i => i.Id == ideaId, ct);
 
         public async Task<IReadOnlyList<CommitteeVoteIdeaDto>> GetVoteIdeasAsync(CancellationToken ct)
-            => await _db.InnovationIdeas.AsNoTracking()
+        {
+            var ideas = await _db.InnovationIdeas.AsNoTracking()
                 .Where(i => i.CurrentStatus != null
-                    && (i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee
-                        || i.CurrentStatus.Code == IdeaStatusCodes.UnderAssessment))
+                    && i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee)
                 .OrderByDescending(i => i.CreatedAt)
-                .Select(i => new CommitteeVoteIdeaDto(
+                .Select(i => new
+                {
                     i.Id,
                     i.ReferenceNumber,
                     i.Title,
-                    i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty,
-                    i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
-                    i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d"))
+                    StatusCode = i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty,
+                    StatusName = i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
+                    StatusColor = i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d",
+                    i.Description,
+                    i.ProblemStatement,
+                    i.ProposedSolution,
+                    i.ExpectedBenefits,
+                    i.RequiredResources,
+                    DomainName = i.InnovationDomain != null ? i.InnovationDomain.Name : (string?)null,
+                    ExpectedImpactName = i.ExpectedImpact != null ? i.ExpectedImpact.Name : (string?)null,
+                    i.ExpectedImpactOther,
+                    TargetAudienceName = i.TargetAudience != null ? i.TargetAudience.Name : (string?)null,
+                    i.TargetAudienceOther,
+                    i.UsesEmergingTech,
+                    i.TechnologyOther,
+                    i.CreatedAt,
+                    i.SubmittedAt
+                })
                 .ToListAsync(ct);
+
+            var ideaIds = ideas.Select(i => i.Id).ToList();
+            var attachmentsByIdea = await _db.IdeaAttachments.AsNoTracking()
+                .Where(a => ideaIds.Contains(a.InnovationIdeaId))
+                .OrderBy(a => a.UploadedAt)
+                .GroupBy(a => a.InnovationIdeaId)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(a => new MyRequestAttachmentDto(a.Id, a.FileName, a.SizeBytes, a.UploadedAt)).ToList(),
+                    ct);
+
+            return ideas.Select(i => new CommitteeVoteIdeaDto(
+                i.Id,
+                i.ReferenceNumber,
+                i.Title,
+                i.StatusCode,
+                i.StatusName,
+                i.StatusColor,
+                i.Description,
+                i.ProblemStatement,
+                i.ProposedSolution,
+                i.ExpectedBenefits,
+                new CommitteeIdeaReadOnlyDto(
+                    i.Title,
+                    i.Description,
+                    i.ProblemStatement,
+                    i.ProposedSolution,
+                    i.ExpectedBenefits,
+                    i.RequiredResources,
+                    i.DomainName,
+                    i.ExpectedImpactName,
+                    i.ExpectedImpactOther,
+                    i.TargetAudienceName,
+                    i.TargetAudienceOther,
+                    i.UsesEmergingTech,
+                    i.TechnologyOther,
+                    i.CreatedAt,
+                    i.SubmittedAt,
+                    attachmentsByIdea.TryGetValue(i.Id, out var atts) ? atts : new List<MyRequestAttachmentDto>())))
+                .ToList();
+        }
 
         public async Task<IReadOnlyDictionary<Guid, string>> GetVotesByUserAsync(Guid userId, IReadOnlyCollection<Guid> ideaIds, CancellationToken ct)
             => await _db.CommitteeVotes.AsNoTracking()
