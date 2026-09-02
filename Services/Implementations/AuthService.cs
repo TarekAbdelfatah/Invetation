@@ -1,22 +1,22 @@
 using System.Security.Claims;
-using Ibtikar.Data;
+using Ibtikar.DTOs.Account;
 using Ibtikar.Models;
+using Ibtikar.Repositories;
 using Ibtikar.Services;
 using Ibtikar.Services.Helpers;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Services.Implementations
 {
     public sealed class AuthService
     {
-        private readonly IbtikarDbContext _db;
+        private readonly IUserRepository _users;
         private readonly Pbkdf2PasswordHasher _hasher;
         private readonly AuditLogService _audit;
 
-        public AuthService(IbtikarDbContext db, Pbkdf2PasswordHasher hasher, AuditLogService audit)
+        public AuthService(IUserRepository users, Pbkdf2PasswordHasher hasher, AuditLogService audit)
         {
-            _db = db;
+            _users = users;
             _hasher = hasher;
             _audit = audit;
         }
@@ -28,10 +28,7 @@ namespace Ibtikar.Services.Implementations
             if (string.IsNullOrEmpty(password))
                 return LoginResult.Failed("اسم المستخدم أو كلمة المرور غير صحيحة.");
 
-            var user = await _db.Users
-                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
-                .Include(u => u.Department)
-                .FirstOrDefaultAsync(u => u.Username == username && u.IsActive, ct);
+            var user = await _users.GetActiveByUsernameWithRolesAsync(username, ct);
 
             var ok = user is not null && _hasher.Verify(password, user.PasswordSalt, user.PasswordHash);
             if (!ok)
@@ -39,6 +36,9 @@ namespace Ibtikar.Services.Implementations
 
             return LoginResult.Success(user!);
         }
+
+        public Task<IReadOnlyList<DemoUserDto>> GetDemoUsersAsync(CancellationToken ct = default)
+            => _users.GetDemoUsersAsync(ct);
 
         public async Task SignInAsync(HttpContext httpContext, User user, CancellationToken ct = default)
         {
@@ -83,7 +83,7 @@ namespace Ibtikar.Services.Implementations
                 });
 
             user.LastLoginAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync(ct);
+            await _users.SaveChangesAsync(ct);
             await _audit.WriteAsync(
                 action: "login",
                 entityName: nameof(User),
@@ -113,4 +113,3 @@ namespace Ibtikar.Services.Implementations
         }
     }
 }
-

@@ -1,5 +1,6 @@
 using Ibtikar.Data;
 using Ibtikar.DTOs.Execution;
+using Ibtikar.Models;
 using Ibtikar.Services.Helpers;
 using Microsoft.EntityFrameworkCore;
 
@@ -216,6 +217,29 @@ namespace Ibtikar.Repositories
                 .Where(s => s.Code == IdeaStatusCodes.Completed)
                 .Select(s => (Guid?)s.Id)
                 .FirstOrDefaultAsync(ct);
+
+        public async Task<InnovationIdea?> GetIdeaWithStatusAsync(Guid ideaId, CancellationToken ct)
+            => await _db.InnovationIdeas
+                .Include(i => i.CurrentStatus)
+                .FirstOrDefaultAsync(i => i.Id == ideaId, ct);
+
+        public async Task<ExecutionStage?> GetActiveStageByIdAsync(Guid stageId, CancellationToken ct)
+            => await _db.ExecutionStages
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == stageId && s.IsActive, ct);
+
+        public async Task AddProgressAsync(ExecutionProgress progress, CancellationToken ct)
+        {
+            await _db.ExecutionProgresses.AddAsync(progress, ct);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        public async Task AddProgressAndStatusAsync(ExecutionProgress progress, IdeaStatusHistory history, CancellationToken ct)
+        {
+            await _db.ExecutionProgresses.AddAsync(progress, ct);
+            await _db.IdeaStatusHistories.AddAsync(history, ct);
+            await _db.SaveChangesAsync(ct);
+        }
 
         public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
     }

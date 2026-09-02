@@ -1,24 +1,21 @@
 using System.Security.Claims;
-using Ibtikar.Data;
+using Ibtikar.DTOs.Account;
 using Ibtikar.Models;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Implementations;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Controllers
 {
     public class AccountController : Controller
     {
         private readonly AuthService _auth;
-        private readonly IbtikarDbContext _db;
         private readonly ILogger<AccountController> _logger;
 
-        public AccountController(AuthService auth, IbtikarDbContext db, ILogger<AccountController> logger)
+        public AccountController(AuthService auth, ILogger<AccountController> logger)
         {
             _auth = auth;
-            _db = db;
             _logger = logger;
         }
 
@@ -35,21 +32,17 @@ namespace Ibtikar.Controllers
 
             var model = new LoginVm { ReturnUrl = returnUrl };
             ViewData["ReturnUrl"] = returnUrl;
-            PopulateDemoUsers();
+            await PopulateDemoUsersAsync(HttpContext.RequestAborted);
             return View(model);
         }
 
-        private void PopulateDemoUsers()
+        private async Task PopulateDemoUsersAsync(CancellationToken ct)
         {
             if (ViewData.ContainsKey("DemoUsers")) return;
-            var demoUsers = _db.Users
-                .AsNoTracking()
-                .Where(u => u.IsActive)
-                .SelectMany(u => u.UserRoles, (u, ur) => new { u.Username, u.FullName, RoleName = ur.Role!.Name })
-                .OrderBy(x => x.Username)
-                .Select(x => new DemoUser(x.Username, x.FullName, x.RoleName))
+            var demoUsers = await _auth.GetDemoUsersAsync(ct);
+            ViewData["DemoUsers"] = demoUsers
+                .Select(d => new DemoUser(d.Username, d.FullName, d.RoleName))
                 .ToList();
-            ViewData["DemoUsers"] = demoUsers;
         }
 
         [HttpPost]
@@ -65,7 +58,7 @@ namespace Ibtikar.Controllers
                     Password = vm.Password,
                     ReturnUrl = vm.ReturnUrl
                 };
-                PopulateDemoUsers();
+                await PopulateDemoUsersAsync(HttpContext.RequestAborted);
                 return View(viewVm);
             }
 
@@ -76,7 +69,7 @@ namespace Ibtikar.Controllers
                 {
                     _logger.LogWarning("Login failed for {Username}", vm.Username);
                     ViewData["Error"] = result.ErrorMessage;
-                    PopulateDemoUsers();
+                    await PopulateDemoUsersAsync(HttpContext.RequestAborted);
                     return View(vm);
                 }
 
@@ -93,7 +86,7 @@ namespace Ibtikar.Controllers
             {
                 _logger.LogError(ex, "Login error");
                 ViewData["Error"] = "حدث خطأ أثناء تسجيل الدخول. حاول مرة أخرى.";
-                PopulateDemoUsers();
+                await PopulateDemoUsersAsync(HttpContext.RequestAborted);
                 return View(vm);
             }
         }
@@ -113,4 +106,3 @@ namespace Ibtikar.Controllers
         }
     }
 }
-

@@ -1,10 +1,9 @@
-using Ibtikar.Data;
 using Ibtikar.DTOs.Committee;
 using Ibtikar.Models;
+using Ibtikar.Repositories;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Notifications;
-using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Services.Implementations
 {
@@ -13,16 +12,19 @@ namespace Ibtikar.Services.Implementations
         private const int MinScore = 1;
         private const int MaxScore = 5;
 
-        private readonly IbtikarDbContext _db;
+        private readonly ICommitteeDashboardRepository _repo;
+        private readonly ICommitteeRepository _committees;
         private readonly INotificationClient _notifier;
         private readonly ILogger<CommitteeDashboardService> _logger;
 
         public CommitteeDashboardService(
-            IbtikarDbContext db,
+            ICommitteeDashboardRepository repo,
+            ICommitteeRepository committees,
             INotificationClient notifier,
             ILogger<CommitteeDashboardService> logger)
         {
-            _db = db;
+            _repo = repo;
+            _committees = committees;
             _notifier = notifier;
             _logger = logger;
         }
@@ -35,23 +37,7 @@ namespace Ibtikar.Services.Implementations
                 return new CommitteeDashboardDto(0, 0, 0, 0);
             }
 
-            var underStudy = await _db.InnovationIdeas.AsNoTracking()
-                .CountAsync(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee, ct);
-
-            var underVoting = await _db.InnovationIdeas.AsNoTracking()
-                .CountAsync(i => i.CurrentStatus != null
-                    && (i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee
-                        || i.CurrentStatus.Code == IdeaStatusCodes.UnderAssessment), ct);
-
-            var accepted = await _db.InnovationIdeas.AsNoTracking()
-                .CountAsync(i => i.CurrentStatus != null
-                    && (i.CurrentStatus.Code == IdeaStatusCodes.Approved
-                        || i.CurrentStatus.Code == IdeaStatusCodes.InExecution), ct);
-
-            var rejected = await _db.InnovationIdeas.AsNoTracking()
-                .CountAsync(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.Rejected, ct);
-
-            return new CommitteeDashboardDto(underStudy, underVoting, accepted, rejected);
+            return await _repo.GetSnapshotCountsAsync(ct);
         }
 
         public async Task<CommitteeReferralsDto?> GetReferralsAsync(Guid userId, string statusFilter, CancellationToken ct)
@@ -59,76 +45,23 @@ namespace Ibtikar.Services.Implementations
             var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
             if (committeeId is null) return null;
 
-            var query = _db.InnovationIdeas.AsNoTracking()
-                .Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee);
-
-            query = statusFilter switch
-            {
-                "accepted" => query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.Approved),
-                "rejected" => query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.Rejected),
-                _ => query
-            };
-
-            var now = DateTime.UtcNow;
-            var rows = await query
-                .OrderByDescending(i => i.CreatedAt)
-                .Take(100)
-                .Select(i => new CommitteeReferralRowDto(
-                    i.Id,
-                    i.ReferenceNumber,
-                    i.Title,
-                    i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty,
-                    i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
-                    i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d",
-                    i.ApplicantUser != null ? i.ApplicantUser.FullName : null,
-                    i.ApplicantDepartment != null ? i.ApplicantDepartment.Name : null,
-                    i.AuditAssignedAt,
-                    i.AuditAssignedAt.HasValue ? (now - i.AuditAssignedAt.Value).TotalDays : 0.0,
-                    i.AuditAssignedAt.HasValue && (now - i.AuditAssignedAt.Value) > TimeSpan.FromDays(4)))
-                .ToListAsync(ct);
-
-            return new CommitteeReferralsDto(rows, statusFilter);
+            return await _repo.GetReferralsAsync(statusFilter, ct);
         }
 
-        public Task<bool> IsActiveCommitteeMemberAsync(Guid userId, CancellationToken ct)
-        {
-            return _db.CommitteeMembers.AsNoTracking()
-                .AnyAsync(m => m.UserId == userId && m.InnovationCommittee != null && m.InnovationCommittee.IsActive, ct);
-        }
+        public async Task<bool> IsActiveCommitteeMemberAsync(Guid userId, CancellationToken ct)
+            => (await _committees.GetCommitteeIdForMemberAsync(userId, ct)).HasValue;
 
         public async Task<CommitteeAssessDto?> GetAssessAsync(Guid userId, Guid ideaId, CancellationToken ct)
         {
             var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
             if (committeeId is null) return null;
 
-            var idea = await _db.InnovationIdeas.AsNoTracking()
-                .Where(i => i.Id == ideaId)
-                .Select(i => new
-                {
-                    i.Id,
-                    i.ReferenceNumber,
-                    i.Title,
-                    StatusName = i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
-                    StatusColor = i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d"
-                })
-                .FirstOrDefaultAsync(ct);
-
+            var idea = await _repo.GetAssessIdeaAsync(ideaId, ct);
             if (idea is null) return null;
 
-            var criteria = await _db.AssessmentCriteria.AsNoTracking()
-                .Where(c => c.IsActive)
-                .OrderBy(c => c.DisplayOrder)
-                .Select(c => new CommitteeCriterionDto(c.Id, c.Code, c.Name, c.Description, c.DisplayOrder))
-                .ToListAsync(ct);
+            var criteria = await _repo.GetActiveCriteriaAsync(ct);
 
-            var draft = await _db.AssessmentHeaders.AsNoTracking()
-                .Include(h => h.Details)
-                .Where(h => h.InnovationIdeaId == ideaId
-                    && h.AssessorUserId == userId
-                    && h.Source == AssessmentHeader.SourceCommittee)
-                .OrderByDescending(h => h.CreatedAt)
-                .FirstOrDefaultAsync(ct);
-
+            var draft = await _repo.GetLatestCommitteeHeaderAsync(ideaId, userId, ct);
             var draftIsLatest = draft is { IsDraft: true, IsLocked: false };
             var lineMap = draftIsLatest && draft is not null
                 ? draft.Details.ToDictionary(d => d.CriterionId, d => (d.Score, d.Comment))
@@ -148,7 +81,7 @@ namespace Ibtikar.Services.Implementations
                 : (int?)null;
 
             return new CommitteeAssessDto(
-                idea.Id, idea.ReferenceNumber, idea.Title,
+                idea.IdeaId, idea.Reference, idea.Title,
                 idea.StatusName, idea.StatusColor,
                 draftIsLatest, draft?.IsLocked ?? false,
                 draft?.Id, draft?.CreatedAt,
@@ -166,9 +99,7 @@ namespace Ibtikar.Services.Implementations
             if (committeeId is null)
                 return new(false, "لست عضواً نشطاً في أي لجنة.", false);
 
-            var idea = await _db.InnovationIdeas.AsNoTracking()
-                .FirstOrDefaultAsync(i => i.Id == submission.IdeaId, ct);
-            if (idea is null)
+            if (!await _repo.IdeaExistsAsync(submission.IdeaId, ct))
                 return new(false, "الفكرة غير موجودة.", false);
 
             if (submission.Scores.Count == 0)
@@ -180,20 +111,11 @@ namespace Ibtikar.Services.Implementations
                     return new(false, $"الدرجة يجب أن تكون بين {MinScore} و {MaxScore}.", false);
             }
 
-            var criteriaCount = await _db.AssessmentCriteria.CountAsync(c => c.IsActive, ct);
+            var criteriaCount = await _repo.CountActiveCriteriaAsync(ct);
             if (!submission.SaveDraft && submission.Scores.Count < criteriaCount)
                 return new(false, "يجب إكمال تقييم جميع المعايير قبل الإرسال.", false);
 
-            var header = await _db.AssessmentHeaders
-                .Include(h => h.Details)
-                .FirstOrDefaultAsync(h => h.Id == submission.HeaderId, ct)
-                ?? await _db.AssessmentHeaders
-                    .Include(h => h.Details)
-                    .Where(h => h.InnovationIdeaId == submission.IdeaId
-                        && h.AssessorUserId == userId
-                        && h.Source == AssessmentHeader.SourceCommittee)
-                    .OrderByDescending(h => h.CreatedAt)
-                    .FirstOrDefaultAsync(ct);
+            var header = await _repo.GetCommitteeHeaderForSaveAsync(submission.IdeaId, userId, submission.HeaderId, ct);
 
             if (header is null)
             {
@@ -206,11 +128,11 @@ namespace Ibtikar.Services.Implementations
                     Source = AssessmentHeader.SourceCommittee,
                     CreatedAt = DateTime.UtcNow
                 };
-                _db.AssessmentHeaders.Add(header);
+                _repo.AddAssessmentHeader(header);
             }
             else
             {
-                _db.AssessmentDetails.RemoveRange(header.Details);
+                _repo.RemoveAssessmentDetails(header.Details);
             }
 
             header.IsDraft = submission.SaveDraft;
@@ -228,7 +150,7 @@ namespace Ibtikar.Services.Implementations
             }).ToList();
 
             header.TotalScore = submission.Scores.Sum(s => s.Score);
-            await _db.SaveChangesAsync(ct);
+            await _repo.SaveChangesAsync(ct);
 
             var departmentPercent = await GetSpecializedPercentAsync(submission.IdeaId, ct);
             var committeePercent = CalculatePercent((int)header.TotalScore.Value, criteriaCount);
@@ -248,32 +170,15 @@ namespace Ibtikar.Services.Implementations
             var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
             if (committeeId is null) return null;
 
-            var ideas = await _db.InnovationIdeas.AsNoTracking()
-                .Where(i => i.CurrentStatus != null
-                    && (i.CurrentStatus.Code == IdeaStatusCodes.ReferredCommittee
-                        || i.CurrentStatus.Code == IdeaStatusCodes.UnderAssessment))
-                .OrderByDescending(i => i.CreatedAt)
-                .Select(i => new
-                {
-                    i.Id,
-                    i.ReferenceNumber,
-                    i.Title,
-                    StatusCode = i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty,
-                    StatusName = i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
-                    StatusColor = i.CurrentStatus != null ? i.CurrentStatus.Color : "#6c757d"
-                })
-                .ToListAsync(ct);
-
-            var ideaIds = ideas.Select(i => i.Id).ToList();
-            var myVotes = await _db.CommitteeVotes.AsNoTracking()
-                .Where(v => v.MemberUserId == userId && ideaIds.Contains(v.InnovationIdeaId))
-                .ToDictionaryAsync(v => v.InnovationIdeaId, v => v.Decision, ct);
+            var ideas = await _repo.GetVoteIdeasAsync(ct);
+            var ideaIds = ideas.Select(i => i.IdeaId).ToList();
+            var myVotes = await _repo.GetVotesByUserAsync(userId, ideaIds, ct);
 
             var items = ideas.Select(i => new CommitteeVoteRowDto(
-                i.Id, i.ReferenceNumber, i.Title,
+                i.IdeaId, i.Reference, i.Title,
                 i.StatusCode, i.StatusName, i.StatusColor,
-                myVotes.ContainsKey(i.Id),
-                myVotes.TryGetValue(i.Id, out var d) ? d : null)).ToList();
+                myVotes.ContainsKey(i.IdeaId),
+                myVotes.TryGetValue(i.IdeaId, out var d) ? d : null)).ToList();
 
             return new CommitteeVotesDto(items);
         }
@@ -291,31 +196,30 @@ namespace Ibtikar.Services.Implementations
                 return new(false, "قرار التصويت غير معروف.");
             }
 
-            var idea = await _db.InnovationIdeas.AsNoTracking()
-                .FirstOrDefaultAsync(i => i.Id == submission.IdeaId, ct);
-            if (idea is null)
+            if (!await _repo.IdeaExistsAsync(submission.IdeaId, ct))
                 return new(false, "الفكرة غير موجودة.");
 
-            var ideaStatus = await _db.IdeaStatuses.AsNoTracking()
-                .FirstOrDefaultAsync(s => s.Id == idea.CurrentStatusId, ct);
-            if (ideaStatus is not null && ideaStatus.Code != IdeaStatusCodes.ReferredCommittee)
-                return new(false, "انتهى التصويت على هذه الفكرة أو أنها غير مفتوحة للتصويت.");
+            var currentStatusId = await _repo.GetIdeaCurrentStatusIdAsync(submission.IdeaId, ct);
+            if (currentStatusId.HasValue)
+            {
+                var code = await _repo.GetStatusCodeByIdAsync(currentStatusId.Value, ct);
+                if (code is not null && code != IdeaStatusCodes.ReferredCommittee)
+                    return new(false, "انتهى التصويت على هذه الفكرة أو أنها غير مفتوحة للتصويت.");
+            }
 
-            var alreadyVoted = await _db.CommitteeVotes.AsNoTracking()
-                .AnyAsync(v => v.InnovationIdeaId == submission.IdeaId && v.MemberUserId == userId, ct);
+            var alreadyVoted = await _repo.HasVotedAsync(submission.IdeaId, userId, ct);
             if (alreadyVoted)
                 return new(false, "سبق لك التصويت على هذه الفكرة (تصويت واحد لكل عضو).");
 
-            _db.CommitteeVotes.Add(new CommitteeVote
+            await _repo.AddVoteAsync(new CommitteeVote
             {
                 Id = Guid.NewGuid(),
                 InnovationIdeaId = submission.IdeaId,
                 MemberUserId = userId,
                 Decision = submission.Decision,
                 VotedAt = DateTime.UtcNow
-            });
+            }, ct);
 
-            await _db.SaveChangesAsync(ct);
             return new(true, "تم تسجيل تصويتك.");
         }
 
@@ -324,17 +228,7 @@ namespace Ibtikar.Services.Implementations
             var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
             if (committeeId is null) return null;
 
-            var idea = await _db.InnovationIdeas.AsNoTracking()
-                .Where(i => i.Id == ideaId)
-                .Select(i => new
-                {
-                    i.Id,
-                    i.ReferenceNumber,
-                    i.Title,
-                    StatusCode = i.CurrentStatus != null ? i.CurrentStatus.Code : string.Empty
-                })
-                .FirstOrDefaultAsync(ct);
-
+            var idea = await _repo.GetDecisionIdeaAsync(ideaId, ct);
             if (idea is null) return null;
 
             var combined = await GetCombinedPercentAsync(ideaId, ct);
@@ -343,7 +237,7 @@ namespace Ibtikar.Services.Implementations
                 ? "النسبة المجمعة أقل من 40%. هل تريد الموافقة على الفكرة رغم ذلك؟"
                 : null;
 
-            return new CommitteeDecisionDto(idea.Id, idea.ReferenceNumber, idea.Title, combined, canAccept, warning);
+            return new CommitteeDecisionDto(idea.IdeaId, idea.Reference, idea.Title, combined, canAccept, warning);
         }
 
         public async Task<CommitteeVoteOutcomeDto> AcceptAsync(Guid userId, Guid ideaId, bool extraConfirmed, CancellationToken ct)
@@ -352,9 +246,7 @@ namespace Ibtikar.Services.Implementations
             if (committeeId is null)
                 return new(false, "لست عضواً نشطاً في أي لجنة.");
 
-            var idea = await _db.InnovationIdeas
-                .Include(i => i.CurrentStatus)
-                .FirstOrDefaultAsync(i => i.Id == ideaId, ct);
+            var idea = await _repo.GetIdeaWithStatusAsync(ideaId, ct);
             if (idea is null)
                 return new(false, "الفكرة غير موجودة.");
 
@@ -365,14 +257,14 @@ namespace Ibtikar.Services.Implementations
             if (combined < 40 && !extraConfirmed)
                 return new(false, "النسبة المجمعة أقل من 40%. يلزم تأكيد إضافي لقبول الفكرة.");
 
-            var approvedId = await GetStatusIdByCodeAsync(IdeaStatusCodes.Approved, ct);
+            var approvedId = await _repo.GetStatusIdByCodeAsync(IdeaStatusCodes.Approved, ct);
             if (approvedId is null)
                 return new(false, "لم يتم إعداد حالة (قبول الفكرة) بعد.");
 
             var fromId = idea.CurrentStatusId;
             idea.CurrentStatusId = approvedId.Value;
 
-            _db.IdeaStatusHistories.Add(new IdeaStatusHistory
+            await _repo.AddStatusHistoryAndSaveAsync(new IdeaStatusHistory
             {
                 InnovationIdeaId = idea.Id,
                 FromStatusId = fromId,
@@ -381,9 +273,7 @@ namespace Ibtikar.Services.Implementations
                 Note = combined < 40
                     ? $"قبول اللجنة مع تأكيد إضافي (نسبة مجمعة {combined}%)."
                     : $"قبول اللجنة (نسبة مجمعة {combined}%)."
-            });
-
-            await _db.SaveChangesAsync(ct);
+            }, ct);
 
             await SafeNotifyAsync("Committee.Accept", idea.Id.ToString(), new Dictionary<string, string>
             {
@@ -409,16 +299,14 @@ namespace Ibtikar.Services.Implementations
             if (string.IsNullOrWhiteSpace(reason) || reason.Length < 10)
                 return new(false, "يرجى إدخال سبب الرفض (10 أحرف على الأقل).");
 
-            var idea = await _db.InnovationIdeas
-                .Include(i => i.CurrentStatus)
-                .FirstOrDefaultAsync(i => i.Id == ideaId, ct);
+            var idea = await _repo.GetIdeaWithStatusAsync(ideaId, ct);
             if (idea is null)
                 return new(false, "الفكرة غير موجودة.");
 
             if (idea.CurrentStatus?.Code != IdeaStatusCodes.ReferredCommittee)
                 return new(false, "الفكرة ليست في حالة (محوّلة للجنة) للرفض.");
 
-            var rejectedId = await GetStatusIdByCodeAsync(IdeaStatusCodes.Rejected, ct);
+            var rejectedId = await _repo.GetStatusIdByCodeAsync(IdeaStatusCodes.Rejected, ct);
             if (rejectedId is null)
                 return new(false, "لم يتم إعداد حالة (مرفوض) بعد.");
 
@@ -426,16 +314,14 @@ namespace Ibtikar.Services.Implementations
             var trimmedReason = reason.Trim();
             idea.CurrentStatusId = rejectedId.Value;
 
-            _db.IdeaStatusHistories.Add(new IdeaStatusHistory
+            await _repo.AddStatusHistoryAndSaveAsync(new IdeaStatusHistory
             {
                 InnovationIdeaId = idea.Id,
                 FromStatusId = fromId,
                 ToStatusId = rejectedId.Value,
                 ChangedByUserId = userId,
                 Note = trimmedReason
-            });
-
-            await _db.SaveChangesAsync(ct);
+            }, ct);
 
             await SafeNotifyAsync("Committee.Reject", idea.Id.ToString(), new Dictionary<string, string>
             {
@@ -457,9 +343,7 @@ namespace Ibtikar.Services.Implementations
             if (committeeId is null)
                 return new(false, "لست عضواً نشطاً في أي لجنة.");
 
-            var idea = await _db.InnovationIdeas
-                .Include(i => i.CurrentStatus)
-                .FirstOrDefaultAsync(i => i.Id == ideaId, ct);
+            var idea = await _repo.GetIdeaWithStatusAsync(ideaId, ct);
             if (idea is null)
                 return new(false, "الفكرة غير موجودة.");
 
@@ -470,23 +354,21 @@ namespace Ibtikar.Services.Implementations
             if (combined < 61 || combined > 79)
                 return new(false, "الإعادة للتطوير مسموحة فقط عندما تكون النسبة المجمعة بين 61% و 79%.");
 
-            var returnedId = await GetStatusIdByCodeAsync(IdeaStatusCodes.ReturnedForDevelopment, ct);
+            var returnedId = await _repo.GetStatusIdByCodeAsync(IdeaStatusCodes.ReturnedForDevelopment, ct);
             if (returnedId is null)
                 return new(false, "لم يتم إعداد حالة (معاد للتطوير) بعد.");
 
             var fromId = idea.CurrentStatusId;
             idea.CurrentStatusId = returnedId.Value;
 
-            _db.IdeaStatusHistories.Add(new IdeaStatusHistory
+            await _repo.AddStatusHistoryAndSaveAsync(new IdeaStatusHistory
             {
                 InnovationIdeaId = idea.Id,
                 FromStatusId = fromId,
                 ToStatusId = returnedId.Value,
                 ChangedByUserId = userId,
                 Note = "إعادة للتطوير من اللجنة بناءً على تقييم الأعضاء."
-            });
-
-            await _db.SaveChangesAsync(ct);
+            }, ct);
 
             await SafeNotifyAsync("Committee.ReturnForDevelopment", idea.Id.ToString(), new Dictionary<string, string>
             {
@@ -517,27 +399,13 @@ namespace Ibtikar.Services.Implementations
 
         private async Task<int?> GetCommitteePercentAsync(Guid ideaId, CancellationToken ct)
         {
-            var criteriaCount = await _db.AssessmentCriteria.CountAsync(c => c.IsActive, ct);
+            var criteriaCount = await _repo.CountActiveCriteriaAsync(ct);
             if (criteriaCount == 0) return null;
 
-            var committeeHeader = await _db.AssessmentHeaders.AsNoTracking()
-                .Include(h => h.Details)
-                .Where(h => h.InnovationIdeaId == ideaId
-                    && h.Source == AssessmentHeader.SourceCommittee
-                    && !h.IsDraft)
-                .OrderByDescending(h => h.SubmittedAt ?? h.CreatedAt)
-                .FirstOrDefaultAsync(ct);
+            var committeeHeader = await _repo.GetLatestSubmittedHeaderAsync(ideaId, AssessmentHeader.SourceCommittee, ct);
 
             if (committeeHeader is null || committeeHeader.Details.Count == 0) return null;
             return CalculatePercent(committeeHeader.Details.Sum(d => d.Score), criteriaCount);
-        }
-
-        private async Task<Guid?> GetStatusIdByCodeAsync(string code, CancellationToken ct)
-        {
-            return await _db.IdeaStatuses.AsNoTracking()
-                .Where(s => s.Code == code)
-                .Select(s => (Guid?)s.Id)
-                .FirstOrDefaultAsync(ct);
         }
 
         private async Task SafeNotifyAsync(string action, string entityId, IDictionary<string, string>? payload, CancellationToken ct)
@@ -558,16 +426,10 @@ namespace Ibtikar.Services.Implementations
 
         private async Task<int?> GetSpecializedPercentAsync(Guid ideaId, CancellationToken ct)
         {
-            var criteriaCount = await _db.AssessmentCriteria.CountAsync(c => c.IsActive, ct);
+            var criteriaCount = await _repo.CountActiveCriteriaAsync(ct);
             if (criteriaCount == 0) return null;
 
-            var specialized = await _db.AssessmentHeaders.AsNoTracking()
-                .Include(h => h.Details)
-                .Where(h => h.InnovationIdeaId == ideaId
-                    && h.Source == AssessmentHeader.SourceSpecialized
-                    && !h.IsDraft)
-                .OrderByDescending(h => h.SubmittedAt ?? h.CreatedAt)
-                .FirstOrDefaultAsync(ct);
+            var specialized = await _repo.GetLatestSubmittedHeaderAsync(ideaId, AssessmentHeader.SourceSpecialized, ct);
 
             if (specialized is null || specialized.Details.Count == 0) return null;
             return CalculatePercent(specialized.Details.Sum(d => d.Score), criteriaCount);
@@ -581,12 +443,7 @@ namespace Ibtikar.Services.Implementations
         private static int CalculateCombined(int departmentPercent, int committeePercent)
             => (int)Math.Round((departmentPercent + committeePercent) / 2.0, MidpointRounding.AwayFromZero);
 
-        private async Task<Guid?> GetCommitteeIdForMemberAsync(Guid userId, CancellationToken ct)
-        {
-            return await _db.CommitteeMembers.AsNoTracking()
-                .Where(m => m.UserId == userId && m.InnovationCommittee != null && m.InnovationCommittee.IsActive)
-                .Select(m => (Guid?)m.InnovationCommitteeId)
-                .FirstOrDefaultAsync(ct);
-        }
+        private Task<Guid?> GetCommitteeIdForMemberAsync(Guid userId, CancellationToken ct)
+            => _committees.GetCommitteeIdForMemberAsync(userId, ct);
     }
 }

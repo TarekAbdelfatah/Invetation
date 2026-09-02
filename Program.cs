@@ -50,6 +50,12 @@ namespace Ibtikar
             builder.Services.AddScoped<IPartnerDashboardRepository, PartnerDashboardRepository>();
             builder.Services.AddScoped<IPartnerDashboardService, PartnerDashboardService>();
             builder.Services.AddScoped<ICommitteeFormationService, CommitteeFormationService>();
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+            builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
+            builder.Services.AddScoped<ICommitteeRepository, CommitteeRepository>();
+            builder.Services.AddScoped<IDelegationRepository, DelegationRepository>();
+            builder.Services.AddScoped<ICommitteeDashboardRepository, CommitteeDashboardRepository>();
             builder.Services.AddScoped<IExecutionRepository, ExecutionRepository>();
             builder.Services.AddScoped<IExecutionService, ExecutionService>();
             builder.Services.AddScoped<IReportsRepository, ReportsRepository>();

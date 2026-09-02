@@ -1,5 +1,13 @@
 namespace Ibtikar.DTOs.Committee
 {
+    public sealed record CommitteeVoteIdeaDto(
+        Guid IdeaId,
+        string Reference,
+        string Title,
+        string StatusCode,
+        string StatusName,
+        string StatusColor);
+
     public sealed record CommitteeVoteRowDto(
         Guid IdeaId,
         string Reference,

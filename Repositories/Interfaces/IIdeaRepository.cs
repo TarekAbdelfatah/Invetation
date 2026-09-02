@@ -17,5 +17,7 @@ namespace Ibtikar.Repositories
         Task<UserSummaryDto?> GetUserSummaryAsync(Guid userId, CancellationToken ct);
 
         Task<IdeaLookupsDto> GetLookupsAsync(CancellationToken ct);
+
+        Task<IdeaMetaDto?> GetMetaAsync(Guid? ideaId, string? referenceNumber, CancellationToken ct);
     }
 }

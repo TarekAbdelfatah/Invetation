@@ -158,5 +158,19 @@ namespace Ibtikar.Repositories
                 .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.Name })
                 .ToListAsync(ct);
         }
+
+        public async Task<IdeaMetaDto?> GetMetaAsync(Guid? ideaId, string? referenceNumber, CancellationToken ct)
+        {
+            var query = _db.InnovationIdeas.AsNoTracking();
+
+            if (ideaId.HasValue)
+                query = query.Where(i => i.Id == ideaId.Value);
+            else
+                query = query.Where(i => i.ReferenceNumber == referenceNumber);
+
+            return await query
+                .Select(i => new IdeaMetaDto(i.Id, i.ReferenceNumber, i.Title))
+                .FirstOrDefaultAsync(ct);
+        }
     }
 }

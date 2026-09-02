@@ -1,9 +1,7 @@
-using Ibtikar.Data;
-using Ibtikar.Models;
+using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Implementations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Ibtikar.Controllers
@@ -14,18 +12,15 @@ namespace Ibtikar.Controllers
     {
         private readonly AttachmentService _attachments;
         private readonly FileStorageService _storage;
-        private readonly IbtikarDbContext _db;
         private readonly ILogger<AttachmentController> _logger;
 
         public AttachmentController(
             AttachmentService attachments,
             FileStorageService storage,
-            IbtikarDbContext db,
             ILogger<AttachmentController> logger)
         {
             _attachments = attachments;
             _storage = storage;
-            _db = db;
             _logger = logger;
         }
 
@@ -41,8 +36,8 @@ namespace Ibtikar.Controllers
             if (file is null || file.Length == 0)
                 return BadRequest(new { error = "file is required." });
 
-            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(userIdRaw, out var userId))
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty)
                 return Challenge();
 
             if (!await _attachments.UserOwnsIdeaAsync(ideaId, userId, ct))
@@ -71,8 +66,8 @@ namespace Ibtikar.Controllers
         {
             if (ideaId == Guid.Empty) return BadRequest(new { error = "ideaId required." });
 
-            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(userIdRaw, out var userId))
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty)
                 return Challenge();
 
             if (!await _attachments.UserOwnsIdeaAsync(ideaId, userId, ct))
@@ -106,8 +101,8 @@ namespace Ibtikar.Controllers
             if (file is null || file.Length == 0)
                 return BadRequest(new { error = "file is required." });
 
-            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(userIdRaw, out var userId))
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty)
                 return Challenge();
 
             var result = _attachments.SaveDraftAsync(userId, draftId, file, ct);
@@ -133,8 +128,8 @@ namespace Ibtikar.Controllers
         {
             if (draftId == Guid.Empty) return BadRequest(new { error = "draftId required." });
 
-            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(userIdRaw, out var userId))
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty)
                 return Challenge();
 
             var items = _attachments.ListDraftAsync(userId, draftId);
@@ -161,8 +156,8 @@ namespace Ibtikar.Controllers
             if (draftId == Guid.Empty) return BadRequest(new { error = "draftId required." });
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(new { error = "fileName required." });
 
-            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(userIdRaw, out var userId))
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty)
                 return Challenge();
 
             var ok = _attachments.DeleteDraftFile(userId, draftId, fileName);
@@ -172,13 +167,11 @@ namespace Ibtikar.Controllers
         [HttpPost("delete/{attachmentId:guid}")]
         public async Task<IActionResult> DeleteById(Guid attachmentId, CancellationToken ct)
         {
-            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(userIdRaw, out var userId))
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty)
                 return Challenge();
 
-            var attachment = await _db.IdeaAttachments
-                .AsNoTracking()
-                .FirstOrDefaultAsync(a => a.Id == attachmentId, ct);
+            var attachment = await _attachments.GetByIdAsync(attachmentId, ct);
             if (attachment is null) return NotFound();
 
             if (!await _attachments.UserOwnsIdeaAsync(attachment.InnovationIdeaId, userId, ct))
@@ -191,12 +184,17 @@ namespace Ibtikar.Controllers
         [HttpGet("download/{attachmentId:guid}")]
         public async Task<IActionResult> Download(Guid attachmentId, CancellationToken ct)
         {
-            var attachment = await _db.IdeaAttachments
-                .AsNoTracking()
-                .FirstOrDefaultAsync(a => a.Id == attachmentId, ct);
+            var attachment = await _attachments.GetByIdAsync(attachmentId, ct);
             if (attachment is null) return NotFound();
 
-            if (!await _attachments.UserOwnsIdeaAsync(attachment.InnovationIdeaId, ResolveUserId(), ct))
+            var current = ResolveCurrentUserForAccess();
+            if (current is null
+                || !await _attachments.CanAccessIdeaAsync(
+                    attachment.InnovationIdeaId,
+                    current.Value.UserId,
+                    current.Value.RoleCodes,
+                    current.Value.DepartmentId,
+                    ct))
                 return Forbid();
 
             if (!System.IO.File.Exists(attachment.StoragePath))
@@ -227,6 +225,23 @@ namespace Ibtikar.Controllers
         {
             var raw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
+        }
+
+        private (Guid UserId, IReadOnlyCollection<string> RoleCodes, Guid? DepartmentId)? ResolveCurrentUserForAccess()
+        {
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty) return null;
+
+            var roles = User.FindAll(RoleCodes.ClaimType)
+                .Select(c => c.Value)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            Guid? departmentId = null;
+            var deptRaw = User.FindFirst(RoleCodes.DepartmentIdClaim)?.Value;
+            if (!string.IsNullOrEmpty(deptRaw) && Guid.TryParse(deptRaw, out var deptId))
+                departmentId = deptId;
+
+            return (userId, roles, departmentId);
         }
     }
 }

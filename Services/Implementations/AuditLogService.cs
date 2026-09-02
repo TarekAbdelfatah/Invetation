@@ -1,18 +1,17 @@
 using System.Security.Claims;
-using Ibtikar.Data;
 using Ibtikar.Models;
-using Microsoft.EntityFrameworkCore;
+using Ibtikar.Repositories;
 
 namespace Ibtikar.Services.Implementations
 {
     public class AuditLogService
     {
-        private readonly IbtikarDbContext _db;
+        private readonly IAuditLogRepository _repo;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AuditLogService(IbtikarDbContext db, IHttpContextAccessor httpContextAccessor)
+        public AuditLogService(IAuditLogRepository repo, IHttpContextAccessor httpContextAccessor)
         {
-            _db = db;
+            _repo = repo;
             _httpContextAccessor = httpContextAccessor;
         }
 
@@ -34,8 +33,8 @@ namespace Ibtikar.Services.Implementations
                 CreatedAt = DateTime.UtcNow
             };
 
-            await _db.AuditLogs.AddAsync(entry, ct);
-            await _db.SaveChangesAsync(ct);
+            await _repo.AddAsync(entry, ct);
+            await _repo.SaveChangesAsync(ct);
         }
 
         private (Guid? userId, string? ip, string? userAgent) ResolveCallerContext()

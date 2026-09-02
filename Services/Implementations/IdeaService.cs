@@ -162,6 +162,9 @@ namespace Ibtikar.Services.Implementations
         public async Task<UserSummaryDto?> GetUserSummaryAsync(Guid userId, CancellationToken ct)
             => await _repo.GetUserSummaryAsync(userId, ct);
 
+        public async Task<IdeaMetaDto?> GetMetaAsync(Guid? ideaId, string? referenceNumber, CancellationToken ct)
+            => await _repo.GetMetaAsync(ideaId, referenceNumber, ct);
+
         private static InnovationIdea BuildIdea(
             CreateIdeaRequestDto request,
             Guid userId,

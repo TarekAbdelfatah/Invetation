@@ -23,6 +23,8 @@ namespace Ibtikar.Services.Interfaces
         Task<UserSummaryDto?> GetUserSummaryAsync(Guid userId, CancellationToken ct);
 
         Task<IdeaDetailsForEditDto?> GetDraftForEditAsync(Guid ideaId, Guid applicantId, IReadOnlyList<Guid> technologyIds, CancellationToken ct);
+
+        Task<IdeaMetaDto?> GetMetaAsync(Guid? ideaId, string? referenceNumber, CancellationToken ct);
     }
 
     public sealed record IdeaCreateOutcome(
