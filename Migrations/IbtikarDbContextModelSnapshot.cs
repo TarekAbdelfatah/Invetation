@@ -93,7 +93,7 @@ namespace Ibtikar.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("AssessorDepartmentId")
+                    b.Property<Guid?>("AssessorDepartmentId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("AssessorUserId")
@@ -1052,8 +1052,7 @@ namespace Ibtikar.Migrations
                     b.HasOne("Ibtikar.Models.Department", "AssessorDepartment")
                         .WithMany()
                         .HasForeignKey("AssessorDepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Ibtikar.Models.User", "Assessor")
                         .WithMany()

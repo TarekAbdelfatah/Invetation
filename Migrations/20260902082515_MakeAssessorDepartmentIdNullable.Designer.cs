@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Ibtikar.Migrations
 {
     [DbContext(typeof(IbtikarDbContext))]
-    [Migration("20260902081202_MakeAssessorDepartmentIdNullable")]
+    [Migration("20260902082515_MakeAssessorDepartmentIdNullable")]
     partial class MakeAssessorDepartmentIdNullable
     {
         /// <inheritdoc />
@@ -96,7 +96,7 @@ namespace Ibtikar.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("AssessorDepartmentId")
+                    b.Property<Guid?>("AssessorDepartmentId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("AssessorUserId")
@@ -1055,8 +1055,7 @@ namespace Ibtikar.Migrations
                     b.HasOne("Ibtikar.Models.Department", "AssessorDepartment")
                         .WithMany()
                         .HasForeignKey("AssessorDepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Ibtikar.Models.User", "Assessor")
                         .WithMany()
