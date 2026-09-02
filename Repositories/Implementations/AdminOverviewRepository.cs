@@ -11,7 +11,7 @@ namespace Ibtikar.Repositories
 
         public AdminOverviewRepository(IbtikarDbContext db) => _db = db;
 
-        public async Task<AdminOverviewDto> GetSnapshotAsync(int recentTake, CancellationToken ct)
+        public async Task<AdminOverviewDto> GetSnapshotAsync(CancellationToken ct)
         {
             var totalIdeas = await _db.InnovationIdeas.CountAsync(ct);
             var drafts = await _db.InnovationIdeas.CountAsync(i => i.IsDraft, ct);
@@ -20,31 +20,16 @@ namespace Ibtikar.Repositories
 
             var byStatus = await _db.IdeaStatuses
                 .AsNoTracking()
+                .Where(s => RecentAfterAuditCodes.Contains(s.Code))
                 .OrderBy(s => s.DisplayOrder)
                 .Select(s => new AdminOverviewStatusCountDto(
                     s.Code,
                     s.Name,
                     s.Color,
-                    _db.InnovationIdeas.Count(i => i.CurrentStatusId == s.Id)))
+                    _db.InnovationIdeas.Count(i => !i.IsDraft && i.CurrentStatusId == s.Id)))
                 .ToListAsync(ct);
 
-            var recent = await _db.InnovationIdeas
-                .AsNoTracking()
-                .Where(i => i.CurrentStatus != null
-                    && !i.IsDraft
-                    && RecentAfterAuditCodes.Contains(i.CurrentStatus.Code))
-                .OrderByDescending(i => i.CreatedAt)
-                .Take(recentTake)
-                .Select(i => new AdminOverviewRecentIdeaDto(
-                    i.ReferenceNumber,
-                    i.Title,
-                    i.CurrentStatus != null ? i.CurrentStatus.Name : "—",
-                    i.CurrentStatus != null ? i.CurrentStatus.Color : "#888",
-                    i.InnovationDomain != null ? i.InnovationDomain.Name : "—",
-                    i.CreatedAt))
-                .ToListAsync(ct);
-
-            return new AdminOverviewDto(totalIdeas, drafts, submitted, totalUsers, byStatus, recent);
+            return new AdminOverviewDto(totalIdeas, drafts, submitted, totalUsers, byStatus);
         }
 
         private static readonly HashSet<string> RecentAfterAuditCodes = new(StringComparer.OrdinalIgnoreCase)
@@ -62,7 +47,10 @@ namespace Ibtikar.Repositories
 
         public async Task<AdminOverviewListDto> GetIdeasAsync(string? statusFilter, int page, int pageSize, CancellationToken ct)
         {
-            var query = _db.InnovationIdeas.AsNoTracking();
+            var query = _db.InnovationIdeas.AsNoTracking()
+                .Where(i => !i.IsDraft
+                    && i.CurrentStatus != null
+                    && RecentAfterAuditCodes.Contains(i.CurrentStatus.Code));
 
             if (!string.IsNullOrWhiteSpace(statusFilter))
                 query = query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == statusFilter);

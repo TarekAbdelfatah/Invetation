@@ -5,18 +5,9 @@ namespace Ibtikar.DTOs.AdminOverview
         int Drafts,
         int Submitted,
         int TotalUsers,
-        IReadOnlyList<AdminOverviewStatusCountDto> ByStatus,
-        IReadOnlyList<AdminOverviewRecentIdeaDto> Recent);
+        IReadOnlyList<AdminOverviewStatusCountDto> ByStatus);
 
     public sealed record AdminOverviewStatusCountDto(string Code, string Name, string Color, int Count);
-
-    public sealed record AdminOverviewRecentIdeaDto(
-        string Reference,
-        string Title,
-        string StatusName,
-        string StatusColor,
-        string Domain,
-        DateTime CreatedAt);
 
     public sealed record AdminOverviewIdeaRowDto(
         Guid Id,

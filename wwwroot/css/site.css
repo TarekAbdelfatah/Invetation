@@ -462,6 +462,43 @@ body {
   white-space: nowrap;
 }
 
+/* ---------- Tables: fixed layout without horizontal scroll ---------- */
+.bog-table-no-hscroll {
+  overflow-x: clip !important;
+}
+
+.bog-table-no-hscroll table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.bog-table-no-hscroll thead th {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.bog-table-no-hscroll tbody td {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.bog-table-no-hscroll .bog-idea-title {
+  display: block;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.bog-table-no-hscroll .bog-idea-clamp {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-height: 132px;
+  overflow-y: auto;
+  font-size: var(--text-sm);
+}
+
 /* Mobile: convert table rows into stacked cards */
 @media (max-width: 767.98px) {
   .bog-card-list thead {
