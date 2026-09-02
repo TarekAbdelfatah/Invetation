@@ -163,11 +163,11 @@
                                 <table class="bog-card-list mb-0" data-testid="admin-ideas-table">
                                     <colgroup>
                                         <col style="width:26%" />
-                                        <col style="width:13%" />
+                                        <col style="width:12%" />
                                         <col style="width:17%" />
                                         <col style="width:14%" />
-                                        <col style="width:13%" />
-                                        <col style="width:17%" />
+                                        <col style="width:11%" />
+                                        <col style="width:20%" />
                                     </colgroup>
                                     <thead>
                                         <tr>
@@ -195,7 +195,7 @@
                                                 <td data-label="الحالة"><span class="badge rounded-pill" style="background-color:@i.StatusColor">@i.StatusName</span></td>
                                                 <td class="bog-card-list__actions" data-label="تاريخ التقديم">
                                                     <div class="d-flex align-items-center justify-content-between gap-2">
-                                                        <small dir="ltr">@i.CreatedAt.FormatDateTime()</small>
+                                                        <small dir="ltr">@i.CreatedAt.FormatDate()</small>
                                                         <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@i.Id">
                                                             <span class="material-icons align-middle" style="font-size:14px">visibility</span>
                                                             تفاصيل
