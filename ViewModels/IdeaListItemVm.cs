@@ -4,6 +4,7 @@ namespace Ibtikar.ViewModels
         Guid Id,
         string ReferenceNumber,
         string Title,
+        string TitleDisplay,
         string? StatusName,
         string? StatusColor,
         string? DomainName,

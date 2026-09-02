@@ -39,6 +39,7 @@ namespace Ibtikar.Controllers
 
         [Authorize]
         [HttpGet]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> Create(Guid? draftId, CancellationToken ct)
         {
             var model = new IdeaCreateViewModel
@@ -202,6 +203,7 @@ namespace Ibtikar.Controllers
                 dto.Id,
                 dto.ReferenceNumber,
                 dto.Title,
+                dto.TitleDisplay,
                 dto.StatusName,
                 dto.StatusColor,
                 dto.DomainName,

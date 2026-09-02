@@ -4,6 +4,7 @@ namespace Ibtikar.DTOs.MyRequests
         Guid Id,
         string Reference,
         string Title,
+        string TitleDisplay,
         string? DomainName,
         bool IsDraft,
         string StatusCode,

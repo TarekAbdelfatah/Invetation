@@ -58,6 +58,9 @@ namespace Ibtikar.Repositories
                     i.Id,
                     i.ReferenceNumber,
                     i.Title,
+                    i.Title != null && i.Title.Length > 50
+                        ? i.Title.Substring(0, 50) + "…"
+                        : i.Title,
                     i.InnovationDomain != null ? i.InnovationDomain.Name : null,
                     i.IsDraft,
                     i.IsDraft

@@ -6,6 +6,7 @@ namespace Ibtikar.ViewModels
         Guid Id,
         string Reference,
         string Title,
+        string TitleDisplay,
         string? DomainName,
         bool IsDraft,
         string StatusCode,

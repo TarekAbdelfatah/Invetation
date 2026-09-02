@@ -54,7 +54,7 @@
                                         </span>
                                     }
                                 </div>
-                                <h3 class="bog-idea-card__title" title="@idea.Title">@(idea.Title?.Length > 50 ? idea.Title[..50] + "…" : idea.Title)</h3>
+                                <h3 class="bog-idea-card__title" title="@idea.Title">@idea.TitleDisplay</h3>
                                 <div class="bog-idea-card__foot">
                                     <small class="bog-idea-card__date">
                                         <span class="material-icons" style="font-size:14px">event</span>
@@ -86,7 +86,7 @@
                                 {
                                     <tr>
                                         <td data-label="المرجع"><code>@idea.ReferenceNumber</code></td>
-                                        <td data-label="العنوان"><span title="@idea.Title">@(idea.Title?.Length > 50 ? idea.Title[..50] + "…" : idea.Title)</span></td>
+                                        <td data-label="العنوان"><span title="@idea.Title">@idea.TitleDisplay</span></td>
                                         <td class="d-none d-lg-table-cell" data-label="المجال">@idea.DomainName</td>
                                         <td data-label="الحالة">
                                             @if (!string.IsNullOrEmpty(idea.StatusName))

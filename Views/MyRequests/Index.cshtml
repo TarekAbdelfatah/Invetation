@@ -62,7 +62,7 @@
                                     }
                                 </div>
 
-                                <h3 class="bog-idea-card__title">@i.Title</h3>
+                                <h3 class="bog-idea-card__title" title="@i.Title">@i.TitleDisplay</h3>
                                 @if (!string.IsNullOrWhiteSpace(i.DomainName))
                                 {
                                     <div class="bog-idea-card__meta small text-muted">
@@ -129,7 +129,7 @@
                                                 <code>@i.Reference</code>
                                             }
                                         </td>
-                                        <td data-label="العنوان">@i.Title</td>
+                                        <td data-label="العنوان"><span title="@i.Title">@i.TitleDisplay</span></td>
                                         <td class="d-none d-lg-table-cell" data-label="المجال">
                                             @if (!string.IsNullOrWhiteSpace(i.DomainName))
                                             {
