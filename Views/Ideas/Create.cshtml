@@ -216,4 +216,13 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/idea-form.js" asp-append-version="true"></script>
     <script src="~/js/idea-attachments.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            window.addEventListener('pageshow', function (e) {
+                if (e.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                    location.reload();
+                }
+            });
+        })();
+    </script>
 }
