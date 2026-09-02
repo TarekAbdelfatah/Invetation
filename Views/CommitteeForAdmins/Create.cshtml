@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "إنشاء لجنة ابتكار";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["SuppressGlobalAlert"] = true;
 }
 
 <div class="bog-main">
@@ -22,11 +23,17 @@
 
         @if (TempData["AlertMessage"] is string ok)
         {
-            <div class="alert alert-success">@ok</div>
+            ViewData["Type"] = "success";
+            ViewData["Dismissible"] = true;
+            ViewData["Ttl"] = 5000;
+            @await Html.PartialAsync("_Alert", ok)
         }
         @if (TempData["AlertError"] is string err)
         {
-            <div class="alert alert-danger">@err</div>
+            ViewData["Type"] = "danger";
+            ViewData["Dismissible"] = true;
+            ViewData["Ttl"] = 0;
+            @await Html.PartialAsync("_Alert", err)
         }
 
         <form asp-action="Create" method="post" id="committeeForm">
@@ -55,7 +62,7 @@
                             }
                         </select>
                         <span asp-validation-for="HeadUserId" class="text-danger"></span>
-                        <div class="form-text">يجب اختيار رئيس واحد فقط، وسيتم احتسابه ضمن الأعضاء.</div>
+                        <div class="form-text">يجب اختيار رئيس واحد فقط، ويُضاف تلقائياً ضمن أعضاء اللجنة. لا تختاره من قائمة الأعضاء.</div>
                     </div>
 
                     <div class="mb-3">
@@ -65,8 +72,8 @@
                             {
                                 <div class="form-check">
                                     <input class="form-check-input member-check"
-                                           asp-for="MemberUserIds"
                                            type="checkbox"
+                                           name="MemberUserIds"
                                            id="member_@m.UserId"
                                            value="@m.UserId" />
                                     <label class="form-check-label" for="member_@m.UserId">
@@ -76,7 +83,7 @@
                             }
                         </div>
                         <span asp-validation-for="MemberUserIds" class="text-danger"></span>
-                        <div class="form-text">يجب إضافة عضو واحد على الأقل. الرئيس محسوب ضمن الأعضاء.</div>
+                        <div class="form-text">يجب إضافة عضو واحد على الأقل من غير رئيس اللجنة. الرئيس يُضاف تلقائياً كعضو.</div>
                     </div>
                 </div>
             </div>
@@ -93,24 +100,44 @@
     document.addEventListener('DOMContentLoaded', function () {
         var form = document.getElementById('committeeForm');
         var head = document.getElementById('HeadUserId');
+        var memberChecks = Array.prototype.slice.call(document.querySelectorAll('.member-check'));
+
+        function syncHeadExclusion() {
+            var headValue = head.value;
+            memberChecks.forEach(function (c) {
+                var isHeadOption = c.value === headValue;
+                var wrap = c.closest('.form-check');
+                if (headValue && isHeadOption) {
+                    c.checked = false;
+                    c.disabled = true;
+                    if (wrap) wrap.classList.add('text-muted');
+                } else {
+                    c.disabled = false;
+                    if (wrap) wrap.classList.remove('text-muted');
+                }
+            });
+        }
+
+        head.addEventListener('change', syncHeadExclusion);
+        syncHeadExclusion();
 
         form.addEventListener('submit', function (e) {
-            var checked = document.querySelectorAll('.member-check:checked');
+            var checked = Array.prototype.slice.call(document.querySelectorAll('.member-check:checked'));
             var headValue = head.value;
             if (!headValue) {
                 e.preventDefault();
                 alert('يرجى اختيار رئيس اللجنة.');
                 return;
             }
-            var containsHead = Array.prototype.some.call(checked, function (c) { return c.value === headValue; });
             if (checked.length < 1) {
                 e.preventDefault();
-                alert('يرجى إضافة عضو واحد على الأقل.');
+                alert('يرجى إضافة عضو واحد على الأقل من غير رئيس اللجنة.');
                 return;
             }
-            if (!containsHead) {
+            var headSelectedAsMember = checked.some(function (c) { return c.value === headValue; });
+            if (headSelectedAsMember) {
                 e.preventDefault();
-                alert('يجب أن يكون الرئيس ضمن قائمة الأعضاء المحددة.');
+                alert('لا يمكن اختيار رئيس اللجنة ضمن الأعضاء؛ يُضاف تلقائياً كعضو.');
             }
         });
     });

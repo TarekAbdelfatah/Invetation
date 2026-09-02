@@ -1,26 +1,30 @@
 @{
+    var suppressGlobalAlert = ViewData["SuppressGlobalAlert"] is true;
     var alertMessage = string.Empty;
     var alertType = "info";
 
-    if (TempData["AlertMessage"] is string am)
+    if (!suppressGlobalAlert)
     {
-        alertMessage = am;
-        alertType = TempData["AlertType"] as string ?? "info";
-    }
-    else if (TempData["IdeaDeleted"] is string d)
-    {
-        alertMessage = d;
-        alertType = "success";
-    }
-    else if (TempData["IdeaResubmitted"] is string r)
-    {
-        alertMessage = r;
-        alertType = "success";
-    }
-    else if (TempData["IdeaDraftSaved"] is string s)
-    {
-        alertMessage = s;
-        alertType = "success";
+        if (TempData["AlertMessage"] is string am)
+        {
+            alertMessage = am;
+            alertType = TempData["AlertType"] as string ?? "info";
+        }
+        else if (TempData["IdeaDeleted"] is string d)
+        {
+            alertMessage = d;
+            alertType = "success";
+        }
+        else if (TempData["IdeaResubmitted"] is string r)
+        {
+            alertMessage = r;
+            alertType = "success";
+        }
+        else if (TempData["IdeaDraftSaved"] is string s)
+        {
+            alertMessage = s;
+            alertType = "success";
+        }
     }
 
     if (!string.IsNullOrEmpty(alertMessage))

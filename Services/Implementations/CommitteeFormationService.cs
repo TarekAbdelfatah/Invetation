@@ -98,19 +98,9 @@ namespace Ibtikar.Services.Implementations
                 return new CommitteeCreateResultDto(false, "يجب إضافة عضو واحد على الأقل للجنة.", null);
             }
 
-            if (!distinctMembers.Contains(dto.HeadUserId))
+            if (distinctMembers.Contains(dto.HeadUserId))
             {
-                return new CommitteeCreateResultDto(false, "يجب أن يكون الرئيس ضمن قائمة الأعضاء.", null);
-            }
-
-            if (distinctMembers.Count != distinctMembers.Distinct().Count())
-            {
-                return new CommitteeCreateResultDto(false, "لا يمكن تكرار نفس العضو.", null);
-            }
-
-            if (distinctMembers.Count(m => m == dto.HeadUserId) != 1)
-            {
-                return new CommitteeCreateResultDto(false, "يجب وجود رئيس واحد فقط للجنة.", null);
+                return new CommitteeCreateResultDto(false, "لا يمكن اختيار رئيس اللجنة من ضمن الأعضاء؛ يُضاف الرئيس تلقائياً كعضو للجنة.", null);
             }
 
             var headUser = await _db.Users.AsNoTracking()
@@ -137,13 +127,15 @@ namespace Ibtikar.Services.Implementations
                 IsActive = false,
                 CreatedAt = DateTime.UtcNow,
                 CreatedByUserId = actorUserId,
-                Members = distinctMembers.Select(uid => new CommitteeMember
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = uid,
-                    IsHead = uid == dto.HeadUserId,
-                    JoinedAt = DateTime.UtcNow
-                }).ToList()
+                Members = distinctMembers
+                    .Append(dto.HeadUserId)
+                    .Select(uid => new CommitteeMember
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = uid,
+                        IsHead = uid == dto.HeadUserId,
+                        JoinedAt = DateTime.UtcNow
+                    }).ToList()
             };
 
             _db.InnovationCommittees.Add(committee);
