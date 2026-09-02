@@ -29,5 +29,6 @@ namespace Ibtikar.DTOs.Committee
         int? CommitteePercent = null,
         int? MyCommitteePercent = null,
         bool HasAddedCommitteeAssessment = false,
-        bool HasVoted = false);
+        bool HasVoted = false,
+        string? DecisionNote = null);
 }

@@ -36,10 +36,6 @@
         @if (isHead)
         {
             <div class="d-flex justify-content-end mb-3 gap-2">
-                <a asp-action="Votes" class="btn btn-outline-primary">
-                    <span class="material-icons align-middle" style="font-size:18px">how_to_vote</span>
-                    التصويت
-                </a>
                 <a asp-action="Delegations" class="btn btn-outline-secondary">
                     <span class="material-icons align-middle" style="font-size:18px">swap_horiz</span>
                     التفويض
@@ -141,6 +137,7 @@
                                         data-has-assessment="@(i.HasAddedCommitteeAssessment ? "true" : "false")"
                                         data-combined="@(combined?.ToString())"
                                         data-band="@band"
+                                        data-note="@i.DecisionNote"
                                         data-is-referred="@(isReferred ? "true" : "false")">
                                         <td class="text-muted small">@i.Reference</td>
                                         <td class="fw-semibold"><span title="@i.Title">@i.TitleDisplay</span></td>
@@ -325,6 +322,10 @@
             <div id="decisionReadOnly" class="alert alert-light border text-center mb-0 d-none">
                 <span class="material-icons align-middle text-muted">info</span>
                 هذا القرار تم. العرض للتفاصيل فقط.
+                <div id="decisionNoteWrap" class="mt-3 text-start d-none">
+                    <div class="text-muted small mb-1">تفاصيل القرار / الملاحظات</div>
+                    <div class="border rounded bg-white p-3" id="decisionNoteText" style="white-space:pre-wrap"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -345,6 +346,8 @@
         var combinedEl = document.getElementById('combinedPercent');
         var actionsWrap = document.getElementById('decisionActions');
         var readOnlyWrap = document.getElementById('decisionReadOnly');
+        var noteWrap = document.getElementById('decisionNoteWrap');
+        var noteText = document.getElementById('decisionNoteText');
         var hintEl = document.getElementById('decisionHint');
         var acceptForm = document.getElementById('acceptForm');
         var rejectForm = document.getElementById('rejectForm');
@@ -367,6 +370,8 @@
             if (rejectReason) { rejectReason.value = ''; rejectReason.classList.remove('is-invalid'); }
             if (actionsWrap) actionsWrap.classList.add('d-none');
             if (readOnlyWrap) readOnlyWrap.classList.add('d-none');
+            if (noteWrap) noteWrap.classList.add('d-none');
+            if (noteText) noteText.textContent = '';
         }
 
         function displayValues(tr) {
@@ -419,6 +424,15 @@
             } else {
                 actionsWrap.classList.add('d-none');
                 readOnlyWrap.classList.remove('d-none');
+                var note = tr.getAttribute('data-note');
+                if (noteWrap && noteText) {
+                    if (note && note.trim() !== '') {
+                        noteText.textContent = note;
+                        noteWrap.classList.remove('d-none');
+                    } else {
+                        noteWrap.classList.add('d-none');
+                    }
+                }
             }
 
             var acceptBtn = document.getElementById('acceptSubmit');

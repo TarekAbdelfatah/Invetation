@@ -65,8 +65,9 @@ namespace Ibtikar.Services.Implementations
             var criteria = await _repo.GetActiveCriteriaAsync(ct);
 
             var draft = await _repo.GetLatestCommitteeHeaderAsync(ideaId, userId, ct);
-            var draftIsLatest = draft is { IsDraft: true, IsLocked: false };
-            var lineMap = draftIsLatest && draft is not null
+            var hasSaved = draft is not null;
+            var isEditableDraft = draft is { IsDraft: true, IsLocked: false };
+            var lineMap = hasSaved && draft is not null
                 ? draft.Details.ToDictionary(d => d.CriterionId, d => (d.Score, d.Comment))
                 : new Dictionary<Guid, (int, string?)>();
 
@@ -76,7 +77,7 @@ namespace Ibtikar.Services.Implementations
                 .ToList();
 
             var departmentPercent = await GetSpecializedPercentAsync(ideaId, ct);
-            var committeePercent = draftIsLatest && draft is { Details.Count: > 0 }
+            var committeePercent = hasSaved && draft is { Details.Count: > 0 }
                 ? CalculatePercent(draft.Details.Sum(d => d.Score), criteria.Count)
                 : (int?)null;
             var combined = departmentPercent.HasValue && committeePercent.HasValue
@@ -86,7 +87,7 @@ namespace Ibtikar.Services.Implementations
             return new CommitteeAssessDto(
                 idea.IdeaId, idea.Reference, idea.Title,
                 idea.StatusName, idea.StatusColor,
-                draftIsLatest, draft?.IsLocked ?? false,
+                isEditableDraft, draft?.IsLocked ?? false,
                 draft?.Id, draft?.CreatedAt,
                 draft?.TotalScore, draft?.Comment,
                 criteria, lines,

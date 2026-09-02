@@ -114,13 +114,22 @@ namespace Ibtikar.Repositories
                 .ToListAsync(ct))
                 .ToHashSet();
 
+            var decisionNotes = (await _db.IdeaStatusHistories.AsNoTracking()
+                .Where(h => ideaIds.Contains(h.InnovationIdeaId))
+                .OrderByDescending(h => h.ChangedAt)
+                .Select(h => new { h.InnovationIdeaId, h.Note })
+                .ToListAsync(ct))
+                .GroupBy(h => h.InnovationIdeaId)
+                .ToDictionary(g => g.Key, g => g.First().Note);
+
             var paged = rows.Select(r => r with
             {
                 DepartmentPercent = deptByIdea.TryGetValue(r.IdeaId, out var d) ? d : null,
                 CommitteePercent = committeeByIdea.TryGetValue(r.IdeaId, out var c) ? c : null,
                 MyCommitteePercent = myByIdea.TryGetValue(r.IdeaId, out var m) ? m : null,
                 HasAddedCommitteeAssessment = mySubmittedIds.Contains(r.IdeaId),
-                HasVoted = myVotedIds.Contains(r.IdeaId)
+                HasVoted = myVotedIds.Contains(r.IdeaId),
+                DecisionNote = decisionNotes.TryGetValue(r.IdeaId, out var n) ? n : null
             }).ToList();
 
             return new CommitteeReferralListDto(paged, page, pageSize, totalCount);

@@ -61,7 +61,8 @@ namespace Ibtikar.Controllers
                         i.ApplicantName, i.ApplicantDepartmentName,
                         i.ReferredAt, i.StayDays, i.IsOverdue,
                         i.DepartmentPercent, i.CommitteePercent,
-                        i.MyCommitteePercent, i.HasAddedCommitteeAssessment, i.HasVoted)).ToList();
+                        i.MyCommitteePercent, i.HasAddedCommitteeAssessment, i.HasVoted,
+                        i.DecisionNote)).ToList();
                     vm.TotalCount = referrals.TotalCount;
                 }
                 return View(vm);
@@ -106,12 +107,18 @@ namespace Ibtikar.Controllers
         [HttpGet("CommitteeForMembers/Votes")]
         public async Task<IActionResult> Votes(CancellationToken ct)
         {
-            var dto = await _dashboardService.GetVotesAsync(ResolveUserId(), ct);
+            var userId = ResolveUserId();
+            if ((await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var dto = await _dashboardService.GetVotesAsync(userId, ct);
             if (dto is null) return Forbid();
 
             var vm = new CommitteeVotesVm
             {
-                IsHead = (await _delegations.GetCommitteeIdForHeadAsync(ResolveUserId(), ct)).HasValue,
+                IsHead = false,
                 Items = dto.Items.Select(i => new CommitteeVoteRowVm(
                     i.IdeaId, i.Reference, i.Title,
                     i.StatusCode, i.StatusName, i.StatusColor,
@@ -126,7 +133,13 @@ namespace Ibtikar.Controllers
         [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> Vote(Guid id, CancellationToken ct)
         {
-            var dto = await _dashboardService.GetSingleVoteAsync(ResolveUserId(), id, ct);
+            var userId = ResolveUserId();
+            if ((await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var dto = await _dashboardService.GetSingleVoteAsync(userId, id, ct);
             if (dto is null) return Forbid();
 
             var vm = new CommitteeVoteRowVm(
@@ -142,8 +155,14 @@ namespace Ibtikar.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitVote(Guid ideaId, string decision, string? returnUrl, CancellationToken ct)
         {
+            var userId = ResolveUserId();
+            if ((await _delegations.GetCommitteeIdForHeadAsync(userId, ct)).HasValue)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
             var submission = new CommitteeVoteSubmitDto(ideaId, decision);
-            var result = await _dashboardService.SubmitVoteAsync(ResolveUserId(), submission, ct);
+            var result = await _dashboardService.SubmitVoteAsync(userId, submission, ct);
 
             TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
             TempData["AlertType"] = result.Success ? "success" : "danger";
