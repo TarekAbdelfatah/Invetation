@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Ibtikar.Validation;
 
 namespace Ibtikar.ViewModels
 {
@@ -30,9 +31,11 @@ namespace Ibtikar.ViewModels
     {
         [Required(ErrorMessage = "اسم اللجنة مطلوب.")]
         [StringLength(150, ErrorMessage = "اسم اللجنة يجب ألا يتجاوز 150 حرفاً.")]
+        [NoHtml]
         public string Name { get; set; } = string.Empty;
 
         [StringLength(1000, ErrorMessage = "الوصف يجب ألا يتجاوز 1000 حرف.")]
+        [NoHtml]
         public string? Description { get; set; }
 
         [Required(ErrorMessage = "يرجى اختيار رئيس اللجنة.")]

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Ibtikar.Validation;
 
 namespace Ibtikar.ViewModels
 {
@@ -64,10 +65,16 @@ namespace Ibtikar.ViewModels
     public sealed class MyRequestResubmitVm
     {
         [Required(ErrorMessage = "وصف الفكرة مطلوب عند إعادة التقديم.")]
+        [NoHtml]
         public string? Description { get; set; }
 
+        [NoHtml]
         public string? ProblemStatement { get; set; }
+
+        [NoHtml]
         public string? ProposedSolution { get; set; }
+
+        [NoHtml]
         public string? ExpectedBenefits { get; set; }
     }
 }

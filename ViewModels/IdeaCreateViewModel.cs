@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Ibtikar.Validation;
 
 namespace Ibtikar.ViewModels
 {
@@ -16,26 +17,31 @@ namespace Ibtikar.ViewModels
 
         [Required(ErrorMessage = "العنوان مطلوب")]
         [StringLength(TitleMax, MinimumLength = 5, ErrorMessage = "العنوان بين 5 و 200 حرف")]
+        [NoHtml]
         [Display(Name = "عنوان الفكرة")]
         public string Title { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "الملخص مطلوب")]
         [StringLength(DescriptionMax, MinimumLength = 30, ErrorMessage = "الملخص بين 30 و 3000 حرف")]
+        [NoHtml]
         [Display(Name = "الملخص")]
         [DataType(DataType.MultilineText)]
         public string Description { get; set; } = string.Empty;
 
         [StringLength(ProblemMax, ErrorMessage = "التحديات حتى 3000 حرف")]
+        [NoHtml]
         [Display(Name = "التحديات الحالية")]
         [DataType(DataType.MultilineText)]
         public string? ProblemStatement { get; set; }
 
         [StringLength(SolutionMax, ErrorMessage = "الحل المقترح حتى 3000 حرف")]
+        [NoHtml]
         [Display(Name = "الحل المقترح")]
         [DataType(DataType.MultilineText)]
         public string? ProposedSolution { get; set; }
 
         [StringLength(BenefitsMax, ErrorMessage = "الفوائد حتى 3000 حرف")]
+        [NoHtml]
         [Display(Name = "الفوائد المتوقعة")]
         [DataType(DataType.MultilineText)]
         public string? ExpectedBenefits { get; set; }
@@ -48,6 +54,7 @@ namespace Ibtikar.ViewModels
         public Guid? ExpectedImpactId { get; set; }
 
         [StringLength(OtherImpactMax, ErrorMessage = "حتى 200 حرف")]
+        [NoHtml]
         [Display(Name = "حدد الأثر الآخر")]
         public string? ExpectedImpactOther { get; set; }
 
@@ -55,6 +62,7 @@ namespace Ibtikar.ViewModels
         public Guid? TargetAudienceId { get; set; }
 
         [StringLength(OtherAudienceMax, ErrorMessage = "حتى 200 حرف")]
+        [NoHtml]
         [Display(Name = "حدد الفئة الأخرى")]
         public string? TargetAudienceOther { get; set; }
 
@@ -65,10 +73,12 @@ namespace Ibtikar.ViewModels
         public List<Guid> TechnologyIds { get; set; } = new();
 
         [StringLength(OtherTechMax, ErrorMessage = "حتى 200 حرف")]
+        [NoHtml]
         [Display(Name = "حدد التقنية الأخرى")]
         public string? TechnologyOther { get; set; }
 
         [StringLength(RequiredResourcesMax, ErrorMessage = "الموارد المطلوبة حتى 3000 حرف")]
+        [NoHtml]
         [Display(Name = "الموارد المطلوبة")]
         [DataType(DataType.MultilineText)]
         public string? RequiredResources { get; set; }

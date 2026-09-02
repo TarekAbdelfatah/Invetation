@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Ibtikar.Validation;
 
 namespace Ibtikar.ViewModels
 {
@@ -86,6 +87,7 @@ namespace Ibtikar.ViewModels
 
         [Required(ErrorMessage = "سبب الرفض مطلوب.")]
         [MinLength(10, ErrorMessage = "سبب الرفض يجب ألا يقل عن 10 أحرف.")]
+        [NoHtml]
         public string? Reason { get; set; }
     }
 

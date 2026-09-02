@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Ibtikar.DTOs.Execution;
+using Ibtikar.Validation;
 
 namespace Ibtikar.ViewModels
 {
@@ -72,6 +73,7 @@ namespace Ibtikar.ViewModels
 
         [Required(ErrorMessage = "ملاحظة التحديث مطلوبة.")]
         [MinLength(5, ErrorMessage = "ملاحظة التحديث يجب ألا تقل عن 5 أحرف.")]
+        [NoHtml]
         public string? Note { get; set; }
     }
 
@@ -81,6 +83,7 @@ namespace Ibtikar.ViewModels
 
         [Required(ErrorMessage = "ملاحظة الإكمال مطلوبة.")]
         [MinLength(5, ErrorMessage = "ملاحظة الإكمال يجب ألا تقل عن 5 أحرف.")]
+        [NoHtml]
         public string? CompleteNote { get; set; }
 
         public Guid? AttachmentIdeaId { get; set; }
