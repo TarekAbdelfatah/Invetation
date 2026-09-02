@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = RoleCodes.InnovationCommitteeMember)]
+    [IbtikarAuthorize(RoleCodes.InnovationCommitteeMember)]
     public class CommitteeController : Controller
     {
         private readonly ICommitteeDashboardService _dashboardService;

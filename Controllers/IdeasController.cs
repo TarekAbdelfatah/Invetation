@@ -9,6 +9,7 @@ using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
+    [IbtikarAuthorize]
     public class IdeasController : Controller
     {
         private readonly IIdeaService _ideaService;

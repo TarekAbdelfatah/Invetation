@@ -2,24 +2,22 @@ namespace Ibtikar.Services.Helpers
 {
     public static class RoleCodes
     {
-        public const string AuditEmployee = "audit-employee";
-        public const string SpecializedDepartment = "specialized-department";
-        public const string PartnerDepartment = "partner-department";
-        public const string InnovationCommitteeMember = "innovation-committee-member";
-        public const string SystemAdmin = "system-admin";
-        public const string ExternalBeneficiary = "external-beneficiary";
-        public const string InternalBeneficiary = "internal-beneficiary";
+        public const string AuditEmployee = "AuditEmployee";
+        public const string SpecializedDepartment = "SpecializedDepartment";
+        public const string PartnerDepartment = "SpecializedDepartment";
+        public const string InnovationCommitteeMember = "InnovationCommitteeMember";
+        public const string SystemAdmin = "admin";
+        public const string Admin = "admin";
+        public const string ExternalBeneficiary = "AuditEmployee";
+        public const string InternalBeneficiary = "AuditEmployee";
 
         public static readonly IReadOnlyDictionary<string, string> HomeRedirects =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 [AuditEmployee]            = "/Audit/Inbox",
                 [SpecializedDepartment]    = "/SpecializedDashboard",
-                [PartnerDepartment]        = "/SpecializedDashboard",
                 [InnovationCommitteeMember]= "/Committee",
-                [SystemAdmin]              = "/AdminOverview",
-                [ExternalBeneficiary]      = "/MyRequests",
-                [InternalBeneficiary]      = "/MyRequests"
+                [SystemAdmin]              = "/AdminOverview"
             };
 
         public const string ClaimType = "ibtikar_role";

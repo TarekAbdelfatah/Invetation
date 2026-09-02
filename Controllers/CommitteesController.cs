@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = RoleCodes.SystemAdmin)]
+    [IbtikarAuthorize(RoleCodes.SystemAdmin)]
     public class CommitteesController : Controller
     {
         private readonly ICommitteeFormationService _service;

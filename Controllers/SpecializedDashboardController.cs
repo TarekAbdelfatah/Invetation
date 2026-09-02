@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = $"{RoleCodes.SpecializedDepartment},{RoleCodes.PartnerDepartment}")]
+    [IbtikarAuthorize(RoleCodes.SpecializedDepartment, RoleCodes.PartnerDepartment)]
     public class SpecializedDashboardController : Controller
     {
         private readonly ISpecializedDashboardService _service;

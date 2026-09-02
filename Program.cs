@@ -26,10 +26,16 @@ namespace Ibtikar
             builder.Services.AddControllersWithViews(options =>
             {
                 options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+                var globalPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .Build();
+                options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(globalPolicy));
             });
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddDbContext<IbtikarDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddDbContext<CommonSysDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("CommonSysDB")));
             builder.Services.AddScoped<Pbkdf2PasswordHasher>();
             builder.Services.AddScoped<AuthService>();
             builder.Services.AddHttpClient();

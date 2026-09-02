@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = RoleCodes.SpecializedDepartment)]
+    [IbtikarAuthorize(RoleCodes.SpecializedDepartment)]
     public class ExecutionController : Controller
     {
         private readonly IExecutionService _service;

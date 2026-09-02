@@ -2,8 +2,11 @@ using Ibtikar.Services.Implementations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace Ibtikar.Controllers
 {
+    [AllowAnonymous]
     public class SignInCallBackController : Controller
     {
         private readonly ILogger<SignInCallBackController> _logger;
