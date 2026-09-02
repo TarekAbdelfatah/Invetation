@@ -70,7 +70,7 @@
                             {
                                 <tr>
                                     <td data-label="المرجع"><code>@i.Reference</code></td>
-                                    <td data-label="العنوان">@i.Title</td>
+                                    <td data-label="العنوان"><span title="@i.Title">@Display.Title(i.Title)</span></td>
                                     <td data-label="المُقدِّم">@i.ApplicantName</td>
                                     <td data-label="المرحلة الحالية">
                                         @if (!string.IsNullOrEmpty(i.CurrentStageName))

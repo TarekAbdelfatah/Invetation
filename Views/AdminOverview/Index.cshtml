@@ -123,7 +123,7 @@
                                         {
                                             <tr>
                                                 <td data-label="المرجع"><code>@r.Reference</code></td>
-                                                <td data-label="العنوان">@r.Title</td>
+                                                <td data-label="العنوان"><span title="@r.Title">@Display.Title(r.Title)</span></td>
                                                 <td data-label="المجال"><small>@r.Domain</small></td>
                                                 <td data-label="الحالة"><span class="badge rounded-pill" style="background-color:@r.StatusColor">@r.StatusName</span></td>
                                                 <td data-label="التاريخ"><small>@r.CreatedAt.ToString("yyyy-MM-dd")</small></td>
@@ -245,7 +245,7 @@
                                 {
                                     <tr>
                                         <td data-label="المرجع"><code>@i.Reference</code></td>
-                                        <td data-label="العنوان">@i.Title</td>
+                                        <td data-label="العنوان"><span title="@i.Title">@Display.Title(i.Title)</span></td>
                                         <td data-label="المجال"><small>@i.DomainName</small></td>
                                         <td data-label="المُقدِّم"><small>@i.ApplicantName<br />@i.ApplicantDepartmentName</small></td>
                                         <td data-label="الإدارة المحالة"><small>@(i.AssignedDepartmentName ?? "—")</small></td>

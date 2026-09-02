@@ -12,7 +12,7 @@
         var isRoutedRow = i.StatusCode == "under_study" && !string.IsNullOrWhiteSpace(i.AssignedDepartment);
         <tr class="@(i.IsOverdue && !isRoutedRow ? "table-danger" : null)" data-inbox-row>
             <td data-label="المرجع"><code>@i.Reference</code></td>
-            <td data-label="العنوان">@i.Title</td>
+            <td data-label="العنوان"><span title="@i.Title">@Display.Title(i.Title)</span></td>
             <td class="d-none d-lg-table-cell" data-label="المجال"><small>@i.Domain</small></td>
             <td data-label="الإدارة">
                 <small>@i.Department</small>
