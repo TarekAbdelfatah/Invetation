@@ -1,0 +1,187 @@
+@model Ibtikar.ViewModels.CommitteesCreateVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = "إنشاء لجنة ابتكار";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["SuppressGlobalAlert"] = true;
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="bog-page-header">
+            <h1>
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">group_add</span>
+                </span>
+                إنشاء لجنة ابتكار
+            </h1>
+            <span class="bog-page-role">
+                <span class="material-icons" aria-hidden="true">admin_panel_settings</span>
+                إدارة النظام
+            </span>
+        </div>
+
+        @if (TempData["AlertMessage"] is string ok)
+        {
+            ViewData["Type"] = "success";
+            ViewData["Dismissible"] = true;
+            ViewData["Ttl"] = 5000;
+            @await Html.PartialAsync("_Alert", ok)
+        }
+        @if (TempData["AlertError"] is string err)
+        {
+            ViewData["Type"] = "danger";
+            ViewData["Dismissible"] = true;
+            ViewData["Ttl"] = 0;
+            @await Html.PartialAsync("_Alert", err)
+        }
+
+        <form asp-action="Create" method="post" id="committeeForm" data-loading="false">
+            @Html.AntiForgeryToken()
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label" asp-for="Name">اسم اللجنة <span class="text-danger">*</span></label>
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" asp-for="Description">الوصف</label>
+                        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" asp-for="HeadUserId">رئيس اللجنة <span class="text-danger">*</span></label>
+                        <select asp-for="HeadUserId" class="form-select">
+                            <option value="">— اختر رئيس اللجنة —</option>
+                            @foreach (var h in Model.HeadCandidates)
+                            {
+                                <option value="@h.UserId">@h.FullName (@h.Username)</option>
+                            }
+                        </select>
+                        <span asp-validation-for="HeadUserId" class="text-danger"></span>
+                        <div class="form-text">يجب اختيار رئيس واحد فقط، ويُضاف تلقائياً ضمن أعضاء اللجنة. لا تختاره من قائمة الأعضاء.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">الأعضاء <span class="text-danger">*</span></label>
+                        <div class="form-check-list" id="memberList">
+                            @foreach (var m in Model.MemberCandidates)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input member-check"
+                                           type="checkbox"
+                                           name="MemberUserIds"
+                                           id="member_@m.UserId"
+                                           value="@m.UserId" />
+                                    <label class="form-check-label" for="member_@m.UserId">
+                                        @m.FullName (@m.Username)
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                        <span asp-validation-for="MemberUserIds" class="text-danger"></span>
+                        <div class="form-text">يجب إضافة عضو واحد على الأقل من غير رئيس اللجنة. الرئيس يُضاف تلقائياً كعضو.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">إنشاء اللجنة</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">إلغاء</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="committeeValidationModal" class="bog-modal" hidden role="dialog" aria-modal="true"
+     aria-labelledby="committeeValidationTitle" aria-describedby="committeeValidationMessage">
+    <div class="bog-modal-backdrop" data-close-committee-validation></div>
+    <div class="bog-modal-dialog bog-modal-dialog-centered" role="document">
+        <div class="bog-modal-content">
+            <h5 id="committeeValidationTitle" class="bog-modal-title">
+                <span class="material-icons align-middle text-warning" aria-hidden="true">warning</span>
+                تنبيه
+            </h5>
+            <p id="committeeValidationMessage" class="bog-modal-body text-secondary"></p>
+            <div class="bog-modal-actions">
+                <button type="button" class="btn btn-primary" data-close-committee-validation>حسناً</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('committeeForm');
+        var head = document.getElementById('HeadUserId');
+        var memberChecks = Array.prototype.slice.call(document.querySelectorAll('.member-check'));
+        var modal = document.getElementById('committeeValidationModal');
+        var messageEl = modal ? modal.querySelector('#committeeValidationMessage') : null;
+
+        function showValidation(message) {
+            if (!modal || !messageEl) { alert(message); return; }
+            messageEl.textContent = message;
+            modal.hidden = false;
+            modal.setAttribute('data-open', 'true');
+        }
+
+        function closeValidation() {
+            if (!modal) return;
+            modal.hidden = true;
+            modal.removeAttribute('data-open');
+        }
+
+        function syncHeadExclusion() {
+            var headValue = head.value;
+            memberChecks.forEach(function (c) {
+                var isHeadOption = c.value === headValue;
+                var wrap = c.closest('.form-check');
+                if (headValue && isHeadOption) {
+                    c.checked = false;
+                    c.disabled = true;
+                    if (wrap) wrap.classList.add('text-muted');
+                } else {
+                    c.disabled = false;
+                    if (wrap) wrap.classList.remove('text-muted');
+                }
+            });
+        }
+
+        head.addEventListener('change', syncHeadExclusion);
+        syncHeadExclusion();
+
+        if (modal) {
+            modal.querySelectorAll('[data-close-committee-validation]').forEach(function (el) {
+                el.addEventListener('click', closeValidation);
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && !modal.hidden) closeValidation();
+            });
+        }
+
+        form.addEventListener('submit', function (e) {
+            var checked = Array.prototype.slice.call(document.querySelectorAll('.member-check:checked'));
+            var headValue = head.value;
+            var message = null;
+            if (!headValue) {
+                message = 'يرجى اختيار رئيس اللجنة.';
+            } else if (checked.length < 1) {
+                message = 'يرجى إضافة عضو واحد على الأقل من غير رئيس اللجنة.';
+            } else if (checked.some(function (c) { return c.value === headValue; })) {
+                message = 'لا يمكن اختيار رئيس اللجنة ضمن الأعضاء؛ يُضاف تلقائياً كعضو.';
+            }
+            if (message) {
+                e.preventDefault();
+                e.stopPropagation();
+                showValidation(message);
+                return;
+            }
+            if (window.BogLoading && BogLoading.show) {
+                BogLoading.show('جارٍ إنشاء اللجنة...');
+            }
+        });
+    });
+</script>

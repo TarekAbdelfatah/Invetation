@@ -754,6 +754,9 @@ namespace Ibtikar.Migrations
                     b.Property<Guid>("CurrentStatusId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(4000)
@@ -772,6 +775,9 @@ namespace Ibtikar.Migrations
                     b.Property<Guid>("InnovationDomainId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
@@ -787,6 +793,10 @@ namespace Ibtikar.Migrations
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("RequiredResources")
+                        .HasMaxLength(3000)
+                        .HasColumnType("character varying(3000)");
 
                     b.Property<DateTime?>("SubmittedAt")
                         .HasColumnType("datetime2");
@@ -812,7 +822,8 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("ApplicantDepartmentId");
 
-                    b.HasIndex("ApplicantUserId");
+                    b.HasIndex("ApplicantUserId")
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.HasIndex("AssignedDepartmentId");
 
@@ -1087,8 +1098,7 @@ namespace Ibtikar.Migrations
                     b.HasOne("Ibtikar.Models.Department", "AssessorDepartment")
                         .WithMany()
                         .HasForeignKey("AssessorDepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Ibtikar.Models.User", "Assessor")
                         .WithMany()

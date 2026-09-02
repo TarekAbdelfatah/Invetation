@@ -1,80 +1,35 @@
-using Ibtikar.Data;
 using Ibtikar.DTOs.Committees;
 using Ibtikar.Models;
+using Ibtikar.Repositories;
 using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Notifications;
-using Ibtikar.Services.Helpers;
-using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Services.Implementations
 {
     public sealed class CommitteeFormationService : ICommitteeFormationService
     {
-        private readonly IbtikarDbContext _db;
+        private readonly ICommitteeRepository _committees;
+        private readonly IUserRepository _users;
         private readonly INotificationClient _notifier;
         private readonly ILogger<CommitteeFormationService> _logger;
 
         public CommitteeFormationService(
-            IbtikarDbContext db,
+            ICommitteeRepository committees,
+            IUserRepository users,
             INotificationClient notifier,
             ILogger<CommitteeFormationService> logger)
         {
-            _db = db;
+            _committees = committees;
+            _users = users;
             _notifier = notifier;
             _logger = logger;
         }
 
-        public async Task<IReadOnlyList<CommitteeSummaryDto>> GetAllAsync(CancellationToken ct)
-        {
-            var committees = await _db.InnovationCommittees.AsNoTracking()
-                .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync(ct);
+        public Task<IReadOnlyList<CommitteeSummaryDto>> GetAllAsync(CancellationToken ct)
+            => _committees.GetAllAsync(ct);
 
-            var memberLookup = await _db.CommitteeMembers.AsNoTracking()
-                .Where(m => committees.Select(c => c.Id).Contains(m.InnovationCommitteeId))
-                .GroupBy(m => m.InnovationCommitteeId)
-                .Select(g => new { CommitteeId = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.CommitteeId, x => x.Count, ct);
-
-            var headLookup = await _db.Users.AsNoTracking()
-                .Where(u => _db.CommitteeMembers.Any(m => m.UserId == u.Id && m.IsHead))
-                .ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
-
-            return committees.Select(c =>
-            {
-                var headUserId = _db.CommitteeMembers.AsNoTracking()
-                    .Where(m => m.InnovationCommitteeId == c.Id && m.IsHead)
-                    .Select(m => m.UserId)
-                    .FirstOrDefault();
-                var headName = headUserId != Guid.Empty && headLookup.TryGetValue(headUserId, out var n)
-                    ? n
-                    : "—";
-                var count = memberLookup.TryGetValue(c.Id, out var k) ? k : 0;
-                return new CommitteeSummaryDto(c.Id, c.Name, c.Description, c.IsActive, c.CreatedAt, c.ActivatedAt, headName, count);
-            }).ToList();
-        }
-
-        public async Task<CommitteeMemberOptionDto[]> GetMemberCandidatesAsync(Guid? excludeCommitteeId, CancellationToken ct)
-        {
-            var roleCode = RoleCodes.InnovationCommitteeMember;
-            var users = await _db.UserRoles.AsNoTracking()
-                .Where(ur => ur.Role.Code == roleCode && ur.User.IsActive)
-                .Select(ur => new { ur.UserId, ur.User.FullName, ur.User.Username, ur.User.Id })
-                .ToListAsync(ct);
-
-            var alreadyOnCommittee = await _db.CommitteeMembers.AsNoTracking()
-                .Where(m => excludeCommitteeId == null || m.InnovationCommitteeId == excludeCommitteeId)
-                .Select(m => m.UserId)
-                .ToListAsync(ct);
-
-            var alreadySet = new HashSet<Guid>(alreadyOnCommittee);
-
-            return users
-                .Where(u => !alreadySet.Contains(u.Id))
-                .Select(u => new CommitteeMemberOptionDto(u.Id, u.FullName, u.Username, false))
-                .OrderBy(u => u.FullName)
-                .ToArray();
-        }
+        public Task<CommitteeMemberOptionDto[]> GetMemberCandidatesAsync(Guid? excludeCommitteeId, CancellationToken ct)
+            => _committees.GetMemberCandidatesAsync(excludeCommitteeId, ct);
 
         public async Task<CommitteeCreateResultDto> CreateAsync(Guid actorUserId, CommitteeCreateDto dto, CancellationToken ct)
         {
@@ -98,33 +53,19 @@ namespace Ibtikar.Services.Implementations
                 return new CommitteeCreateResultDto(false, "يجب إضافة عضو واحد على الأقل للجنة.", null);
             }
 
-            if (!distinctMembers.Contains(dto.HeadUserId))
+            if (distinctMembers.Contains(dto.HeadUserId))
             {
-                return new CommitteeCreateResultDto(false, "يجب أن يكون الرئيس ضمن قائمة الأعضاء.", null);
+                return new CommitteeCreateResultDto(false, "لا يمكن اختيار رئيس اللجنة من ضمن الأعضاء؛ يُضاف الرئيس تلقائياً كعضو للجنة.", null);
             }
 
-            if (distinctMembers.Count != distinctMembers.Distinct().Count())
-            {
-                return new CommitteeCreateResultDto(false, "لا يمكن تكرار نفس العضو.", null);
-            }
-
-            if (distinctMembers.Count(m => m == dto.HeadUserId) != 1)
-            {
-                return new CommitteeCreateResultDto(false, "يجب وجود رئيس واحد فقط للجنة.", null);
-            }
-
-            var headUser = await _db.Users.AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == dto.HeadUserId, ct);
-            if (headUser is null || !headUser.IsActive)
+            var headIsActive = await _users.ExistsAndActiveAsync(dto.HeadUserId, ct);
+            if (!headIsActive)
             {
                 return new CommitteeCreateResultDto(false, "المستخدم المختار كرئيس غير موجود أو غير فعال.", null);
             }
 
-            var memberUsers = await _db.Users.AsNoTracking()
-                .Where(u => distinctMembers.Contains(u.Id) && u.IsActive)
-                .Select(u => u.Id)
-                .ToListAsync(ct);
-            if (memberUsers.Count != distinctMembers.Count)
+            var activeMembers = await _users.GetActiveUserIdsAsync(distinctMembers, ct);
+            if (activeMembers.Count != distinctMembers.Count)
             {
                 return new CommitteeCreateResultDto(false, "بعض الأعضاء المختارين غير موجودين أو غير فعالين.", null);
             }
@@ -137,17 +78,18 @@ namespace Ibtikar.Services.Implementations
                 IsActive = false,
                 CreatedAt = DateTime.UtcNow,
                 CreatedByUserId = actorUserId,
-                Members = distinctMembers.Select(uid => new CommitteeMember
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = uid,
-                    IsHead = uid == dto.HeadUserId,
-                    JoinedAt = DateTime.UtcNow
-                }).ToList()
+                Members = distinctMembers
+                    .Append(dto.HeadUserId)
+                    .Select(uid => new CommitteeMember
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = uid,
+                        IsHead = uid == dto.HeadUserId,
+                        JoinedAt = DateTime.UtcNow
+                    }).ToList()
             };
 
-            _db.InnovationCommittees.Add(committee);
-            await _db.SaveChangesAsync(ct);
+            await _committees.AddCommitteeAsync(committee, ct);
 
             _logger.LogInformation("Committee {Id} '{Name}' created with {Count} members by user {Actor}",
                 committee.Id, committee.Name, committee.Members.Count, actorUserId);
@@ -157,10 +99,7 @@ namespace Ibtikar.Services.Implementations
 
         public async Task<CommitteeCreateResultDto> ActivateAsync(Guid actorUserId, Guid committeeId, CancellationToken ct)
         {
-            var committee = await _db.InnovationCommittees
-                .Include(c => c.Members)
-                .ThenInclude(m => m.User)
-                .FirstOrDefaultAsync(c => c.Id == committeeId, ct);
+            var committee = await _committees.GetWithMembersAsync(committeeId, ct);
 
             if (committee is null)
             {
@@ -180,7 +119,7 @@ namespace Ibtikar.Services.Implementations
 
             committee.IsActive = true;
             committee.ActivatedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync(ct);
+            await _committees.SaveChangesAsync(ct);
 
             foreach (var member in members)
             {

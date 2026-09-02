@@ -9,6 +9,7 @@ namespace Ibtikar.ViewModels
         public int Accepted { get; set; }
         public int Rejected { get; set; }
         public string? CommitteeName { get; set; }
+        public List<CommitteeReferralRowVm> Items { get; set; } = new();
     }
 
     public sealed record CommitteeReferralRowVm(
@@ -23,13 +24,6 @@ namespace Ibtikar.ViewModels
         DateTime? ReferredAt,
         double StayDays,
         bool IsOverdue);
-
-    public class CommitteeReferralsVm
-    {
-        public List<CommitteeReferralRowVm> Items { get; set; } = new();
-        public string StatusFilter { get; set; } = string.Empty;
-        public string? CommitteeName { get; set; }
-    }
 
     public class CommitteeAssessVm
     {

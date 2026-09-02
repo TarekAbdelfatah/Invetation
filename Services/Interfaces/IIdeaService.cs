@@ -11,6 +11,7 @@ namespace Ibtikar.Services.Interfaces
             Guid? departmentId,
             bool isSaveDraft,
             Guid? draftId,
+            Guid? existingDraftId,
             List<IFormFile>? attachments,
             CancellationToken ct);
 
@@ -20,6 +21,10 @@ namespace Ibtikar.Services.Interfaces
         Task<IdeaLookupsDto> GetLookupsAsync(CancellationToken ct);
 
         Task<UserSummaryDto?> GetUserSummaryAsync(Guid userId, CancellationToken ct);
+
+        Task<IdeaDetailsForEditDto?> GetDraftForEditAsync(Guid ideaId, Guid applicantId, IReadOnlyList<Guid> technologyIds, CancellationToken ct);
+
+        Task<IdeaMetaDto?> GetMetaAsync(Guid? ideaId, string? referenceNumber, CancellationToken ct);
     }
 
     public sealed record IdeaCreateOutcome(

@@ -1,5 +1,6 @@
 @model Ibtikar.ViewModels.ReportsChallengesVm
 @using Ibtikar.ViewModels
+@using static Ibtikar.Services.Helpers.KsaTime
 @{
     ViewData["Title"] = "تقرير التحديات";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -132,7 +133,7 @@
                                     <td data-label="الحالة">
                                         <span class="status-badge badge rounded-pill" style="background-color:@r.StatusColor">@r.StatusName</span>
                                     </td>
-                                    <td data-label="تاريخ التقديم"><small dir="ltr">@r.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small></td>
+                                    <td data-label="تاريخ التقديم"><small dir="ltr">@r.CreatedAt.FormatDateTime()</small></td>
                                 </tr>
                             }
                         </tbody>

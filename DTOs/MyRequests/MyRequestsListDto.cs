@@ -4,6 +4,8 @@ namespace Ibtikar.DTOs.MyRequests
         Guid Id,
         string Reference,
         string Title,
+        string TitleDisplay,
+        string? DomainName,
         bool IsDraft,
         string StatusCode,
         string StatusName,
@@ -11,5 +13,9 @@ namespace Ibtikar.DTOs.MyRequests
         DateTime CreatedAt,
         DateTime? SubmittedAt);
 
-    public sealed record MyRequestsListDto(IReadOnlyList<MyRequestSummaryDto> Items);
+    public sealed record MyRequestsListDto(
+        IReadOnlyList<MyRequestSummaryDto> Items,
+        int Page,
+        int PageSize,
+        int TotalCount);
 }

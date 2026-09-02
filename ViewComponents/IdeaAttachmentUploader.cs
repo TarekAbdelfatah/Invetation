@@ -1,16 +1,15 @@
-using Ibtikar.Data;
+using Ibtikar.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.ViewComponents
 {
     public class IdeaAttachmentUploader : ViewComponent
     {
-        private readonly IbtikarDbContext _db;
+        private readonly IIdeaService _ideas;
 
-        public IdeaAttachmentUploader(IbtikarDbContext db)
+        public IdeaAttachmentUploader(IIdeaService ideas)
         {
-            _db = db;
+            _ideas = ideas;
         }
 
         /// <summary>
@@ -20,7 +19,7 @@ namespace Ibtikar.ViewComponents
         /// the database; the widget still renders and uploads go through the
         /// draft-specific endpoints, then move to the idea on submission.
         /// </summary>
-        public async Task<IViewComponentResult> InvokeAsync(string? referenceNumber = null, Guid? ideaId = null)
+        public async Task<IViewComponentResult> InvokeAsync(string? referenceNumber = null, Guid? ideaId = null, bool readOnly = false)
         {
             Guid resolvedId = Guid.Empty;
             string resolvedRef = string.Empty;
@@ -29,16 +28,12 @@ namespace Ibtikar.ViewComponents
 
             if (ideaId is { } iid && iid != Guid.Empty)
             {
-                var byId = await _db.InnovationIdeas
-                    .AsNoTracking()
-                    .Where(i => i.Id == iid)
-                    .Select(i => new { i.Id, i.Title, i.ReferenceNumber })
-                    .FirstOrDefaultAsync();
-                if (byId is not null)
+                var meta = await _ideas.GetMetaAsync(ideaId: iid, referenceNumber: null, HttpContext.RequestAborted);
+                if (meta is not null)
                 {
-                    resolvedId = byId.Id;
-                    resolvedRef = byId.ReferenceNumber ?? string.Empty;
-                    resolvedTitle = byId.Title;
+                    resolvedId = meta.Id;
+                    resolvedRef = meta.ReferenceNumber ?? string.Empty;
+                    resolvedTitle = meta.Title;
                     existsInDb = true;
                 }
                 else
@@ -48,15 +43,11 @@ namespace Ibtikar.ViewComponents
             }
             else if (!string.IsNullOrWhiteSpace(referenceNumber))
             {
-                var byRef = await _db.InnovationIdeas
-                    .AsNoTracking()
-                    .Where(i => i.ReferenceNumber == referenceNumber)
-                    .Select(i => new { i.Id, i.Title, i.ReferenceNumber })
-                    .FirstOrDefaultAsync();
-                if (byRef is null) return Content(string.Empty);
-                resolvedId = byRef.Id;
-                resolvedRef = byRef.ReferenceNumber ?? string.Empty;
-                resolvedTitle = byRef.Title;
+                var meta = await _ideas.GetMetaAsync(ideaId: null, referenceNumber: referenceNumber, HttpContext.RequestAborted);
+                if (meta is null) return Content(string.Empty);
+                resolvedId = meta.Id;
+                resolvedRef = meta.ReferenceNumber ?? string.Empty;
+                resolvedTitle = meta.Title;
                 existsInDb = true;
             }
             else
@@ -65,11 +56,13 @@ namespace Ibtikar.ViewComponents
             }
 
             ViewBag.ExistsInDb = existsInDb;
+            ViewBag.ReadOnly = readOnly;
             return View("Default", new
             {
                 Id = resolvedId,
                 ReferenceNumber = resolvedRef,
-                Title = resolvedTitle
+                Title = resolvedTitle,
+                ReadOnly = readOnly
             });
         }
     }

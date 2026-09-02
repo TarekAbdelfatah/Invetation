@@ -13,5 +13,6 @@ namespace Ibtikar.DTOs.Ideas
         string? TargetAudienceOther,
         bool UsesEmergingTech,
         IReadOnlyList<Guid> TechnologyIds,
-        string? TechnologyOther);
+        string? TechnologyOther,
+        string? RequiredResources);
 }

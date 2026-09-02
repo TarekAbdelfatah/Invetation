@@ -1,5 +1,6 @@
 @model Ibtikar.ViewModels.PartnerDetailsVm
 @using Ibtikar.ViewModels
+@using static Ibtikar.Services.Helpers.KsaTime
 @{
     ViewData["Title"] = $"مراجعة {Model.IdeaReference}";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -120,9 +121,9 @@
                 <div class="card-body">
                     <dl class="row mb-0">
                         <dt class="col-sm-4">تاريخ الطلب</dt>
-                        <dd class="col-sm-8" dir="ltr">@Model.SentAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+                        <dd class="col-sm-8" dir="ltr">@Model.SentAt.FormatDateTime()</dd>
                         <dt class="col-sm-4">تاريخ الرد</dt>
-                        <dd class="col-sm-8" dir="ltr">@(Model.RespondedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
+                        <dd class="col-sm-8" dir="ltr">@Model.RespondedAt.FormatDateTime()</dd>
                         @if (Model.AlreadyScored)
                         {
                             <dt class="col-sm-4">إجمالي الدرجات</dt>
@@ -150,7 +151,7 @@
                     <span class="badge bg-light text-dark border">@Model.SpecializedAssessment.AssessorDepartmentName</span>
                     @if (Model.SpecializedAssessment.SubmittedAt.HasValue)
                     {
-                        <small class="text-muted" dir="ltr">@Model.SpecializedAssessment.SubmittedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                        <small class="text-muted" dir="ltr">@Model.SpecializedAssessment.SubmittedAt.Value.FormatDateTime()</small>
                     }
                     @if (Model.SpecializedAssessment.TotalScore.HasValue)
                     {

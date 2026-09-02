@@ -1,9 +1,7 @@
-using Ibtikar.Data;
-using Ibtikar.Models;
+using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Implementations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 using Ibtikar.Services.Helpers;
@@ -16,23 +14,21 @@ namespace Ibtikar.Controllers
     {
         private readonly AttachmentService _attachments;
         private readonly FileStorageService _storage;
-        private readonly IbtikarDbContext _db;
         private readonly ILogger<AttachmentController> _logger;
 
         public AttachmentController(
             AttachmentService attachments,
             FileStorageService storage,
-            IbtikarDbContext db,
             ILogger<AttachmentController> logger)
         {
             _attachments = attachments;
             _storage = storage;
-            _db = db;
             _logger = logger;
         }
 
         [HttpPost("upload")]
-        [RequestSizeLimit(20 * 1024 * 1024)]
+        [ValidateAntiForgeryToken]
+        [RequestSizeLimit(6 * 1024 * 1024)]
         public async Task<IActionResult> Upload(
             [FromForm] Guid ideaId,
             [FromForm] IFormFile file,
@@ -43,8 +39,8 @@ namespace Ibtikar.Controllers
             if (file is null || file.Length == 0)
                 return BadRequest(new { error = "file is required." });
 
-            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(userIdRaw, out var userId))
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty)
                 return Challenge();
 
             if (!await _attachments.UserOwnsIdeaAsync(ideaId, userId, ct))
@@ -73,8 +69,8 @@ namespace Ibtikar.Controllers
         {
             if (ideaId == Guid.Empty) return BadRequest(new { error = "ideaId required." });
 
-            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(userIdRaw, out var userId))
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty)
                 return Challenge();
 
             if (!await _attachments.UserOwnsIdeaAsync(ideaId, userId, ct))
@@ -97,7 +93,8 @@ namespace Ibtikar.Controllers
         }
 
         [HttpPost("uploadDraft")]
-        [RequestSizeLimit(20 * 1024 * 1024)]
+        [ValidateAntiForgeryToken]
+        [RequestSizeLimit(6 * 1024 * 1024)]
         public async Task<IActionResult> UploadDraft(
             [FromForm] Guid draftId,
             [FromForm] IFormFile file,
@@ -108,8 +105,8 @@ namespace Ibtikar.Controllers
             if (file is null || file.Length == 0)
                 return BadRequest(new { error = "file is required." });
 
-            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(userIdRaw, out var userId))
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty)
                 return Challenge();
 
             var result = _attachments.SaveDraftAsync(userId, draftId, file, ct);
@@ -135,8 +132,8 @@ namespace Ibtikar.Controllers
         {
             if (draftId == Guid.Empty) return BadRequest(new { error = "draftId required." });
 
-            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(userIdRaw, out var userId))
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty)
                 return Challenge();
 
             var items = _attachments.ListDraftAsync(userId, draftId);
@@ -155,6 +152,7 @@ namespace Ibtikar.Controllers
         }
 
         [HttpPost("deleteDraft")]
+        [ValidateAntiForgeryToken]
         public IActionResult DeleteDraft(
             [FromForm] Guid draftId,
             [FromForm] string fileName,
@@ -163,12 +161,112 @@ namespace Ibtikar.Controllers
             if (draftId == Guid.Empty) return BadRequest(new { error = "draftId required." });
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(new { error = "fileName required." });
 
-            var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(userIdRaw, out var userId))
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty)
                 return Challenge();
 
             var ok = _attachments.DeleteDraftFile(userId, draftId, fileName);
             return ok ? Ok(new { ok = true }) : NotFound();
+        }
+
+        [HttpPost("delete/{attachmentId:guid}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteById(Guid attachmentId, CancellationToken ct)
+        {
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty)
+                return Challenge();
+
+            var attachment = await _attachments.GetByIdAsync(attachmentId, ct);
+            if (attachment is null) return NotFound();
+
+            if (!await _attachments.UserOwnsIdeaAsync(attachment.InnovationIdeaId, userId, ct))
+                return Forbid();
+
+            var ok = await _attachments.DeleteForApplicantAsync(attachment.InnovationIdeaId, attachmentId, userId, ct);
+            return ok ? Ok(new { ok = true }) : BadRequest(new { error = "cannot delete attachment in current idea state." });
+        }
+
+        [HttpGet("download/{attachmentId:guid}")]
+        public async Task<IActionResult> Download(Guid attachmentId, CancellationToken ct)
+        {
+            var attachment = await _attachments.GetByIdAsync(attachmentId, ct);
+            if (attachment is null) return NotFound();
+
+            var current = ResolveCurrentUserForAccess();
+            if (current is null
+                || !await _attachments.CanAccessIdeaAsync(
+                    attachment.InnovationIdeaId,
+                    current.Value.UserId,
+                    current.Value.RoleCodes,
+                    current.Value.DepartmentId,
+                    ct))
+                return Forbid();
+
+            if (!System.IO.File.Exists(attachment.StoragePath))
+                return NotFound(new { error = "file not found on disk." });
+
+            var fullStoragePath = Path.GetFullPath(attachment.StoragePath);
+            if (!fullStoragePath.StartsWith(Path.GetFullPath(_storage.Root), StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("StoragePath escape attempt blocked: {Path}", fullStoragePath);
+                return Forbid();
+            }
+
+            var stream = System.IO.File.OpenRead(attachment.StoragePath);
+            return File(stream, "application/pdf", attachment.FileName);
+        }
+
+        [HttpGet("downloadDraft")]
+        public IActionResult DownloadDraft(
+            [FromQuery] Guid draftId,
+            [FromQuery] string fileName,
+            CancellationToken ct)
+        {
+            if (draftId == Guid.Empty) return BadRequest(new { error = "draftId required." });
+            if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(new { error = "fileName required." });
+
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty)
+                return Challenge();
+
+            var folder = Path.Combine(_storage.Root, "_drafts", userId.ToString("N"), draftId.ToString("N"));
+            if (!Directory.Exists(folder))
+                return NotFound();
+
+            var path = Path.GetFullPath(Path.Combine(folder, fileName));
+            if (!path.StartsWith(Path.GetFullPath(folder), StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("Path traversal attempt blocked in DownloadDraft: {Path}", path);
+                return Forbid();
+            }
+
+            if (!System.IO.File.Exists(path)) return NotFound();
+            var stream = System.IO.File.OpenRead(path);
+            return File(stream, "application/pdf", Path.GetFileName(fileName));
+        }
+
+        private Guid ResolveUserId()
+        {
+            var raw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
+        }
+
+        private (Guid UserId, IReadOnlyCollection<string> RoleCodes, Guid? DepartmentId)? ResolveCurrentUserForAccess()
+        {
+            var userId = ResolveUserId();
+            if (userId == Guid.Empty) return null;
+
+            var roles = User.FindAll(RoleCodes.ClaimType)
+                .Select(c => c.Value)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            Guid? departmentId = null;
+            var deptRaw = User.FindFirst(RoleCodes.DepartmentIdClaim)?.Value;
+            if (!string.IsNullOrEmpty(deptRaw) && Guid.TryParse(deptRaw, out var deptId))
+                departmentId = deptId;
+
+            return (userId, roles, departmentId);
         }
     }
 }

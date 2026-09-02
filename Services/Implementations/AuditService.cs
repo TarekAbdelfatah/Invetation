@@ -9,8 +9,6 @@ namespace Ibtikar.Services.Implementations
 {
     public sealed class AuditService : IAuditService
     {
-        private const int InboxTake = 50;
-
         private readonly IAuditRepository _repo;
         private readonly AuditLogService _auditLog;
         private readonly INotificationClient _notifier;
@@ -28,19 +26,19 @@ namespace Ibtikar.Services.Implementations
             _logger = logger;
         }
 
-        public async Task<AuditInboxDto> GetInboxAsync(string? applicantType, string? status, CancellationToken ct)
+        public async Task<AuditInboxDto> GetInboxAsync(string? applicantType, string? status, int page, int pageSize, CancellationToken ct)
         {
             var applicantTypeNorm = Normalize(applicantType);
             var statusNorm = Normalize(status);
-            var rows = await GetInboxRowsInternalAsync(applicantTypeNorm, statusNorm, ct);
-            return new AuditInboxDto(rows, applicantTypeNorm, statusNorm);
+            return await GetInboxAsyncInternalAsync(applicantTypeNorm, statusNorm, page, pageSize, ct);
         }
 
         public async Task<IReadOnlyList<AuditInboxRowDto>> GetInboxRowsAsync(string? applicantType, string? status, CancellationToken ct)
         {
             var applicantTypeNorm = Normalize(applicantType);
             var statusNorm = Normalize(status);
-            return await GetInboxRowsInternalAsync(applicantTypeNorm, statusNorm, ct);
+            var inbox = await GetInboxAsyncInternalAsync(applicantTypeNorm, statusNorm, 1, 1000, ct);
+            return inbox.Items;
         }
 
         public Task<AuditDetailsDto?> GetDetailsAsync(Guid id, CancellationToken ct)
@@ -92,11 +90,38 @@ namespace Ibtikar.Services.Implementations
             if (department is null)
                 return new(AuditActionOutcome.InvalidInput, "يرجى اختيار إدارة تحويل صحيحة.");
 
-            if (idea.CurrentStatus?.Code != IdeaStatusCodes.UnderStudy)
-                return new(AuditActionOutcome.InvalidState, "لا يمكن التحويل لجهة إلا بعد فتح الملف للدراسة.");
+            var actionableStatuses = new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted, IdeaStatusCodes.UnderStudy };
+            if (!actionableStatuses.Contains(idea.CurrentStatus?.Code ?? string.Empty))
+                return new(AuditActionOutcome.InvalidState, "لا يمكن التحويل لجهة في حالة الطلب الحالية.");
+
+            var fromId = idea.CurrentStatusId;
+            var currentCode = idea.CurrentStatus?.Code ?? string.Empty;
 
             idea.AssignedDepartmentId = departmentId;
             idea.AuditEmployeeId = auditorId;
+
+            if (currentCode == IdeaStatusCodes.New || currentCode == IdeaStatusCodes.Resubmitted)
+            {
+                var underStudyId = await _repo.GetStatusIdByCodeAsync(IdeaStatusCodes.UnderStudy, ct);
+                if (underStudyId is null)
+                    return new(AuditActionOutcome.InvalidState, "لم يتم إعداد حالة (قيد الدراسة) بعد.");
+
+                idea.AuditAssignedAt = DateTime.UtcNow;
+                idea.CurrentStatusId = underStudyId.Value;
+
+                await _repo.AddStatusHistoryAsync(new IdeaStatusHistory
+                {
+                    InnovationIdeaId = idea.Id,
+                    FromStatusId = fromId,
+                    ToStatusId = underStudyId.Value,
+                    ChangedByUserId = auditorId,
+                    Note = "تحويل الملف إلى جهة مختصة"
+                }, ct);
+            }
+            else if (currentCode == IdeaStatusCodes.UnderStudy)
+            {
+                idea.AuditAssignedAt = DateTime.UtcNow;
+            }
 
             await _repo.AddAuditActionAsync(new AuditActionItem
             {
@@ -131,6 +156,10 @@ namespace Ibtikar.Services.Implementations
             if (idea.CurrentStatus?.Code == IdeaStatusCodes.Rejected || idea.CurrentStatus?.IsTerminal == true)
                 return new(AuditActionOutcome.InvalidState, "الملف في حالة نهائية ولا يمكن رفضه مجدداً.");
 
+            var actionableStatuses = new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted, IdeaStatusCodes.UnderStudy };
+            if (!actionableStatuses.Contains(idea.CurrentStatus?.Code ?? string.Empty))
+                return new(AuditActionOutcome.InvalidState, "لا يمكن رفض الملف في حالته الحالية.");
+
             var rejectedId = await _repo.GetStatusIdByCodeAsync(IdeaStatusCodes.Rejected, ct);
             if (rejectedId is null)
                 return new(AuditActionOutcome.InvalidState, "لم يتم إعداد حالة (مرفوض) بعد.");
@@ -138,6 +167,7 @@ namespace Ibtikar.Services.Implementations
             var fromId = idea.CurrentStatusId;
             var trimmedReason = reason.Trim();
             idea.CurrentStatusId = rejectedId.Value;
+            idea.AuditEmployeeId = auditorId;
 
             await _repo.AddAuditActionAsync(new AuditActionItem
             {
@@ -178,6 +208,10 @@ namespace Ibtikar.Services.Implementations
             if (idea.CurrentStatus?.IsTerminal == true)
                 return new(AuditActionOutcome.InvalidState, "الملف في حالة نهائية ولا يمكن طلب استكماله.");
 
+            var actionableStatuses = new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted, IdeaStatusCodes.UnderStudy };
+            if (!actionableStatuses.Contains(idea.CurrentStatus?.Code ?? string.Empty))
+                return new(AuditActionOutcome.InvalidState, "لا يمكن طلب استكمال الملف في حالته الحالية.");
+
             var waitingId = await _repo.GetStatusIdByCodeAsync(IdeaStatusCodes.WaitingForCompletion, ct);
             if (waitingId is null)
                 return new(AuditActionOutcome.InvalidState, "لم يتم إعداد حالة (بانتظار الاستكمال) بعد.");
@@ -185,6 +219,7 @@ namespace Ibtikar.Services.Implementations
             var fromId = idea.CurrentStatusId;
             var trimmed = instructions.Trim();
             idea.CurrentStatusId = waitingId.Value;
+            idea.AuditEmployeeId = auditorId;
 
             await _repo.AddAuditActionAsync(new AuditActionItem
             {
@@ -211,16 +246,23 @@ namespace Ibtikar.Services.Implementations
             return new(AuditActionOutcome.Success, "تم طلب استكمال الملف من مقدمه.");
         }
 
-        private async Task<IReadOnlyList<AuditInboxRowDto>> GetInboxRowsInternalAsync(string applicantTypeNorm, string statusNorm, CancellationToken ct)
+        private async Task<AuditInboxDto> GetInboxAsyncInternalAsync(string applicantTypeNorm, string statusNorm, int page, int pageSize, CancellationToken ct)
         {
             var codes = statusNorm switch
             {
                 "new" => new[] { IdeaStatusCodes.New },
                 "resubmitted" => new[] { IdeaStatusCodes.Resubmitted },
+                "routed" => new[] { IdeaStatusCodes.UnderStudy },
                 "rejected" => new[] { IdeaStatusCodes.Rejected },
-                _ => new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted }
+                _ => new[] { IdeaStatusCodes.New, IdeaStatusCodes.Resubmitted, IdeaStatusCodes.UnderStudy }
             };
-            return await _repo.GetInboxRowsAsync(applicantTypeNorm, codes, InboxTake, ct);
+            var inbox = await _repo.GetInboxRowsAsync(applicantTypeNorm, codes, page, pageSize, ct);
+            var normalizedStatus = statusNorm switch
+            {
+                "new" or "resubmitted" or "routed" or "rejected" => statusNorm,
+                _ => string.Empty
+            };
+            return inbox with { Status = normalizedStatus };
         }
 
         private static string Normalize(string? value) => (value ?? string.Empty).Trim().ToLowerInvariant();

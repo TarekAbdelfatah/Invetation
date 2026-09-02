@@ -5,6 +5,9 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
     var currentStatus = Model.StatusFilter;
     var deptLabel = string.IsNullOrWhiteSpace(Model.DepartmentName) ? "الإدارة" : Model.DepartmentName;
+    var totalLabel = Model.TotalCount > 0
+        ? $"{Model.Items.Count} من {Model.TotalCount}"
+        : Model.Items.Count.ToString();
 }
 
 <div class="bog-main">
@@ -56,7 +59,7 @@
                 <div class="card-header bg-white d-flex align-items-center gap-2">
                     <span class="material-icons text-primary">inventory_2</span>
                     <strong>الأفكار المحوّلة</strong>
-                    <span class="badge bg-secondary ms-auto">@Model.Items.Count</span>
+                    <span class="badge bg-secondary ms-auto">@totalLabel</span>
                 </div>
                 <div class="table-responsive">
                     <table class="bog-card-list mb-0">
@@ -81,7 +84,7 @@
                                     </td>
                                     <td data-label="المُقدِّم">@(i.ApplicantName ?? "—")</td>
                                     <td data-label="منذ التحويل">
-                                        <small dir="ltr">@i.StayDays.ToString("0.0") يوم</small>
+                                        <small dir="ltr">@Math.Ceiling(i.StayDays).ToString("0") يوم</small>
                                         @if (i.IsOverdue)
                                         {
                                             <span class="badge bg-danger ms-1">متأخر</span>
@@ -103,6 +106,14 @@
                     </table>
                 </div>
             </div>
+
+            @await Html.PartialAsync("_Pagination", null,
+                new ViewDataDictionary(ViewData)
+                {
+                    { "Page", Model.Page },
+                    { "PageSize", Model.PageSize },
+                    { "TotalCount", Model.TotalCount }
+                })
         }
     </div>
 </div>

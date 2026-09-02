@@ -56,59 +56,299 @@
             </div>
         }
 
-        <form method="post" asp-action="ConfirmRequest" id="request-form">
+        <form method="post" asp-action="ConfirmRequest" id="request-form" autocomplete="off">
             @Html.AntiForgeryToken()
             <input type="hidden" name="IdeaId" value="@Model.IdeaId" />
-
-            <div class="card bog-section mb-3">
-                <div class="card-header bg-white d-flex align-items-center gap-2">
-                    <span class="material-icons text-primary">add_business</span>
-                    <strong>اختر الجهات لطلب الرأي</strong>
-                </div>
-                <div class="card-body">
-                    @if (!Model.AvailablePartners.Any())
-                    {
-                        <p class="text-muted mb-0">لا توجد جهات متاحة. كل الإدارات النشطة تم طلب رأيها أو مستبعدة.</p>
-                    }
-                    else
-                    {
-                        <div class="row g-2">
-                            @foreach (var p in Model.AvailablePartners)
-                            {
-                                <div class="col-md-4 col-sm-6">
-                                    <label class="form-check card bog-partner-tile p-3 h-100">
-                                        <input type="checkbox" name="PartnerIds" value="@p.Id" class="form-check-input me-2"
-                                               checked="@(Model.SelectedPartnerIds.Contains(p.Id))" />
-                                        <span class="form-check-label d-flex align-items-center gap-2">
-                                            <span class="material-icons text-primary">apartment</span>
-                                            <span>@p.Name</span>
-                                        </span>
-                                    </label>
+            <div data-partner-picker data-max="2">
+                <div class="card bog-section mb-3 bog-partner-picker-card">
+                    <div class="card-header bg-white d-flex align-items-center gap-2">
+                        <span class="material-icons text-primary">add_business</span>
+                        <strong>اختر الجهات لطلب الرأي</strong>
+                        <span class="badge bg-secondary ms-auto" data-partner-count>0 / 2</span>
+                    </div>
+                    <div class="card-body">
+                        @if (!Model.AvailablePartners.Any())
+                        {
+                            <p class="text-muted mb-0">لا توجد جهات متاحة. كل الإدارات النشطة تم طلب رأيها أو مستبعدة.</p>
+                        }
+                        else
+                        {
+                            <div class="bog-partner-picker">
+                                <div class="bog-partner-picker__search">
+                                    <span class="material-icons bog-partner-picker__icon">search</span>
+                                    <input type="text"
+                                           class="form-control"
+                                           placeholder="ابحث عن إدارة…"
+                                           data-partner-search
+                                           aria-label="ابحث عن إدارة"
+                                           autocomplete="off" />
                                 </div>
-                            }
+
+                                <div class="bog-partner-picker__list" data-partner-list>
+                                    @foreach (var p in Model.AvailablePartners)
+                                    {
+                                        <button type="button"
+                                                class="bog-partner-option"
+                                                data-partner-option
+                                                data-id="@p.Id"
+                                                data-name="@p.Name"
+                                                title="@p.Name">
+                                            <span class="material-icons bog-partner-option__icon">apartment</span>
+                                            <span class="bog-partner-option__name">@p.Name</span>
+                                            <span class="bog-partner-option__check">
+                                                <span class="material-icons">add</span>
+                                            </span>
+                                        </button>
+                                    }
+                                </div>
+
+                                <div class="text-danger small mt-2" data-partner-error></div>
+                                <small class="text-muted d-block mt-2" data-partner-help>
+                                    اختر حتى إدارتين فقط. عند بلوغ الحد يتحول الاختيار إلى غير متاح حتى تحذف إدارة من الاختيار.
+                                </small>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card bog-section mb-3" data-partner-notes-card>
+                    <div class="card-header bg-white d-flex align-items-center gap-2">
+                        <span class="material-icons text-info">chat_bubble_outline</span>
+                        <strong>ملاحظات خاصة بكل جهة</strong>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">
+                            أضف ملاحظة موجّهة لكل إدارة تطلب رأيها. الملاحظة تظهر للإدارة المستهدفة فقط.
+                        </p>
+                        <div class="bog-partner-notes" data-partner-notes>
+                            <p class="text-muted small mb-0" data-partner-empty>لم يتم اختيار أي إدارة بعد.</p>
                         </div>
-                        <span asp-validation-for="PartnerIds" class="text-danger"></span>
-                    }
+                    </div>
                 </div>
-            </div>
 
-            <div class="card bog-section mb-3">
-                <div class="card-header bg-white d-flex align-items-center gap-2">
-                    <span class="material-icons text-info">chat_bubble_outline</span>
-                    <strong>ملاحظة للجهات المستشارة</strong>
+                <div class="d-flex flex-wrap gap-2 justify-content-end">
+                    <button type="submit"
+                            class="btn btn-primary"
+                            data-partner-submit
+                            @(Model.AvailablePartners.Any() ? null : "disabled")>
+                        <span class="material-icons align-middle" style="font-size:18px">send</span>
+                        إرسال الطلب
+                    </button>
                 </div>
-                <div class="card-body">
-                    <textarea asp-for="Note" class="form-control" rows="3" maxlength="2000" placeholder="اذكر للمشاركين النقاط التي تريد رأيهم فيها"></textarea>
-                    <span asp-validation-for="Note" class="text-danger"></span>
-                </div>
-            </div>
-
-            <div class="d-flex flex-wrap gap-2 justify-content-end">
-                <button type="submit" class="btn btn-primary" @(Model.AvailablePartners.Any() ? null : "disabled")>
-                    <span class="material-icons align-middle" style="font-size:18px">send</span>
-                    إرسال الطلب
-                </button>
             </div>
         </form>
     </div>
 </div>
+
+<template id="bog-partner-note-template">
+    <div class="bog-partner-note" data-partner-note>
+        <div class="bog-partner-note__head">
+            <span class="material-icons text-primary">apartment</span>
+            <strong class="bog-partner-note__name" data-partner-name></strong>
+            <button type="button"
+                    class="btn btn-sm btn-outline-danger ms-auto"
+                    data-partner-remove
+                    aria-label="إزالة الإدارة">
+                <span class="material-icons align-middle" style="font-size:16px">close</span>
+                إزالة
+            </button>
+        </div>
+        <textarea class="form-control mt-2"
+                  rows="3"
+                  maxlength="2000"
+                  placeholder="اذكر للإدارة النقاط التي تريد رأيها فيها…"
+                  data-partner-note-input></textarea>
+    </div>
+</template>
+
+@section Scripts {
+<script>
+    (function () {
+        const root = document.querySelector('[data-partner-picker]');
+        if (!root) return;
+
+        const maxPartners = parseInt(root.dataset.max || '2', 10);
+
+        const search = root.querySelector('[data-partner-search]');
+        const list = root.querySelector('[data-partner-list]');
+        const notesHost = root.querySelector('[data-partner-notes]');
+        const emptyHint = root.querySelector('[data-partner-empty]');
+        const countBadge = root.querySelector('[data-partner-count]');
+        const errorBox = root.querySelector('[data-partner-error]');
+        const helpBox = root.querySelector('[data-partner-help]');
+        const submitBtn = root.querySelector('[data-partner-submit]');
+        const noteTemplate = document.getElementById('bog-partner-note-template');
+
+        if (!list || !notesHost || !countBadge || !submitBtn || !noteTemplate) return;
+
+        const options = Array.prototype.slice.call(list.querySelectorAll('[data-partner-option]'));
+        const state = { selected: new Map() };
+
+        function normalize(s) {
+            return (s || '').toString().trim().toLowerCase();
+        }
+
+        function isSelected(id) {
+            return state.selected.has(id);
+        }
+
+        function setError(msg) {
+            if (!errorBox) return;
+            if (!msg) {
+                errorBox.textContent = '';
+                errorBox.classList.add('d-none');
+                return;
+            }
+            errorBox.textContent = msg;
+            errorBox.classList.remove('d-none');
+        }
+
+        function updateCount() {
+            const count = state.selected.size;
+            countBadge.textContent = count + ' / ' + maxPartners;
+            const reachedMax = count >= maxPartners;
+
+            list.classList.toggle('--locked', reachedMax);
+            options.forEach(opt => {
+                const id = opt.dataset.id;
+                const isSel = isSelected(id);
+                opt.classList.toggle('--selected', isSel);
+                opt.disabled = reachedMax || isSel;
+                const icon = opt.querySelector('.bog-partner-option__check .material-icons');
+                if (icon) icon.textContent = isSel ? 'check' : 'add';
+            });
+
+            if (search) {
+                search.disabled = reachedMax;
+                search.placeholder = reachedMax
+                    ? 'تم اختيار الحد الأقصى (' + maxPartners + ' إدارات)'
+                    : 'ابحث عن إدارة…';
+            }
+            if (helpBox) {
+                helpBox.textContent = reachedMax
+                    ? 'تم بلوغ الحد الأقصى. احذف إدارة من الأسفل لإتاحة الاختيار مجدداً.'
+                    : 'اختر حتى إدارتين فقط. عند بلوغ الحد يتحول الاختيار إلى غير متاح حتى تحذف إدارة من الاختيار.';
+            }
+            submitBtn.disabled = count === 0;
+        }
+
+        function filterList() {
+            if (!search) return;
+            const term = normalize(search.value);
+            let visible = 0;
+            options.forEach(opt => {
+                const name = normalize(opt.dataset.name || '');
+                const match = term === '' || name.includes(term);
+                opt.hidden = !match || isSelected(opt.dataset.id);
+                if (!opt.hidden) visible++;
+            });
+            list.classList.toggle('--empty', visible === 0);
+        }
+
+        function syncHiddenInputs() {
+            root.querySelectorAll('[data-partner-hidden], [data-mirror="true"]').forEach(n => n.remove());
+
+            let i = 0;
+            state.selected.forEach((value, id) => {
+                const hiddenId = document.createElement('input');
+                hiddenId.type = 'hidden';
+                hiddenId.name = 'PartnerIds';
+                hiddenId.value = id;
+                hiddenId.setAttribute('data-partner-hidden', 'id-' + i);
+                root.appendChild(hiddenId);
+
+                const hiddenNote = document.createElement('input');
+                hiddenNote.type = 'hidden';
+                hiddenNote.name = 'Notes[' + i + '].PartnerId';
+                hiddenNote.value = id;
+                hiddenNote.setAttribute('data-partner-hidden', 'note-id-' + i);
+                root.appendChild(hiddenNote);
+                i++;
+            });
+
+            let noteIdx = 0;
+            notesHost.querySelectorAll('[data-partner-note]').forEach(card => {
+                const partnerId = card.dataset.partnerId;
+                const noteInput = card.querySelector('[data-partner-note-input]');
+                if (!partnerId || !noteInput) return;
+                const mirror = document.createElement('input');
+                mirror.type = 'hidden';
+                mirror.name = 'Notes[' + noteIdx + '].Note';
+                mirror.value = noteInput.value || '';
+                mirror.setAttribute('data-mirror', 'true');
+                card.appendChild(mirror);
+                noteIdx++;
+            });
+
+            while (noteIdx < state.selected.size) {
+                const pad = document.createElement('input');
+                pad.type = 'hidden';
+                pad.name = 'Notes[' + noteIdx + '].Note';
+                pad.value = '';
+                pad.setAttribute('data-partner-hidden', 'pad-' + noteIdx);
+                root.appendChild(pad);
+                noteIdx++;
+            }
+        }
+
+        function addPartner(id, name) {
+            if (!id || isSelected(id)) return;
+            if (state.selected.size >= maxPartners) {
+                setError('لا يمكن طلب رأي أكثر من ' + maxPartners + ' إدارات في المرة الواحدة.');
+                return;
+            }
+            setError('');
+            state.selected.set(id, { name: name, note: '' });
+
+            const node = noteTemplate.content.firstElementChild.cloneNode(true);
+            node.dataset.partnerId = id;
+            node.querySelector('[data-partner-name]').textContent = name;
+            const removeBtn = node.querySelector('[data-partner-remove]');
+            removeBtn.addEventListener('click', function () {
+                removePartner(id);
+            });
+            const noteInput = node.querySelector('[data-partner-note-input]');
+            noteInput.addEventListener('input', function () {
+                const existing = state.selected.get(id);
+                if (existing) existing.note = noteInput.value;
+                syncHiddenInputs();
+            });
+
+            if (emptyHint) emptyHint.classList.add('d-none');
+            notesHost.appendChild(node);
+
+            updateCount();
+            filterList();
+            syncHiddenInputs();
+        }
+
+        function removePartner(id) {
+            state.selected.delete(id);
+            const card = notesHost.querySelector('[data-partner-note][data-partner-id="' + id + '"]');
+            if (card) card.remove();
+            if (state.selected.size === 0 && emptyHint) emptyHint.classList.remove('d-none');
+            setError('');
+            updateCount();
+            filterList();
+            syncHiddenInputs();
+        }
+
+        options.forEach(opt => {
+            opt.addEventListener('click', function () {
+                addPartner(opt.dataset.id, opt.dataset.name || opt.textContent.trim());
+            });
+        });
+
+        if (search) {
+            search.addEventListener('input', function () {
+                setError('');
+                filterList();
+            });
+        }
+
+        updateCount();
+        filterList();
+        syncHiddenInputs();
+    })();
+</script>
+}

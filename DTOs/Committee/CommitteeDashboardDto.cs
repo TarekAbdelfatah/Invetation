@@ -18,8 +18,4 @@ namespace Ibtikar.DTOs.Committee
         DateTime? ReferredAt,
         double StayDays,
         bool IsOverdue);
-
-    public sealed record CommitteeReferralsDto(
-        IReadOnlyList<CommitteeReferralRowDto> Items,
-        string StatusFilter);
 }

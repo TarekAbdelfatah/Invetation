@@ -32,10 +32,28 @@ namespace Ibtikar.Services.Implementations
             Guid? departmentId,
             bool isSaveDraft,
             Guid? draftId,
+            Guid? existingDraftId,
             List<IFormFile>? attachments,
             CancellationToken ct)
         {
-            var idea = BuildIdea(request, userId, departmentId, isSaveDraft);
+            InnovationIdea idea;
+            var isUpdate = existingDraftId is { } && existingDraftId.Value != Guid.Empty;
+
+            if (isUpdate)
+            {
+                var existing = await _repo.GetDraftByIdAsync(existingDraftId!.Value, userId, ct);
+                if (existing is null)
+                {
+                    return IdeaCreateOutcome.Failed("تعذّر العثور على المسودة المطلوب تحديثها.");
+                }
+                idea = existing;
+                ApplyToIdea(idea, request, departmentId, isSaveDraft);
+            }
+            else
+            {
+                idea = BuildIdea(request, userId, departmentId, isSaveDraft);
+                await _repo.AddAsync(idea, ct);
+            }
 
             if (!isSaveDraft)
             {
@@ -47,15 +65,17 @@ namespace Ibtikar.Services.Implementations
                     return IdeaCreateOutcome.Failed("حالة الطلب غير مهيأة. تواصل مع مدير النظام.");
                 }
                 idea.CurrentStatusId = newStatus.Id;
+                idea.SubmittedAt = DateTime.UtcNow;
+                idea.IsDraft = false;
             }
-            else
+            else if (!isUpdate)
             {
                 idea.ReferenceNumber = string.Empty;
                 var draftStatus = await _repo.GetStatusByCodeAsync(IdeaStatusCodes.New, ct);
                 idea.CurrentStatusId = draftStatus?.Id ?? Guid.Empty;
+                idea.SubmittedAt = null;
+                idea.IsDraft = true;
             }
-
-            await _repo.AddAsync(idea, ct);
 
             try
             {
@@ -67,7 +87,7 @@ namespace Ibtikar.Services.Implementations
                 return IdeaCreateOutcome.Failed("تعذّر حفظ الطلب. حاول مرة أخرى.");
             }
 
-            if (draftId is { } did && did != Guid.Empty)
+            if (!isUpdate && draftId is { } did && did != Guid.Empty)
             {
                 var moved = _attachments.MoveDraftToIdea(userId, did, idea.Id, ct);
                 if (moved > 0)
@@ -105,6 +125,31 @@ namespace Ibtikar.Services.Implementations
             return IdeaCreateOutcome.DraftSaved();
         }
 
+        public async Task<IdeaDetailsForEditDto?> GetDraftForEditAsync(Guid ideaId, Guid applicantId, IReadOnlyList<Guid> technologyIds, CancellationToken ct)
+        {
+            var idea = await _repo.GetDraftByIdAsync(ideaId, applicantId, ct);
+            if (idea is null) return null;
+
+            var techs = await _repo.GetDraftTechnologyIdsAsync(ideaId, ct);
+            return new IdeaDetailsForEditDto(
+                idea.Id,
+                idea.ReferenceNumber,
+                idea.Title,
+                idea.Description,
+                idea.ProblemStatement,
+                idea.ProposedSolution,
+                idea.ExpectedBenefits,
+                idea.RequiredResources,
+                idea.InnovationDomainId,
+                idea.ExpectedImpactId,
+                idea.ExpectedImpactOther,
+                idea.TargetAudienceId,
+                idea.TargetAudienceOther,
+                idea.UsesEmergingTech,
+                techs,
+                idea.TechnologyOther);
+        }
+
         public async Task<IdeaDetailsDto?> GetDetailsAsync(string referenceNumber, Guid userId, CancellationToken ct)
             => await _repo.GetDetailsAsync(referenceNumber, userId, ct);
 
@@ -116,6 +161,9 @@ namespace Ibtikar.Services.Implementations
 
         public async Task<UserSummaryDto?> GetUserSummaryAsync(Guid userId, CancellationToken ct)
             => await _repo.GetUserSummaryAsync(userId, ct);
+
+        public async Task<IdeaMetaDto?> GetMetaAsync(Guid? ideaId, string? referenceNumber, CancellationToken ct)
+            => await _repo.GetMetaAsync(ideaId, referenceNumber, ct);
 
         private static InnovationIdea BuildIdea(
             CreateIdeaRequestDto request,
@@ -135,6 +183,7 @@ namespace Ibtikar.Services.Implementations
                 TargetAudienceOther = NullIfBlank(request.TargetAudienceOther),
                 UsesEmergingTech = request.UsesEmergingTech,
                 TechnologyOther = NullIfBlank(request.TechnologyOther),
+                RequiredResources = NullIfBlank(request.RequiredResources),
                 InnovationDomainId = request.InnovationDomainId ?? Guid.Empty,
                 ExpectedImpactId = request.ExpectedImpactId,
                 TargetAudienceId = request.TargetAudienceId,
@@ -144,6 +193,28 @@ namespace Ibtikar.Services.Implementations
                 CreatedAt = DateTime.UtcNow,
                 SubmittedAt = isSaveDraft ? null : DateTime.UtcNow
             };
+        }
+
+        private static void ApplyToIdea(
+            InnovationIdea idea,
+            CreateIdeaRequestDto request,
+            Guid? departmentId,
+            bool isSaveDraft)
+        {
+            idea.Title = request.Title.Trim();
+            idea.Description = request.Description.Trim();
+            idea.ProblemStatement = NullIfBlank(request.ProblemStatement);
+            idea.ProposedSolution = NullIfBlank(request.ProposedSolution);
+            idea.ExpectedBenefits = NullIfBlank(request.ExpectedBenefits);
+            idea.ExpectedImpactOther = NullIfBlank(request.ExpectedImpactOther);
+            idea.TargetAudienceOther = NullIfBlank(request.TargetAudienceOther);
+            idea.UsesEmergingTech = request.UsesEmergingTech;
+            idea.TechnologyOther = NullIfBlank(request.TechnologyOther);
+            idea.RequiredResources = NullIfBlank(request.RequiredResources);
+            idea.InnovationDomainId = request.InnovationDomainId ?? Guid.Empty;
+            idea.ExpectedImpactId = request.ExpectedImpactId;
+            idea.TargetAudienceId = request.TargetAudienceId;
+            idea.ApplicantDepartmentId = departmentId;
         }
 
         private async Task<string?> SaveAttachmentsAsync(

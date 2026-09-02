@@ -1,4 +1,4 @@
-# دليل اختبار نظام ابتكار (Ibtikar) — Cycle التحقق
+﻿# دليل اختبار نظام ابتكار (Ibtikar) — Cycle التحقق
 
 > **اسم النظام:** ابتكار (Ibtikar) — منصة استقبال الأفكار الابتكارية لمكتب المظالم
 > **نوع التطبيق:** ASP.NET Core MVC + EF Core + PostgreSQL + Bootstrap 5 RTL
@@ -39,7 +39,7 @@
 |---|---|---|---|
 | 1 | `beneficiary@ibtikar.local` (داخلي) أو `ext-user@ibtikar.local` (خارجي) | External beneficiary | `/MyRequests` |
 | 2 | `audit@ibtikar.local` | Audit employee | `/AuditInbox` |
-| 3 | `committee@ibtikar.local` | Innovation committee member | `/Committee` *(قد يكون فارغاً — راجع §6)* |
+| 3 | `committee@ibtikar.local` | Innovation committee member | `/CommitteeForMembers` *(قد يكون فارغاً — راجع §6)* |
 | 4 | `specialized-ai@ibtikar.local` | Specialized department (مثال: AI — judicial) | `/SpecializedDashboard` (لوحة موحّدة) |
 | 5 | `system-manager@ibtikar.local` | System manager | `/Reports` |
 | 6 | `partner@ibtikar.local` *(Username للتوضيح فقط — الإدارة الفعلية: تقنية/tech)* | Partner department *(= نفس الإدارة — لوحة موحّدة)* | `/SpecializedDashboard` (لوحة موحّدة) |
@@ -152,7 +152,7 @@
 
 #### 2.14 Out of Scope
 - ❌ لا يعدّل فكرة بعد القبول (Read-only).
-- ❌ لا يصل لـ `/Committee` أو `/SpecializedDashboard`.
+- ❌ لا يصل لـ `/CommitteeForMembers` أو `/SpecializedDashboard`.
 
 ---
 
@@ -164,8 +164,8 @@
 #### 3.1 Login فقط
 | # | الخطوة | المتوقع |
 |---|---|---|
-| 14.1 | Login كـ `committee@ibtikar.local` | ينتقل إلى `/Committee` (قد يكون فارغاً أو مع لوحة غير مكتملة) |
-| 14.2 | حاول فتح `/Committee/Details/{id}` | إذا كانت الـ action موجودة: يفتح بشكل read-only أو 404 |
+| 14.1 | Login كـ `committee@ibtikar.local` | ينتقل إلى `/CommitteeForMembers` (قد يكون فارغاً أو مع لوحة غير مكتملة) |
+| 14.2 | حاول فتح `/CommitteeForMembers/Details/{id}` | إذا كانت الـ action موجودة: يفتح بشكل read-only أو 404 |
 | 14.3 | حاول POST لـ أي action تقييم | مرفوض (404 / 405 / Not Implemented) |
 
 **🛑 لا تكمل باقي الـ Cycle الآن.** سجّل النتيجة كـ "Pending Feature" في الـ Sign-off.
@@ -240,7 +240,7 @@
 
 #### 4.8 Out of Scope
 - ❌ لا يعدّل الفكرة بعد الإرسال للجنة (Read-only).
-- ❌ لا يصل لـ `/AuditInbox` أو `/Committee` كـ writer.
+- ❌ لا يصل لـ `/AuditInbox` أو `/CommitteeForMembers` كـ writer.
 
 ---
 
@@ -808,7 +808,7 @@ specialized      | specialized-department  | judicial    | /SpecializedDashboard
 admin            | system-admin            | (no dept)   | /AdminOverview
 audit            | audit-employee          | (no dept)   | /Audit/Inbox
 partner          | partner-department      | tech        | /SpecializedDashboard
-committee        | innovation-committee-member | (no dept) | /Committee
+committee        | innovation-committee-member | (no dept) | /CommitteeForMembers
 ext-beneficiary  | external-beneficiary    | (none)      | /MyRequests
 int-beneficiary  | internal-beneficiary    | judicial    | /MyRequests
 ```

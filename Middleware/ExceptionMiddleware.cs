@@ -23,6 +23,11 @@ namespace Ibtikar.Middleware
             {
                 _logger.LogError(ex, "Unhandled exception at {Path}", context.Request.Path);
                 await WriteAuditAsync(auditLogService, ex, context, context.RequestAborted);
+                var env = context.RequestServices.GetService<IWebHostEnvironment>();
+                if (env?.IsDevelopment() == true)
+                {
+                    throw;
+                }
                 await WriteErrorResponseAsync(context);
             }
         }
@@ -43,9 +48,9 @@ namespace Ibtikar.Middleware
         {
             if (context.Response.HasStarted) return Task.CompletedTask;
             context.Response.Clear();
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            context.Response.ContentType = "text/plain; charset=utf-8";
-            return context.Response.WriteAsync("حدث خطأ في الخادم. الرجاء المحاولة لاحقاً.", context.RequestAborted);
+            context.Response.StatusCode = StatusCodes.Status302Found;
+            context.Response.Headers["Location"] = "/Error";
+            return Task.CompletedTask;
         }
     }
 }

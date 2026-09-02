@@ -128,12 +128,52 @@
         });
     }
 
+    function bindHeaderDrawer() {
+        var toggle = document.getElementById('bogHeaderToggle');
+        var nav = document.getElementById('mainNav');
+        var overlay = document.getElementById('bogHeaderOverlay');
+        if (!toggle || !nav) return;
+
+        function setOpen(open) {
+            nav.classList.toggle('is-open', open);
+            if (overlay) overlay.classList.toggle('is-open', open);
+            toggle.setAttribute('aria-expanded', String(open));
+            var open = open;
+            var iconMenu = toggle.querySelector('[data-icon-menu]');
+            var iconClose = toggle.querySelector('[data-icon-close]');
+            if (iconMenu) iconMenu.style.display = open ? 'none' : '';
+            if (iconClose) iconClose.style.display = open ? '' : 'none';
+            document.body.style.overflow = open ? 'hidden' : '';
+        }
+
+        toggle.addEventListener('click', function () {
+            var open = !nav.classList.contains('is-open');
+            setOpen(open);
+        });
+
+        if (overlay) {
+            overlay.addEventListener('click', function () { setOpen(false); });
+        }
+
+        // Close drawer when nav link tapped (mobile UX)
+        nav.addEventListener('click', function (e) {
+            var link = e.target.closest('a.bog-nav-link');
+            if (link) setOpen(false);
+        });
+
+        // Close on Escape
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && nav.classList.contains('is-open')) setOpen(false);
+        });
+    }
+
     function bootstrap() {
         bindNavbar();
         bindConfirmModal();
         bindToasts();
         bindRelatedToggle();
         bindCounters();
+        bindHeaderDrawer();
     }
 
     if (document.readyState === 'loading') {

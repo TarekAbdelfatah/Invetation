@@ -21,6 +21,10 @@ namespace Ibtikar.ViewModels
         public List<SpecializedReferralRowVm> Items { get; set; } = new();
         public string StatusFilter { get; set; } = string.Empty;
         public string? DepartmentName { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalCount { get; set; }
+        public int TotalPages => PageSize <= 0 ? 1 : Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
     }
 
     public sealed record SpecializedReferralRowVm(
@@ -54,6 +58,7 @@ namespace Ibtikar.ViewModels
         public string StatusCode { get; set; } = string.Empty;
         public DateTime? SubmittedAt { get; set; }
         public DateTime? AssignedAt { get; set; }
+        public bool CanReturnNotCompetent { get; set; }
         public List<SpecializedAttachmentVm> Attachments { get; set; } = new();
         public List<SpecializedHistoryRowVm> History { get; set; } = new();
     }
@@ -90,15 +95,25 @@ namespace Ibtikar.ViewModels
         public List<SpecializedPartnerOptionVm> AlreadyAssigned { get; set; } = new();
         public List<Guid> SelectedPartnerIds { get; set; } = new();
         public List<Guid> PartnerIds { get; set; } = new();
-        public string? Note { get; set; }
     }
 
     public sealed class SpecializedRequestSubmitVm
     {
+        public const int MaxPartners = 2;
+
         public Guid IdeaId { get; set; }
 
+        [Required(ErrorMessage = "يرجى اختيار جهة واحدة على الأقل لطلب الرأي.")]
         [MinLength(1, ErrorMessage = "يرجى اختيار جهة واحدة على الأقل لطلب الرأي.")]
+        [MaxLength(MaxPartners, ErrorMessage = "لا يمكن طلب رأي أكثر من إدارتين في المرة الواحدة.")]
         public List<Guid> PartnerIds { get; set; } = new();
+
+        public List<SpecializedRequestPartnerNoteVm> Notes { get; set; } = new();
+    }
+
+    public sealed class SpecializedRequestPartnerNoteVm
+    {
+        public Guid PartnerId { get; set; }
 
         [MaxLength(2000, ErrorMessage = "الملاحظة يجب ألا تتجاوز 2000 حرف.")]
         public string? Note { get; set; }
@@ -114,6 +129,13 @@ namespace Ibtikar.ViewModels
         public List<SpecializedPartnerFollowUpVm> Rows { get; set; } = new();
     }
 
+    public sealed record SpecializedPartnerScoreLineVm(
+        Guid CriterionId,
+        string CriterionCode,
+        string CriterionName,
+        int Score,
+        string? Comment);
+
     public sealed record SpecializedPartnerFollowUpVm(
         Guid AssignmentId,
         Guid IdeaId,
@@ -126,7 +148,12 @@ namespace Ibtikar.ViewModels
         DateTime? RespondedAt,
         double DaysOpen,
         bool IsLate,
-        string? Note);
+        string? Note,
+        bool HasResponse,
+        string? ResponseComment,
+        decimal? TotalScore,
+        DateTime? ResponseSubmittedAt,
+        IReadOnlyList<SpecializedPartnerScoreLineVm> Scores);
 
     public class SpecializedSendToCommitteeVm
     {

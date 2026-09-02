@@ -22,6 +22,9 @@ namespace Ibtikar.Repositories
                     i.Id,
                     i.ReferenceNumber,
                     i.Title,
+                    i.Title != null && i.Title.Length > 50
+                        ? i.Title.Substring(0, 50) + "…"
+                        : i.Title,
                     i.CurrentStatus != null ? i.CurrentStatus.Name : null,
                     i.CurrentStatus != null ? i.CurrentStatus.Color : null,
                     i.InnovationDomain != null ? i.InnovationDomain.Name : null,
@@ -74,6 +77,23 @@ namespace Ibtikar.Repositories
         public async Task AddAsync(InnovationIdea idea, CancellationToken ct)
         {
             await _db.InnovationIdeas.AddAsync(idea, ct);
+        }
+
+        public async Task<InnovationIdea?> GetDraftByIdAsync(Guid ideaId, Guid applicantId, CancellationToken ct)
+        {
+            return await _db.InnovationIdeas
+                .Include(i => i.Attachments)
+                .FirstOrDefaultAsync(
+                    i => i.Id == ideaId
+                        && i.ApplicantUserId == applicantId
+                        && i.IsDraft
+                        && !i.IsDeleted,
+                    ct);
+        }
+
+        public async Task<IReadOnlyList<Guid>> GetDraftTechnologyIdsAsync(Guid ideaId, CancellationToken ct)
+        {
+            return Array.Empty<Guid>();
         }
 
         public async Task SaveChangesAsync(CancellationToken ct)
@@ -137,6 +157,20 @@ namespace Ibtikar.Repositories
                 .OrderBy(t => t.DisplayOrder)
                 .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.Name })
                 .ToListAsync(ct);
+        }
+
+        public async Task<IdeaMetaDto?> GetMetaAsync(Guid? ideaId, string? referenceNumber, CancellationToken ct)
+        {
+            var query = _db.InnovationIdeas.AsNoTracking();
+
+            if (ideaId.HasValue)
+                query = query.Where(i => i.Id == ideaId.Value);
+            else
+                query = query.Where(i => i.ReferenceNumber == referenceNumber);
+
+            return await query
+                .Select(i => new IdeaMetaDto(i.Id, i.ReferenceNumber, i.Title))
+                .FirstOrDefaultAsync(ct);
         }
     }
 }

@@ -820,48 +820,9 @@ body {
   .bog-header-toggle {
     display: inline-flex;
   }
-
-  .bog-header-collapse {
-    display: none;
-    flex-direction: column;
-    align-items: stretch;
-    flex-basis: 100%;
-    gap: var(--spacing-4);
-    padding-top: var(--spacing-3);
-  }
-
-  .bog-header-collapse.is-open {
-    display: flex;
-  }
-
-  .bog-nav {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-  }
-
-  .bog-nav-link {
-    justify-content: flex-start;
-    padding-block: var(--spacing-3);
-  }
-
-  .bog-auth {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    border-top: 1px solid var(--border-light);
-    padding-top: var(--spacing-3);
-  }
-
-  .bog-logout-form .btn {
-    width: 100%;
-  }
 }
 
 @media (max-width: 575.98px) {
-  .bog-brand-text {
-    display: none;
-  }
   .bog-brand img {
     height: 36px;
   }

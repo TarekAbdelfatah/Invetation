@@ -7,11 +7,12 @@ namespace Ibtikar.ViewModels
         public const int TitleMax = 200;
         public const int DescriptionMax = 3000;
         public const int ProblemMax = 3000;
-        public const int SolutionMax = 300;
-        public const int BenefitsMax = 2000;
+        public const int SolutionMax = 3000;
+        public const int BenefitsMax = 3000;
         public const int OtherImpactMax = 200;
         public const int OtherAudienceMax = 200;
         public const int OtherTechMax = 200;
+        public const int RequiredResourcesMax = 3000;
 
         [Required(ErrorMessage = "العنوان مطلوب")]
         [StringLength(TitleMax, MinimumLength = 5, ErrorMessage = "العنوان بين 5 و 200 حرف")]
@@ -29,12 +30,12 @@ namespace Ibtikar.ViewModels
         [DataType(DataType.MultilineText)]
         public string? ProblemStatement { get; set; }
 
-        [StringLength(SolutionMax, ErrorMessage = "الحل المقترح حتى 300 حرف")]
+        [StringLength(SolutionMax, ErrorMessage = "الحل المقترح حتى 3000 حرف")]
         [Display(Name = "الحل المقترح")]
         [DataType(DataType.MultilineText)]
         public string? ProposedSolution { get; set; }
 
-        [StringLength(BenefitsMax, ErrorMessage = "الفوائد حتى 2000 حرف")]
+        [StringLength(BenefitsMax, ErrorMessage = "الفوائد حتى 3000 حرف")]
         [Display(Name = "الفوائد المتوقعة")]
         [DataType(DataType.MultilineText)]
         public string? ExpectedBenefits { get; set; }
@@ -67,7 +68,14 @@ namespace Ibtikar.ViewModels
         [Display(Name = "حدد التقنية الأخرى")]
         public string? TechnologyOther { get; set; }
 
+        [StringLength(RequiredResourcesMax, ErrorMessage = "الموارد المطلوبة حتى 3000 حرف")]
+        [Display(Name = "الموارد المطلوبة")]
+        [DataType(DataType.MultilineText)]
+        public string? RequiredResources { get; set; }
+
         public Guid? CurrentDraftId { get; set; }
+
+        public bool IsResumingDraft { get; set; }
 
         /// <summary>
         /// Whether the user pressed "إرسال الفكرة" (Submit).
@@ -83,6 +91,8 @@ namespace Ibtikar.ViewModels
         public string? ApplicantDepartmentName { get; set; }
 
         public bool IsInternalApplicant { get; set; }
+
+        public bool IsAlreadySubmitted { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
@@ -101,6 +111,9 @@ namespace Ibtikar.ViewModels
             if (string.IsNullOrWhiteSpace(ExpectedBenefits))
                 yield return FieldRequired(nameof(ExpectedBenefits));
 
+            if (string.IsNullOrWhiteSpace(RequiredResources))
+                yield return FieldRequired(nameof(RequiredResources));
+
             if (!ExpectedImpactId.HasValue || ExpectedImpactId.Value == Guid.Empty)
                 yield return FieldRequired(nameof(ExpectedImpactId));
 
@@ -117,6 +130,7 @@ namespace Ibtikar.ViewModels
                 nameof(ProblemStatement) => "التحديات الحالية",
                 nameof(ProposedSolution) => "الحل المقترح",
                 nameof(ExpectedBenefits) => "الفوائد المتوقعة",
+                nameof(RequiredResources) => "الموارد المطلوبة",
                 nameof(ExpectedImpactId) => "الأثر المتوقع",
                 nameof(TargetAudienceId) => "الفئة المستهدفة",
                 _ => member

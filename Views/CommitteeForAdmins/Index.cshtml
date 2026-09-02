@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "لجان الابتكار";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["SuppressGlobalAlert"] = true;
 }
 
 <div class="bog-main">
@@ -22,15 +23,24 @@
 
         @if (TempData["AlertMessage"] is string ok)
         {
-            <div class="alert alert-success">@ok</div>
+            ViewData["Type"] = "success";
+            ViewData["Dismissible"] = true;
+            ViewData["Ttl"] = 5000;
+            @await Html.PartialAsync("_Alert", ok)
         }
         @if (TempData["AlertError"] is string err)
         {
-            <div class="alert alert-danger">@err</div>
+            ViewData["Type"] = "danger";
+            ViewData["Dismissible"] = true;
+            ViewData["Ttl"] = 0;
+            @await Html.PartialAsync("_Alert", err)
         }
         @if (ViewBag.DatabaseError is string dbErr)
         {
-            <div class="alert alert-danger">تعذر الاتصال بقاعدة البيانات: @dbErr</div>
+            ViewData["Type"] = "danger";
+            ViewData["Dismissible"] = true;
+            ViewData["Ttl"] = 0;
+            @await Html.PartialAsync("_Alert", "تعذر الاتصال بقاعدة البيانات: " + dbErr)
         }
 
         <div class="d-flex justify-content-end mb-3">
@@ -58,6 +68,7 @@
                             <th>عدد الأعضاء</th>
                             <th>الحالة</th>
                             <th>تاريخ الإنشاء</th>
+                            <th>إجراءات</th>
                         </tr>
                     </thead>
                     <tbody>

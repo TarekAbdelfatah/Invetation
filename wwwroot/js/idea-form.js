@@ -11,7 +11,7 @@
 
         function update() {
             var length = textarea.value.length;
-            var remaining = Math.max(0, limit - length);
+            var remaining = Math.Max ? Math.max(0, limit - length) : Math.max(0, limit - length);
             if (textarea.value.length > limit) {
                 textarea.value = textarea.value.slice(0, limit);
                 remaining = 0;
@@ -70,41 +70,10 @@
         refresh();
     }
 
-    function initSubmitMode() {
-        var form = document.getElementById('idea-form');
-        if (!form) { return; }
-
-        var submitMode = 'draft';
-        var submitBtn = form.querySelector('button[value="Submit"]');
-        var draftBtn = form.querySelector('button[value="SaveDraft"]');
-        if (!submitBtn || !draftBtn) { return; }
-
-        function setRequired(mode) {
-            var inputs = form.querySelectorAll('[data-required-on-submit]');
-            for (var i = 0; i < inputs.length; i++) {
-                if (mode === 'submit') {
-                    inputs[i].setAttribute('required', 'required');
-                } else {
-                    inputs[i].removeAttribute('required');
-                }
-            }
-        }
-
-        submitBtn.addEventListener('click', function () { submitMode = 'submit'; });
-        draftBtn.addEventListener('click', function () { submitMode = 'draft'; });
-
-        // Apply the right HTML5 "required" state right before the browser runs
-        // constraint validation, so Submit is strict but Save Draft stays relaxed.
-        form.addEventListener('submit', function (e) {
-            setRequired(submitMode);
-        });
-    }
-
     function bootstrap() {
         initCounters();
         initOtherFields();
         initEmergingTech();
-        initSubmitMode();
     }
 
     if (document.readyState === 'loading') {

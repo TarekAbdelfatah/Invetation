@@ -6,7 +6,7 @@ namespace Ibtikar.Services.Interfaces
     {
         Task<SpecializedDashboardDto?> GetSnapshotAsync(Guid? departmentId, CancellationToken ct);
 
-        Task<SpecializedReferralsDto?> GetReferralsAsync(Guid? departmentId, string? status, CancellationToken ct);
+        Task<SpecializedReferralsDto?> GetReferralsAsync(Guid? departmentId, string? status, int page, int pageSize, CancellationToken ct);
 
         Task<SpecializedDetailsDto?> GetDetailsAsync(Guid? departmentId, Guid ideaId, CancellationToken ct);
 
@@ -35,6 +35,13 @@ namespace Ibtikar.Services.Interfaces
             Guid actorUserId,
             Guid ideaId,
             bool skipPartnerWarning,
+            CancellationToken ct);
+
+        Task<SpecializedReturnNotCompetentOutcomeDto> ReturnNotCompetentAsync(
+            Guid? departmentId,
+            Guid actorUserId,
+            Guid ideaId,
+            string reason,
             CancellationToken ct);
     }
 }

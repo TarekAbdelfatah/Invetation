@@ -21,3 +21,6 @@ Thumbs.db
 
 ## Logs
 *.log
+
+## Local build output used for syntax verification
+temp_build/

@@ -1,6 +1,7 @@
 @using Ibtikar.Controllers
 @using Ibtikar.Services.Helpers
 @using Ibtikar.ViewModels
+@using static Ibtikar.Services.Helpers.KsaTime
 @model MyRequestDetailsVm
 @{
     ViewData["Title"] = string.IsNullOrEmpty(Model.Reference) ? "تفاصيل المسودة" : $"تفاصيل الطلب {Model.Reference}";
@@ -9,11 +10,12 @@
     var isRejected = Model.StatusCode == IdeaStatusCodes.Rejected;
     var isClosedByTimeout = Model.StatusCode == IdeaStatusCodes.Cancelled;
     var isDraft = string.IsNullOrEmpty(Model.Reference);
+    var isResubmitFlow = isResubmittable || isResubmittableForDevelopment;
 }
 
 <div class="bog-main">
     <div class="container py-4">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 bog-page-header">
             <h2 class="mb-0 d-flex align-items-center gap-2">
                 <span class="bog-page-icon" aria-hidden="true">
                     <span class="material-icons">description</span>
@@ -27,7 +29,7 @@
         </div>
 
         <div class="card bog-section mb-3">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <strong>
                     @if (string.IsNullOrEmpty(Model.Reference))
                     {
@@ -45,7 +47,8 @@
                         <form method="post" asp-action="Delete" asp-route-id="@Model.Id" class="d-inline">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-sm btn-outline-danger"
-                                    data-confirm-trigger data-confirm-message="هل أنت متأكد من حذف هذا الطلب نهائياً؟">
+                                    data-confirm-trigger data-confirm-message="هل أنت متأكد من حذف هذا الطلب نهائياً؟"
+                                    data-loading="true" data-loading-text="جارٍ حذف الطلب...">
                                 <span class="material-icons align-middle" style="font-size:16px">delete</span>
                                 حذف الطلب
                             </button>
@@ -53,51 +56,72 @@
                     }
                 </div>
             </div>
-            <div class="card-body">
-                <h3 class="mb-3">@Model.Title</h3>
+            @if (isResubmitFlow)
+            {
+                <div class="bog-resubmit-banner">
+                    <span class="bog-resubmit-banner__icon">
+                        <span class="material-icons">@(isResubmittable ? "support_agent" : "edit_note")</span>
+                    </span>
+                    <div>
+                        <strong>@(isResubmittable ? "تم طلب استكمال بيانات من المدقق" : "تم إرجاع الفكرة من اللجنة للتطوير")</strong>
+                        <small>اقرأ ملاحظات @(isResubmittable ? "المدقق" : "اللجنة") ثم استخدم النموذج أدناه لاستكمال @(isResubmittable ? "النواقص" : "التطوير") وإعادة الإرسال.</small>
+                    </div>
+                </div>
+            }
+            @if (!isResubmitFlow)
+            {
+                <div class="card-body">
+                    <h3 class="mb-3">@Model.Title</h3>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">المجال</dt>
+                        <dd class="col-sm-9">@(Model.DomainName ?? "—")</dd>
 
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">المجال</dt>
-                    <dd class="col-sm-9">@(Model.DomainName ?? "—")</dd>
+                        <dt class="col-sm-3">التأثير المتوقع</dt>
+                        <dd class="col-sm-9">
+                            @(Model.ExpectedImpactName ?? "—")
+                            @if (!string.IsNullOrWhiteSpace(Model.ExpectedImpactOther))
+                            {
+                                <span class="text-muted">(تفصيل: @Model.ExpectedImpactOther)</span>
+                            }
+                        </dd>
 
-                    <dt class="col-sm-3">التأثير المتوقع</dt>
-                    <dd class="col-sm-9">
-                        @(Model.ExpectedImpactName ?? "—")
-                        @if (!string.IsNullOrWhiteSpace(Model.ExpectedImpactOther))
-                        {
-                            <span class="text-muted">(تفصيل: @Model.ExpectedImpactOther)</span>
-                        }
-                    </dd>
+                        <dt class="col-sm-3">الفئة المستهدفة</dt>
+                        <dd class="col-sm-9">
+                            @(Model.TargetAudienceName ?? "—")
+                            @if (!string.IsNullOrWhiteSpace(Model.TargetAudienceOther))
+                            {
+                                <span class="text-muted">(تفصيل: @Model.TargetAudienceOther)</span>
+                            }
+                        </dd>
 
-                    <dt class="col-sm-3">الفئة المستهدفة</dt>
-                    <dd class="col-sm-9">
-                        @(Model.TargetAudienceName ?? "—")
-                        @if (!string.IsNullOrWhiteSpace(Model.TargetAudienceOther))
-                        {
-                            <span class="text-muted">(تفصيل: @Model.TargetAudienceOther)</span>
-                        }
-                    </dd>
+                        <dt class="col-sm-3">تقنية حديثة</dt>
+                        <dd class="col-sm-9">
+                            @(Model.UsesEmergingTech
+                                ? (string.IsNullOrWhiteSpace(Model.TechnologyOther) ? "نعم" : "نعم — " + Model.TechnologyOther)
+                                : "لا")
+                        </dd>
 
-                    <dt class="col-sm-3">تقنية حديثة</dt>
-                    <dd class="col-sm-9">
-                        @(Model.UsesEmergingTech
-                            ? (string.IsNullOrWhiteSpace(Model.TechnologyOther) ? "نعم" : "نعم — " + Model.TechnologyOther)
-                            : "لا")
-                    </dd>
-
-                    <dt class="col-sm-3">تاريخ التقديم</dt>
-                    <dd class="col-sm-9" dir="ltr">
-                        @((Model.SubmittedAt ?? Model.CreatedAt).ToLocalTime().ToString("yyyy-MM-dd HH:mm"))
-                    </dd>
-                </dl>
-            </div>
+                        <dt class="col-sm-3">تاريخ التقديم</dt>
+                        <dd class="col-sm-9" dir="ltr">
+                            @((Model.SubmittedAt ?? Model.CreatedAt).FormatDateTime())
+                        </dd>
+                    </dl>
+                </div>
+            }
+            else
+            {
+                <div class="card-body py-3">
+                    <h3 class="mb-2">@Model.Title</h3>
+                    <small class="text-muted d-block" dir="ltr">تاريخ التقديم: @((Model.SubmittedAt ?? Model.CreatedAt).FormatDateTime())</small>
+                </div>
+            }
         </div>
 
         @if (isRejected && !string.IsNullOrWhiteSpace(Model.RejectionReason))
         {
             <div class="rejection-reason-box mb-3">
                 <strong>سبب الرفض:</strong>
-                <p class="mb-0 mt-2">@Model.RejectionReason</p>
+                <p class="mb-0 mt-2" style="white-space:pre-line">@Model.RejectionReason</p>
             </div>
         }
 
@@ -108,79 +132,105 @@
             </div>
         }
 
-        <div class="card bog-section mb-3">
-            <div class="card-header bg-white"><strong>وصف الفكرة</strong></div>
-            <div class="card-body">
-                <p class="mb-0" style="white-space:pre-line">@Model.Description</p>
-            </div>
-        </div>
-
-        @if (!string.IsNullOrWhiteSpace(Model.ProblemStatement))
+        @if (!isResubmitFlow)
         {
             <div class="card bog-section mb-3">
-                <div class="card-header bg-white"><strong>المشكلة</strong></div>
+                <div class="card-header bg-white"><strong>وصف الفكرة</strong></div>
                 <div class="card-body">
-                    <p class="mb-0" style="white-space:pre-line">@Model.ProblemStatement</p>
+                    <p class="mb-0" style="white-space:pre-line">@Model.Description</p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.ProblemStatement))
+            {
+                <div class="card bog-section mb-3">
+                    <div class="card-header bg-white"><strong>المشكلة</strong></div>
+                    <div class="card-body">
+                        <p class="mb-0" style="white-space:pre-line">@Model.ProblemStatement</p>
+                    </div>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.ProposedSolution))
+            {
+                <div class="card bog-section mb-3">
+                    <div class="card-header bg-white"><strong>الحل المقترح</strong></div>
+                    <div class="card-body">
+                        <p class="mb-0" style="white-space:pre-line">@Model.ProposedSolution</p>
+                    </div>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.ExpectedBenefits))
+            {
+                <div class="card bog-section mb-3">
+                    <div class="card-header bg-white"><strong>الفوائد المتوقعة</strong></div>
+                    <div class="card-body">
+                        <p class="mb-0" style="white-space:pre-line">@Model.ExpectedBenefits</p>
+                    </div>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.RequiredResources))
+            {
+                <div class="card bog-section mb-3">
+                    <div class="card-header bg-white"><strong>الموارد المطلوبة</strong></div>
+                    <div class="card-body">
+                        <p class="mb-0" style="white-space:pre-line">@Model.RequiredResources</p>
+                    </div>
+                </div>
+            }
+
+            <div class="card bog-section mb-3">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <strong>المرفقات</strong>
+                    <span class="badge bg-secondary">@Model.Attachments.Count</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.Attachments.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var a in Model.Attachments)
+                            {
+                                <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                    <span class="d-inline-flex align-items-center gap-2">
+                                        <span class="material-icons align-middle text-danger" style="font-size:18px">picture_as_pdf</span>
+                                        @a.FileName
+                                    </span>
+                                    <span class="d-inline-flex align-items-center gap-2">
+                                        <small class="text-muted" dir="ltr">@(a.SizeBytes / 1024) KB · @a.UploadedAt.FormatDateTime()</small>
+                                        <a class="btn btn-sm btn-outline-primary"
+                                           href="@Url.Action("Download", "AttachmentDownload", new { attachmentId = a.Id })"
+                                           download="@a.FileName" target="_blank" rel="noopener noreferrer">
+                                            <span class="material-icons align-middle" style="font-size:16px">download</span>
+                                            تحميل
+                                        </a>
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="text-muted text-center p-4">لا توجد مرفقات.</div>
+                    }
                 </div>
             </div>
         }
-
-        @if (!string.IsNullOrWhiteSpace(Model.ProposedSolution))
-        {
-            <div class="card bog-section mb-3">
-                <div class="card-header bg-white"><strong>الحل المقترح</strong></div>
-                <div class="card-body">
-                    <p class="mb-0" style="white-space:pre-line">@Model.ProposedSolution</p>
-                </div>
-            </div>
-        }
-
-        @if (!string.IsNullOrWhiteSpace(Model.ExpectedBenefits))
-        {
-            <div class="card bog-section mb-3">
-                <div class="card-header bg-white"><strong>الفوائد المتوقعة</strong></div>
-                <div class="card-body">
-                    <p class="mb-0" style="white-space:pre-line">@Model.ExpectedBenefits</p>
-                </div>
-            </div>
-        }
-
-        <div class="card bog-section mb-3">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <strong>المرفقات</strong>
-                <span class="badge bg-secondary">@Model.Attachments.Count</span>
-            </div>
-            <div class="card-body p-0">
-                @if (Model.Attachments.Any())
-                {
-                    <ul class="list-group list-group-flush">
-                        @foreach (var a in Model.Attachments)
-                        {
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>
-                                    <span class="material-icons align-middle text-danger" style="font-size:18px">picture_as_pdf</span>
-                                    @a.FileName
-                                </span>
-                                <small class="text-muted" dir="ltr">
-                                    @(a.SizeBytes / 1024) KB · @a.UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
-                                </small>
-                            </li>
-                        }
-                    </ul>
-                }
-                else
-                {
-                    <div class="text-muted text-center p-4">لا توجد مرفقات.</div>
-                }
-            </div>
-        </div>
 
         @if (isDraft)
         {
             <div class="card bog-section mb-3">
-                <div class="card-header bg-white"><strong>رفع مرفقات للمسودة</strong></div>
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <strong>المسودة</strong>
+                    <a class="btn btn-primary"
+                       asp-controller="Ideas" asp-action="Create" asp-route-draftId="@Model.Id">
+                        <span class="material-icons align-middle" style="font-size:18px">edit</span>
+                        متابعة وتعديل المسودة
+                    </a>
+                </div>
                 <div class="card-body">
-                    @await Component.InvokeAsync("IdeaAttachmentUploader", new { ideaId = Model.Id })
+                    <p class="text-muted mb-0">يمكنك رفع المرفقات داخل نموذج التعديل قبل إرسالها.</p>
                 </div>
             </div>
         }
@@ -188,13 +238,18 @@
         @if (isResubmittable)
         {
             <div class="card bog-section mb-3 border-warning">
-                <div class="card-header bg-white"><strong>إعادة التقديم بعد الاستكمال</strong></div>
+                <div class="card-header bg-white"><strong>استكمال البيانات وإعادة التقديم</strong></div>
                 <div class="card-body">
                     @if (!string.IsNullOrWhiteSpace(Model.CompletionNotes))
                     {
-                        <div class="audit-notes-box mb-3">
-                            <strong>ملاحظات التدقيق:</strong>
-                            <p class="mb-0 mt-2">@Model.CompletionNotes</p>
+                        <div class="bog-audit-feedback mb-4 bog-audit-feedback--warning">
+                            <div class="bog-audit-feedback__head">
+                                <span class="bog-audit-feedback__icon">
+                                    <span class="material-icons">support_agent</span>
+                                </span>
+                                <strong>ملاحظات المدقق</strong>
+                            </div>
+                            <p class="mb-0" style="white-space:pre-line">@Model.CompletionNotes</p>
                         </div>
                     }
                     <form method="post" asp-action="ResubmitCompletion" asp-route-id="@Model.Id" id="resubmitCompletionForm">
@@ -233,9 +288,14 @@
                 <div class="card-body">
                     @if (!string.IsNullOrWhiteSpace(Model.DevelopmentNotes))
                     {
-                        <div class="alert alert-info mb-3" role="alert">
-                            <strong>ملاحظات اللجنة:</strong>
-                            <p class="mb-0 mt-2" style="white-space:pre-line">@Model.DevelopmentNotes</p>
+                        <div class="bog-audit-feedback mb-4 bog-audit-feedback--info">
+                            <div class="bog-audit-feedback__head">
+                                <span class="bog-audit-feedback__icon">
+                                    <span class="material-icons">edit_note</span>
+                                </span>
+                                <strong>ملاحظات اللجنة</strong>
+                            </div>
+                            <p class="mb-0" style="white-space:pre-line">@Model.DevelopmentNotes</p>
                         </div>
                     }
                     <form method="post" asp-action="ResubmitDeveloped" asp-route-id="@Model.Id" id="resubmitDevelopedForm">

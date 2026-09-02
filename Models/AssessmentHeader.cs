@@ -5,7 +5,7 @@ namespace Ibtikar.Models
         public Guid Id { get; set; } = Guid.NewGuid();
         public Guid InnovationIdeaId { get; set; }
         public Guid AssessorUserId { get; set; }
-        public Guid AssessorDepartmentId { get; set; }
+        public Guid? AssessorDepartmentId { get; set; }
 
         public const string SourceSpecialized = "specialized";
         public const string SourcePartner = "partner";

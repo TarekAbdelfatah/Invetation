@@ -4,6 +4,7 @@ using Ibtikar.Services.Helpers;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
 namespace Ibtikar.Controllers
@@ -12,16 +13,31 @@ namespace Ibtikar.Controllers
     public class MyRequestsController : Controller
     {
         private readonly IMyRequestsService _service;
+        private readonly ILogger<MyRequestsController> _logger;
 
-        public MyRequestsController(IMyRequestsService service) => _service = service;
+        public MyRequestsController(IMyRequestsService service, ILogger<MyRequestsController> logger)
+        {
+            _service = service;
+            _logger = logger;
+        }
 
-        public async Task<IActionResult> Index(CancellationToken ct)
+        public async Task<IActionResult> Index(int? page, int? pageSize, CancellationToken ct)
         {
             var applicantId = ResolveApplicantId();
             if (applicantId == Guid.Empty) return Challenge();
 
-            var dto = await _service.GetListAsync(applicantId, ct);
-            return View(ToListVm(dto));
+            try
+            {
+                var (p, ps) = PagedRequest.Normalize(page, pageSize);
+                var dto = await _service.GetListAsync(applicantId, p, ps, ct);
+                return View(ToListVm(dto));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MyRequests.Index failed for applicant {Applicant}", applicantId);
+                Response.StatusCode = 500;
+                return RedirectToAction("Index", "Error", new { code = 500, traceId = HttpContext.TraceIdentifier });
+            }
         }
 
         public async Task<IActionResult> Details(Guid id, CancellationToken ct)
@@ -29,10 +45,19 @@ namespace Ibtikar.Controllers
             var applicantId = ResolveApplicantId();
             if (applicantId == Guid.Empty) return Challenge();
 
-            var dto = await _service.GetDetailsAsync(applicantId, id, ct);
-            if (dto is null) return NotFound();
+            try
+            {
+                var dto = await _service.GetDetailsAsync(applicantId, id, ct);
+                if (dto is null) return NotFound();
 
-            return View(ToDetailsVm(dto));
+                return View(ToDetailsVm(dto));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MyRequests.Details failed for applicant {Applicant} idea {Idea}", applicantId, id);
+                Response.StatusCode = 500;
+                return RedirectToAction("Index", "Error", new { code = 500, traceId = HttpContext.TraceIdentifier });
+            }
         }
 
         [HttpPost]
@@ -119,13 +144,15 @@ namespace Ibtikar.Controllers
         }
 
         private static MyRequestsVm ToListVm(MyRequestsListDto dto)
-            => new(dto.Items.Select(ToItemVm).ToList());
+            => new(dto.Items.Select(ToItemVm).ToList(), dto.Page, dto.PageSize, dto.TotalCount);
 
         private static MyRequestVm ToItemVm(MyRequestSummaryDto dto)
             => new(
                 dto.Id,
                 dto.Reference,
                 dto.Title,
+                dto.TitleDisplay,
+                dto.DomainName,
                 dto.IsDraft,
                 dto.StatusCode,
                 dto.StatusName,
@@ -142,6 +169,7 @@ namespace Ibtikar.Controllers
                 dto.ProblemStatement,
                 dto.ProposedSolution,
                 dto.ExpectedBenefits,
+                dto.RequiredResources,
                 dto.ExpectedImpactOther,
                 dto.TargetAudienceOther,
                 dto.UsesEmergingTech,

@@ -7,8 +7,6 @@ namespace Ibtikar.Services.Implementations
 {
     public sealed class MyRequestsService : IMyRequestsService
     {
-        private const int ListTake = 50;
-
         private readonly IMyRequestsRepository _repo;
         private readonly FileStorageService _storage;
 
@@ -18,8 +16,8 @@ namespace Ibtikar.Services.Implementations
             _storage = storage;
         }
 
-        public Task<MyRequestsListDto> GetListAsync(Guid applicantId, CancellationToken ct)
-            => _repo.GetListAsync(applicantId, ListTake, ct);
+        public Task<MyRequestsListDto> GetListAsync(Guid applicantId, int page, int pageSize, CancellationToken ct)
+            => _repo.GetListAsync(applicantId, page, pageSize, ct);
 
         public Task<MyRequestDetailsDto?> GetDetailsAsync(Guid applicantId, Guid id, CancellationToken ct)
             => _repo.GetDetailsAsync(applicantId, id, ct);
@@ -29,15 +27,14 @@ namespace Ibtikar.Services.Implementations
             var idea = await _repo.GetForApplicantAsync(applicantId, id, ct);
             if (idea is null) return new(MyRequestDeleteStatus.NotFound, null);
 
-            if (!IsDeletableNewIdea(idea))
+            if (idea.IsDeleted) return new(MyRequestDeleteStatus.Success, null);
+
+            if (!IsDeletableIdea(idea))
                 return new(MyRequestDeleteStatus.NotDeletable, "لا يمكن حذف الطلب بعد أن يبدأ الفريق المختص دراسته.");
 
-            foreach (var attachment in idea.Attachments)
-            {
-                _storage.Delete(attachment.StoragePath);
-            }
+            idea.IsDeleted = true;
+            idea.DeletedAt = DateTime.UtcNow;
 
-            await _repo.RemoveIdeaAsync(idea, ct);
             await _repo.SaveChangesAsync(ct);
             return new(MyRequestDeleteStatus.Success, null);
         }
@@ -47,7 +44,7 @@ namespace Ibtikar.Services.Implementations
             Guid id,
             MyRequestContentUpdateDto content,
             CancellationToken ct)
-            => ResubmitAsync(applicantId, id, content, IdeaStatusCodes.WaitingForCompletion, IdeaStatusCodes.UnderStudy, ct);
+            => ResubmitAsync(applicantId, id, content, IdeaStatusCodes.WaitingForCompletion, IdeaStatusCodes.Resubmitted, ct);
 
         public Task<MyRequestResubmitResult> ResubmitDevelopedAsync(
             Guid applicantId,
@@ -107,7 +104,10 @@ namespace Ibtikar.Services.Implementations
             return false;
         }
 
-        private static bool IsDeletableNewIdea(Models.InnovationIdea idea) =>
-            !idea.IsDraft && string.Equals(idea.CurrentStatus?.Code, IdeaStatusCodes.New, StringComparison.OrdinalIgnoreCase);
+        private static bool IsDeletableIdea(Models.InnovationIdea idea)
+        {
+            if (idea.IsDraft) return true;
+            return string.Equals(idea.CurrentStatus?.Code, IdeaStatusCodes.New, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

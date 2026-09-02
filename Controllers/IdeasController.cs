@@ -21,7 +21,7 @@ namespace Ibtikar.Controllers
             _logger = logger;
         }
 
-        [AllowAnonymous]
+        [Authorize]
         public async Task<IActionResult> Index(CancellationToken ct)
         {
             try
@@ -33,23 +33,36 @@ namespace Ibtikar.Controllers
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Ideas index fallback (database unavailable): {Message}", ex.Message);
-                ViewBag.DatabaseError = ex.Message;
+                ViewBag.DatabaseError = "تعذر الاتصال بقاعدة البيانات. حاول لاحقاً.";
                 return View(Array.Empty<IdeaListItemVm>());
             }
         }
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> Create(CancellationToken ct)
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> Create(Guid? draftId, CancellationToken ct)
         {
             var model = new IdeaCreateViewModel
             {
-                CurrentDraftId = Guid.NewGuid()
+                CurrentDraftId = draftId ?? Guid.NewGuid()
             };
 
             var userIdRaw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (Guid.TryParse(userIdRaw, out var userId))
             {
+                if (draftId.HasValue && draftId.Value != Guid.Empty)
+                {
+                    var draft = await _ideaService.GetDraftForEditAsync(draftId.Value, userId, Array.Empty<Guid>(), ct);
+                    if (draft is null)
+                    {
+                        return RedirectToAction("Index", "MyRequests");
+                    }
+                    CopyFromDraft(model, draft);
+                    model.IsResumingDraft = true;
+                    model.IsAlreadySubmitted = !string.IsNullOrWhiteSpace(draft.ReferenceNumber);
+                }
+
                 var currentUser = await _ideaService.GetUserSummaryAsync(userId, ct);
                 if (currentUser is not null && BeneficiaryType.IsInternal(User))
                 {
@@ -66,7 +79,7 @@ namespace Ibtikar.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequestSizeLimit(20 * 1024 * 1024)]
+        [RequestSizeLimit(12 * 1024 * 1024)]
         public async Task<IActionResult> Create(IdeaCreateViewModel model, string action, List<IFormFile>? attachments, CancellationToken ct)
         {
             var isSaveDraft = string.Equals(action, "SaveDraft", StringComparison.OrdinalIgnoreCase);
@@ -102,6 +115,8 @@ namespace Ibtikar.Controllers
                 ? depGuid
                 : (Guid?)null;
 
+            var existingDraftId = await ResolveExistingDraftIdAsync(model, userId, ct);
+
             var request = ToCreateRequest(model);
             var result = await _ideaService.CreateIdeaAsync(
                 request,
@@ -109,6 +124,7 @@ namespace Ibtikar.Controllers
                 departmentId,
                 isSaveDraft,
                 model.CurrentDraftId,
+                existingDraftId,
                 attachments,
                 ct);
 
@@ -180,19 +196,49 @@ namespace Ibtikar.Controllers
                 model.TargetAudienceOther,
                 model.UsesEmergingTech,
                 model.TechnologyIds,
-                model.TechnologyOther);
+                model.TechnologyOther,
+                model.RequiredResources);
 
         private static IdeaListItemVm ToListItemVm(IdeaSummaryDto dto)
             => new(
                 dto.Id,
                 dto.ReferenceNumber,
                 dto.Title,
+                dto.TitleDisplay,
                 dto.StatusName,
                 dto.StatusColor,
                 dto.DomainName,
                 dto.DepartmentName,
                 dto.SubmittedAt,
                 dto.CreatedAt);
+
+        private async Task<Guid?> ResolveExistingDraftIdAsync(IdeaCreateViewModel model, Guid userId, CancellationToken ct)
+        {
+            if (model.IsResumingDraft && model.CurrentDraftId.HasValue && model.CurrentDraftId.Value != Guid.Empty)
+            {
+                var existing = await _ideaService.GetDraftForEditAsync(model.CurrentDraftId.Value, userId, Array.Empty<Guid>(), ct);
+                if (existing is not null) return model.CurrentDraftId.Value;
+            }
+            return null;
+        }
+
+        private static void CopyFromDraft(IdeaCreateViewModel model, IdeaDetailsForEditDto draft)
+        {
+            model.Title = draft.Title;
+            model.Description = draft.Description;
+            model.ProblemStatement = draft.ProblemStatement;
+            model.ProposedSolution = draft.ProposedSolution;
+            model.ExpectedBenefits = draft.ExpectedBenefits;
+            model.RequiredResources = draft.RequiredResources;
+            model.InnovationDomainId = draft.InnovationDomainId == Guid.Empty ? null : draft.InnovationDomainId;
+            model.ExpectedImpactId = draft.ExpectedImpactId;
+            model.ExpectedImpactOther = draft.ExpectedImpactOther;
+            model.TargetAudienceId = draft.TargetAudienceId;
+            model.TargetAudienceOther = draft.TargetAudienceOther;
+            model.UsesEmergingTech = draft.UsesEmergingTech;
+            model.TechnologyIds = draft.TechnologyIds.ToList();
+            model.TechnologyOther = draft.TechnologyOther;
+        }
 
         private static IdeaSuccessVm ToSuccessVm(IdeaDetailsDto dto)
             => new(

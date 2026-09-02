@@ -47,6 +47,19 @@ namespace Ibtikar.DTOs.Committee
         Guid IdeaId,
         bool ExtraConfirmed);
 
+    public sealed record CommitteeAssessIdeaDto(
+        Guid IdeaId,
+        string Reference,
+        string Title,
+        string StatusName,
+        string StatusColor);
+
+    public sealed record CommitteeDecisionIdeaDto(
+        Guid IdeaId,
+        string Reference,
+        string Title,
+        string StatusCode);
+
     public sealed record CommitteeDecisionDto(
         Guid IdeaId,
         string Reference,

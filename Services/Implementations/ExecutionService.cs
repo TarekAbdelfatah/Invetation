@@ -1,31 +1,29 @@
-using Ibtikar.Data;
 using Ibtikar.DTOs.Execution;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
 using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Notifications;
-using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Services.Implementations
 {
     public sealed class ExecutionService : IExecutionService
     {
         private readonly IExecutionRepository _repo;
-        private readonly IbtikarDbContext _db;
+        private readonly IAttachmentRepository _attachments;
         private readonly AuditLogService _auditLog;
         private readonly INotificationClient _notifier;
         private readonly ILogger<ExecutionService> _logger;
 
         public ExecutionService(
             IExecutionRepository repo,
-            IbtikarDbContext db,
+            IAttachmentRepository attachments,
             AuditLogService auditLog,
             INotificationClient notifier,
             ILogger<ExecutionService> logger)
         {
             _repo = repo;
-            _db = db;
+            _attachments = attachments;
             _auditLog = auditLog;
             _notifier = notifier;
             _logger = logger;
@@ -55,9 +53,7 @@ namespace Ibtikar.Services.Implementations
             if (!await _repo.IsAssigneeAsync(dto.IdeaId, departmentId, ct))
                 return new(false, "لا تملك صلاحية تعديل هذه الفكرة.");
 
-            var idea = await _db.InnovationIdeas
-                .Include(i => i.CurrentStatus)
-                .FirstOrDefaultAsync(i => i.Id == dto.IdeaId, ct);
+            var idea = await _repo.GetIdeaWithStatusAsync(dto.IdeaId, ct);
             if (idea is null) return new(false, "لم يتم العثور على الفكرة.");
 
             if (idea.IsDraft)
@@ -66,22 +62,19 @@ namespace Ibtikar.Services.Implementations
             if (idea.CurrentStatus?.Code != IdeaStatusCodes.InExecution)
                 return new(false, "الفكرة ليست في حالة تنفيذ.");
 
-            var stage = await _db.ExecutionStages
-                .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.Id == dto.ExecutionStageId, ct);
-            if (stage is null || !stage.IsActive)
+            var stage = await _repo.GetActiveStageByIdAsync(dto.ExecutionStageId, ct);
+            if (stage is null)
                 return new(false, "المرحلة المختارة غير صالحة.");
 
-            _db.ExecutionProgresses.Add(new ExecutionProgress
+            await _repo.AddProgressAsync(new ExecutionProgress
             {
                 InnovationIdeaId = idea.Id,
                 ExecutionStageId = stage.Id,
                 Note = dto.Note.Trim(),
                 ChangedByUserId = userId,
                 ChangedAt = DateTime.UtcNow
-            });
+            }, ct);
 
-            await _db.SaveChangesAsync(ct);
             await _auditLog.WriteAsync(
                 "Execution.StageUpdate",
                 "InnovationIdea",
@@ -115,9 +108,7 @@ namespace Ibtikar.Services.Implementations
             if (!await _repo.IsAssigneeAsync(dto.IdeaId, departmentId, ct))
                 return new(false, "لا تملك صلاحية إكمال هذه الفكرة.");
 
-            var idea = await _db.InnovationIdeas
-                .Include(i => i.CurrentStatus)
-                .FirstOrDefaultAsync(i => i.Id == dto.IdeaId, ct);
+            var idea = await _repo.GetIdeaWithStatusAsync(dto.IdeaId, ct);
             if (idea is null) return new(false, "لم يتم العثور على الفكرة.");
 
             if (idea.IsDraft)
@@ -126,28 +117,15 @@ namespace Ibtikar.Services.Implementations
             if (idea.CurrentStatus?.Code != IdeaStatusCodes.InExecution)
                 return new(false, "الفكرة ليست في حالة تنفيذ.");
 
-            var stage = await _db.ExecutionStages
-                .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.Id == dto.CompletionStageId, ct);
-            if (stage is null || !stage.IsActive)
+            var stage = await _repo.GetActiveStageByIdAsync(dto.CompletionStageId, ct);
+            if (stage is null)
                 return new(false, "مرحلة الإكمال غير صالحة.");
 
-            var attachments = await _db.IdeaAttachments
-                .Where(a => dto.AttachmentIds.Contains(a.Id) && a.InnovationIdeaId == idea.Id)
-                .ToListAsync(ct);
+            var attachments = await _attachments.GetByIdsForIdeaAsync(idea.Id, dto.AttachmentIds, ct);
             if (attachments.Count != 2)
                 return new(false, "يجب أن يكون الملفان مرفقان على نفس الفكرة.");
             if (attachments.Any(a => !a.ContentType.Contains("pdf")))
                 return new(false, "يجب أن يكون الملفان بصيغة PDF.");
-
-            _db.ExecutionProgresses.Add(new ExecutionProgress
-            {
-                InnovationIdeaId = idea.Id,
-                ExecutionStageId = stage.Id,
-                Note = dto.Note.Trim(),
-                ChangedByUserId = userId,
-                ChangedAt = DateTime.UtcNow
-            });
 
             var completedId = await _repo.GetCompletedStatusIdAsync(ct);
             if (completedId is null)
@@ -156,7 +134,14 @@ namespace Ibtikar.Services.Implementations
             var fromId = idea.CurrentStatusId;
             idea.CurrentStatusId = completedId.Value;
 
-            await _db.IdeaStatusHistories.AddAsync(new IdeaStatusHistory
+            await _repo.AddProgressAndStatusAsync(new ExecutionProgress
+            {
+                InnovationIdeaId = idea.Id,
+                ExecutionStageId = stage.Id,
+                Note = dto.Note.Trim(),
+                ChangedByUserId = userId,
+                ChangedAt = DateTime.UtcNow
+            }, new IdeaStatusHistory
             {
                 InnovationIdeaId = idea.Id,
                 FromStatusId = fromId,
@@ -165,7 +150,6 @@ namespace Ibtikar.Services.Implementations
                 Note = "تم تنفيذ الفكرة وإرفاق ملفَي الإغلاق."
             }, ct);
 
-            await _db.SaveChangesAsync(ct);
             await _auditLog.WriteAsync(
                 "Execution.Complete",
                 "InnovationIdea",

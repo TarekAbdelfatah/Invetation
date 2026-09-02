@@ -1,5 +1,6 @@
 @using Ibtikar.Controllers
 @using Ibtikar.ViewModels
+@using static Ibtikar.Services.Helpers.KsaTime
 @model List<AuditInboxVm.Row>
 @{
     var hasItems = Model is { Count: > 0 };
@@ -8,23 +9,37 @@
 {
     @foreach (var i in Model)
     {
-        <tr class="@(i.IsOverdue ? "table-danger" : null)" data-inbox-row>
+        var isRoutedRow = i.StatusCode == "under_study" && !string.IsNullOrWhiteSpace(i.AssignedDepartment);
+        <tr class="@(i.IsOverdue && !isRoutedRow ? "table-danger" : null)" data-inbox-row>
             <td data-label="المرجع"><code>@i.Reference</code></td>
             <td data-label="العنوان">@i.Title</td>
             <td class="d-none d-lg-table-cell" data-label="المجال"><small>@i.Domain</small></td>
-            <td data-label="الإدارة"><small>@i.Department</small></td>
-            <td class="d-none d-md-table-cell" data-label="تاريخ التقديم"><small dir="ltr">@i.SubmittedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
+            <td data-label="الإدارة">
+                <small>@i.Department</small>
+                @if (isRoutedRow)
+                {
+                    <div class="mt-1">
+                        <span class="badge rounded-pill" style="background-color:#0dcaf0;color:#0c111d"
+                              title="تم تحويل الملف من قبل التدقيق إلى هذه الجهة">
+                            <span class="material-icons align-middle" style="font-size:13px">call_split</span>
+                            محوّل إلى: @i.AssignedDepartment
+                        </span>
+                    </div>
+                }
+            </td>
+            <td class="d-none d-md-table-cell" data-label="تاريخ التقديم"><small dir="ltr">@i.SubmittedAt.FormatDateTime()</small></td>
             <td class="bog-card-list__actions" data-label="">
-                @if (i.IsOverdue)
+                @if (!isRoutedRow && i.IsOverdue)
                 {
                     <span class="badge bg-danger mb-1 d-inline-flex align-items-center gap-1" title="لم تتم مراجعة الفكرة منذ أكثر من 48 ساعة">
                         <span class="material-icons" style="font-size:14px">priority_high</span>
                         متأخر
                     </span>
                 }
-                <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@i.Id">
+                <a class="btn btn-sm @(isRoutedRow ? "btn-outline-secondary" : "btn-outline-primary")"
+                   asp-action="Details" asp-route-id="@i.Id">
                     <span class="material-icons align-middle" style="font-size:16px">visibility</span>
-                    مراجعة
+                    @(isRoutedRow ? "استعراض" : "مراجعة")
                 </a>
             </td>
         </tr>

@@ -24,6 +24,7 @@ namespace Ibtikar.DTOs.SpecializedDashboard
         string StatusCode,
         DateTime? SubmittedAt,
         DateTime? AssignedAt,
+        bool CanReturnNotCompetent,
         IReadOnlyList<SpecializedAttachmentDto> Attachments,
         IReadOnlyList<SpecializedHistoryRowDto> History);
 
@@ -55,7 +56,9 @@ namespace Ibtikar.DTOs.SpecializedDashboard
     public sealed record SpecializedReferralsDto(
         IReadOnlyList<SpecializedReferralRowDto> Items,
         string StatusFilter,
-        int Take);
+        int Page,
+        int PageSize,
+        int TotalCount);
 
     public sealed record SpecializedCriterionDto(
         Guid Id,
@@ -114,12 +117,21 @@ namespace Ibtikar.DTOs.SpecializedDashboard
     public sealed record SpecializedRequestSubmissionDto(
         Guid IdeaId,
         IReadOnlyList<Guid> PartnerDepartmentIds,
-        string? Note);
+        IReadOnlyList<SpecializedRequestPartnerNoteDto> PartnerNotes);
+
+    public sealed record SpecializedRequestPartnerNoteDto(Guid PartnerDepartmentId, string? Note);
 
     public sealed record SpecializedRequestOutcomeDto(
         bool Success,
         string? Message,
         int Created);
+
+    public sealed record SpecializedPartnerScoreLineDto(
+        Guid CriterionId,
+        string CriterionCode,
+        string CriterionName,
+        int Score,
+        string? Comment);
 
     public sealed record SpecializedPartnerFollowUpRowDto(
         Guid AssignmentId,
@@ -133,7 +145,12 @@ namespace Ibtikar.DTOs.SpecializedDashboard
         DateTime? RespondedAt,
         double DaysOpen,
         bool IsLate,
-        string? Note);
+        string? Note,
+        bool HasResponse,
+        string? ResponseComment,
+        decimal? TotalScore,
+        DateTime? ResponseSubmittedAt,
+        IReadOnlyList<SpecializedPartnerScoreLineDto> Scores);
 
     public sealed record SpecializedPartnerOpinionDto(
         Guid IdeaId,
@@ -154,4 +171,8 @@ namespace Ibtikar.DTOs.SpecializedDashboard
         bool Success,
         string? Message,
         bool RequiresConfirmation);
+
+    public sealed record SpecializedReturnNotCompetentOutcomeDto(
+        bool Success,
+        string? Message);
 }

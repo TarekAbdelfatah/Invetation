@@ -1,27 +1,26 @@
-using Ibtikar.Data;
 using Ibtikar.Models;
+using Ibtikar.Repositories;
 using Ibtikar.Services.Helpers;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Ibtikar.Services.Implementations
 {
     public sealed class AttachmentService
     {
-        private readonly IbtikarDbContext _db;
+        private readonly IAttachmentRepository _repo;
         private readonly FileStorageService _storage;
         private readonly PdfValidator _pdf;
         private readonly IntegrationOptions _options;
         private readonly ILogger<AttachmentService> _logger;
 
         public AttachmentService(
-            IbtikarDbContext db,
+            IAttachmentRepository repo,
             FileStorageService storage,
             PdfValidator pdf,
             IOptions<IntegrationOptions> options,
             ILogger<AttachmentService> logger)
         {
-            _db = db;
+            _repo = repo;
             _storage = storage;
             _pdf = pdf;
             _options = options.Value;
@@ -52,7 +51,7 @@ namespace Ibtikar.Services.Implementations
             if (!_pdf.IsPdf(probe))
                 return AttachmentSaveResult.Failed("يجب أن يكون الملف بصيغة PDF.");
 
-            var existing = await _db.IdeaAttachments.CountAsync(a => a.InnovationIdeaId == ideaId, ct);
+            var existing = await _repo.CountForIdeaAsync(ideaId, ct);
             if (existing >= MaxCount)
                 return AttachmentSaveResult.Failed($"الحد الأقصى {MaxCount} ملف لكل فكرة.");
 
@@ -67,62 +66,75 @@ namespace Ibtikar.Services.Implementations
                 Id = Guid.NewGuid(),
                 InnovationIdeaId = ideaId,
                 FileName = file.FileName,
-                ContentType = file.ContentType ?? "application/pdf",
+                ContentType = "application/pdf",
                 SizeBytes = file.Length,
                 StoragePath = storedPath,
                 UploadedAt = DateTime.UtcNow,
                 UploadedByUserId = uploadedByUserId
             };
-            _db.IdeaAttachments.Add(attachment);
-            await _db.SaveChangesAsync(ct);
+            _repo.Add(attachment);
+            await _repo.SaveChangesAsync(ct);
 
             _logger.LogInformation("Saved attachment {Id} for idea {Idea}", attachment.Id, ideaId);
             return AttachmentSaveResult.Ok(attachment.Id, file.FileName, file.Length);
         }
 
-        public async Task<List<IdeaAttachment>> ListForIdeaAsync(Guid ideaId, CancellationToken ct)
-        {
-            return await _db.IdeaAttachments
-                .AsNoTracking()
-                .Where(a => a.InnovationIdeaId == ideaId)
-                .OrderBy(a => a.UploadedAt)
-                .ToListAsync(ct);
-        }
+        public Task<List<IdeaAttachment>> ListForIdeaAsync(Guid ideaId, CancellationToken ct)
+            => _repo.ListForIdeaAsync(ideaId, ct);
 
         public Task<int> CountForIdeaAsync(Guid ideaId, CancellationToken ct)
-            => _db.IdeaAttachments.CountAsync(a => a.InnovationIdeaId == ideaId, ct);
+            => _repo.CountForIdeaAsync(ideaId, ct);
 
-        public async Task<bool> UserOwnsIdeaAsync(Guid ideaId, Guid userId, CancellationToken ct)
-            => await _db.InnovationIdeas
-                .AsNoTracking()
-                .AnyAsync(i => i.Id == ideaId && i.ApplicantUserId == userId, ct);
+        public Task<bool> UserOwnsIdeaAsync(Guid ideaId, Guid userId, CancellationToken ct)
+            => _repo.UserOwnsIdeaAsync(ideaId, userId, ct);
+
+        public Task<IdeaAttachment?> GetByIdAsync(Guid attachmentId, CancellationToken ct)
+            => _repo.GetByIdAsync(attachmentId, ct);
 
         public async Task<bool> DeleteForApplicantAsync(Guid ideaId, Guid attachmentId, Guid userId, CancellationToken ct)
         {
-            var idea = await _db.InnovationIdeas
-                .AsNoTracking()
-                .FirstOrDefaultAsync(i => i.Id == ideaId && i.ApplicantUserId == userId, ct);
+            var idea = await _repo.GetOwnedIdeaAsync(ideaId, userId, ct);
             if (idea is null) return false;
 
             if (!idea.IsDraft)
             {
-                var allowedStatusIds = await _db.IdeaStatuses
-                    .AsNoTracking()
-                    .Where(s => s.Code == IdeaStatusCodes.WaitingForCompletion
-                             || s.Code == IdeaStatusCodes.ReturnedForDevelopment)
-                    .Select(s => s.Id)
-                    .ToListAsync(ct);
+                var allowedStatusIds = await _repo.GetDeletableStatusIdsAsync(ct);
                 if (!allowedStatusIds.Contains(idea.CurrentStatusId)) return false;
             }
 
-            var attachment = await _db.IdeaAttachments
-                .FirstOrDefaultAsync(a => a.Id == attachmentId && a.InnovationIdeaId == ideaId, ct);
+            var attachment = await _repo.GetByIdForIdeaAsync(attachmentId, ideaId, ct);
             if (attachment is null) return false;
 
             _storage.Delete(attachment.StoragePath);
-            _db.IdeaAttachments.Remove(attachment);
-            await _db.SaveChangesAsync(ct);
+            await _repo.RemoveAndSaveAsync(attachment, ct);
             return true;
+        }
+
+        public async Task<bool> CanAccessIdeaAsync(
+            Guid ideaId,
+            Guid userId,
+            IReadOnlyCollection<string> roleCodes,
+            Guid? departmentId,
+            CancellationToken ct)
+        {
+            if (await _repo.UserOwnsIdeaAsync(ideaId, userId, ct)) return true;
+
+            var roles = new HashSet<string>(roleCodes, StringComparer.OrdinalIgnoreCase);
+            if (roles.Contains(RoleCodes.SystemAdmin)
+                || roles.Contains(RoleCodes.AuditEmployee)
+                || roles.Contains(RoleCodes.SpecializedDepartment)
+                || roles.Contains(RoleCodes.PartnerDepartment)
+                || roles.Contains(RoleCodes.InnovationCommitteeMember))
+                return true;
+
+            if (departmentId.HasValue
+                && (roles.Contains(RoleCodes.SpecializedDepartment) || roles.Contains(RoleCodes.PartnerDepartment)))
+            {
+                var assigned = await _repo.GetIdeaAssignedDepartmentIdAsync(ideaId, ct);
+                if (assigned.HasValue && assigned.Value == departmentId.Value) return true;
+            }
+
+            return false;
         }
 
         public AttachmentSaveResult SaveDraftAsync(Guid userId, Guid draftId, IFormFile file, CancellationToken ct)
@@ -185,9 +197,14 @@ namespace Ibtikar.Services.Implementations
         public bool DeleteDraftFile(Guid userId, Guid draftId, string storedFileName)
         {
             var folder = DraftFolder(userId, draftId);
-            var path = Path.Combine(folder, storedFileName);
-            if (!File.Exists(path)) return false;
-            File.Delete(path);
+            var fullPath = Path.GetFullPath(Path.Combine(folder, storedFileName));
+            if (!fullPath.StartsWith(Path.GetFullPath(folder), StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("Path traversal attempt blocked in DeleteDraftFile: {Path}", fullPath);
+                return false;
+            }
+            if (!File.Exists(fullPath)) return false;
+            File.Delete(fullPath);
             return true;
         }
 
@@ -220,7 +237,7 @@ namespace Ibtikar.Services.Implementations
                     : fileName;
                 var info = new FileInfo(dstPath);
 
-                _db.IdeaAttachments.Add(new IdeaAttachment
+                _repo.Add(new IdeaAttachment
                 {
                     Id = Guid.NewGuid(),
                     InnovationIdeaId = ideaId,

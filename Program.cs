@@ -72,6 +72,12 @@ namespace Ibtikar
             builder.Services.AddScoped<IPartnerDashboardRepository, PartnerDashboardRepository>();
             builder.Services.AddScoped<IPartnerDashboardService, PartnerDashboardService>();
             builder.Services.AddScoped<ICommitteeFormationService, CommitteeFormationService>();
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+            builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
+            builder.Services.AddScoped<ICommitteeRepository, CommitteeRepository>();
+            builder.Services.AddScoped<IDelegationRepository, DelegationRepository>();
+            builder.Services.AddScoped<ICommitteeDashboardRepository, CommitteeDashboardRepository>();
             builder.Services.AddScoped<IExecutionRepository, ExecutionRepository>();
             builder.Services.AddScoped<IExecutionService, ExecutionService>();
             builder.Services.AddScoped<IReportsRepository, ReportsRepository>();
@@ -81,6 +87,7 @@ namespace Ibtikar
             builder.Services.AddHostedService<VoteLockHostedService>();
             builder.Services.AddHostedService<IdeaDeadlineHostedService>();
             builder.Services.Configure<IntegrationOptions>(builder.Configuration.GetSection("Integrations"));
+            builder.Services.Configure<ErrorOptions>(builder.Configuration.GetSection("Errors"));
             builder.Services.AddHttpClient<ProcedureGatewayService>();
             builder.Services.AddHttpClient<INotificationClient, NotificationService>();
             builder.Services.AddOptions<FileStorageOptions>()
@@ -112,11 +119,15 @@ namespace Ibtikar
 
             ApplyPendingMigrations(app);
 
+            app.UseExceptionHandler("/Error");
+
             app.UseMiddleware<SecurityHeadersMiddleware>();
             app.UseMiddleware<ExceptionMiddleware>();
+
+            app.UseStatusCodePagesWithReExecute("/Error/{0}");
+
             if (!app.Environment.IsDevelopment())
             {
-                app.UseExceptionHandler("/Home/Error");
                 app.UseHsts();
             }
 
