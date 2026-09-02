@@ -192,6 +192,33 @@ namespace Ibtikar.Services.Implementations
             return new CommitteeVotesDto(items);
         }
 
+        public async Task<CommitteeVoteRowDto?> GetSingleVoteAsync(Guid userId, Guid ideaId, CancellationToken ct)
+        {
+            var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);
+            if (committeeId is null) return null;
+
+            var idea = await _repo.GetAssessIdeaAsync(ideaId, ct);
+            if (idea is null) return null;
+
+            var ideaReadOnly = await _repo.GetIdeaReadOnlyAsync(ideaId, ct);
+            var myVote = await _repo.GetVotesByUserAsync(userId, new[] { ideaId }, ct);
+            var hasVoted = myVote.ContainsKey(ideaId);
+
+            return new CommitteeVoteRowDto(
+                idea.IdeaId, idea.Reference, idea.Title,
+                StatusCode: string.Empty, idea.StatusName, idea.StatusColor,
+                hasVoted,
+                hasVoted ? myVote[ideaId] : null,
+                ideaReadOnly?.Description ?? string.Empty,
+                ideaReadOnly?.ProblemStatement,
+                ideaReadOnly?.ProposedSolution,
+                ideaReadOnly?.ExpectedBenefits,
+                ideaReadOnly ?? new CommitteeIdeaReadOnlyDto(
+                    idea.Title, string.Empty, null, null, null, null,
+                    null, null, null, null, null, false, null,
+                    DateTime.UtcNow, null, new List<MyRequestAttachmentDto>()));
+        }
+
         public async Task<CommitteeVoteOutcomeDto> SubmitVoteAsync(Guid userId, CommitteeVoteSubmitDto submission, CancellationToken ct)
         {
             var committeeId = await GetCommitteeIdForMemberAsync(userId, ct);

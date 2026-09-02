@@ -31,16 +31,19 @@
             <div class="alert alert-danger">@err</div>
         }
 
-        <div class="d-flex justify-content-end mb-3 gap-2">
-            <a asp-action="Votes" class="btn btn-outline-primary">
-                <span class="material-icons align-middle" style="font-size:18px">how_to_vote</span>
-                التصويت
-            </a>
-            <a asp-action="Delegations" class="btn btn-outline-secondary">
-                <span class="material-icons align-middle" style="font-size:18px">swap_horiz</span>
-                التفويض
-            </a>
-        </div>
+        @if (isHead)
+        {
+            <div class="d-flex justify-content-end mb-3 gap-2">
+                <a asp-action="Votes" class="btn btn-outline-primary">
+                    <span class="material-icons align-middle" style="font-size:18px">how_to_vote</span>
+                    التصويت
+                </a>
+                <a asp-action="Delegations" class="btn btn-outline-secondary">
+                    <span class="material-icons align-middle" style="font-size:18px">swap_horiz</span>
+                    التفويض
+                </a>
+            </div>
+        }
         @if (ViewBag.DatabaseError is string dbErr)
         {
             <div class="alert alert-danger">تعذر الاتصال بقاعدة البيانات: @dbErr</div>
@@ -170,13 +173,29 @@
                                             <div class="d-flex gap-1">
                                                 @if (isReferred)
                                                 {
-                                                    <a class="btn btn-sm btn-outline-primary" asp-action="Assess" asp-route-id="@i.IdeaId">
-                                                        تقييم
-                                                    </a>
+                                                    @if (isHead)
+                                                    {
+                                                        <a class="btn btn-sm btn-outline-primary" asp-action="Assess" asp-route-id="@i.IdeaId">
+                                                            تقييم
+                                                        </a>
+                                                        <button type="button" class="btn btn-sm btn-outline-success" data-open-decision>
+                                                            قرار
+                                                        </button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <a class="btn btn-sm btn-outline-primary" asp-action="Vote" asp-route-id="@i.IdeaId">
+                                                            <span class="material-icons align-middle" style="font-size:16px">how_to_vote</span>
+                                                            التصويت
+                                                        </a>
+                                                    }
                                                 }
-                                                <button type="button" class="btn btn-sm btn-outline-success" data-open-decision>
-                                                    @(isReferred ? "قرار" : "تفاصيل القرار")
-                                                </button>
+                                                else
+                                                {
+                                                    <button type="button" class="btn btn-sm btn-outline-success" data-open-decision>
+                                                        تفاصيل القرار
+                                                    </button>
+                                                }
                                             </div>
                                         </td>
                                     </tr>
@@ -204,7 +223,7 @@
                     <code id="decisionReference" class="fs-6"></code>
                     <span id="decisionStatusBadge" class="badge"></span>
                 </div>
-                <div id="decisionIdeaTitle" class="h6 mt-2 mb-0 text-break"></div>
+                <div id="decisionIdeaTitle" class="h6 mt-2 mb-0 text-break" style="overflow-wrap:anywhere; word-break:break-word"></div>
             </div>
 
             <div class="row g-2 text-center mb-3">

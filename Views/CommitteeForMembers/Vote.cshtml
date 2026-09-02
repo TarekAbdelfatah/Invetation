@@ -1,0 +1,84 @@
+@model Ibtikar.ViewModels.CommitteeVoteRowVm
+@using Ibtikar.ViewModels
+@{
+    ViewData["Title"] = $"التصويت {Model.Reference}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var voteLabels = new Dictionary<string, string>
+    {
+        ["Agree"] = "أوافق",
+        ["Disagree"] = "لا أوافق",
+        ["NeedsDevelopment"] = "تحتاج تطوير"
+    };
+    var myLabel = voteLabels.TryGetValue(Model.MyVote ?? "", out var l) ? l : Model.MyVote;
+}
+
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <h2 class="mb-0 d-flex align-items-center gap-2">
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">how_to_vote</span>
+                </span>
+                التصويت
+            </h2>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" asp-action="Index">
+                    <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
+                    العودة للأفكار
+                </a>
+            </div>
+        </div>
+
+        @if (TempData["AlertMessage"] is string ok)
+        {
+            <div class="alert alert-success">@ok</div>
+        }
+        @if (TempData["AlertError"] is string err)
+        {
+            <div class="alert alert-danger">@err</div>
+        }
+
+        <div class="card bog-section mb-3">
+            <div class="card-body d-flex flex-wrap align-items-center gap-2">
+                <code class="fs-6">@Model.Reference</code>
+                <span class="badge" style="background-color:@Model.StatusColor">@Model.StatusName</span>
+                <h1 class="h5 mb-0 ms-2">@Model.Title</h1>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            @await Html.PartialAsync("_IdeaReadOnly", Model.Idea)
+        </div>
+
+        @if (Model.HasVoted)
+        {
+            <div class="alert alert-success d-flex align-items-center gap-2 mb-0">
+                <span class="material-icons">check_circle</span>
+                تم التصويت: <strong>@myLabel</strong>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info border">
+                <span class="material-icons align-middle me-1" style="font-size:18px">info</span>
+                لكل عضو تصويت واحد فقط على كل فكرة ولا يمكن تعديله لاحقاً.
+            </div>
+            <form asp-action="SubmitVote" method="post" class="d-flex gap-2 flex-wrap">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ideaId" value="@Model.IdeaId" />
+                <input type="hidden" name="returnUrl" value="@Url.Action("Vote", new { id = Model.IdeaId })" />
+                <button type="submit" name="decision" value="Agree" class="btn btn-success"
+                        data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
+                    <span class="material-icons align-middle" style="font-size:18px">thumb_up</span>
+                    أوافق
+                </button>
+                <button type="submit" name="decision" value="Disagree" class="btn btn-danger"
+                        data-confirm-trigger data-confirm-message="هل أنت متأكد من تسجيل تصويتك؟ لا يمكن تعديله لاحقاً.">
+                    <span class="material-icons align-middle" style="font-size:18px">thumb_down</span>
+                    لا أوافق
+                </button>
+                <a class="btn btn-outline-secondary" asp-action="Index">إلغاء</a>
+            </form>
+        }
+    </div>
+</div>

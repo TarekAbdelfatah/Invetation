@@ -117,15 +117,35 @@ namespace Ibtikar.Controllers
             return View(vm);
         }
 
+        [HttpGet("CommitteeForMembers/Vote/{id:guid}")]
+        public async Task<IActionResult> Vote(Guid id, CancellationToken ct)
+        {
+            var dto = await _dashboardService.GetSingleVoteAsync(ResolveUserId(), id, ct);
+            if (dto is null) return Forbid();
+
+            var vm = new CommitteeVoteRowVm(
+                dto.IdeaId, dto.Reference, dto.Title,
+                dto.StatusCode, dto.StatusName, dto.StatusColor,
+                dto.HasVoted, dto.MyVote,
+                dto.Description, dto.ProblemStatement, dto.ProposedSolution, dto.ExpectedBenefits,
+                ToIdeaReadOnlyVm(dto.Idea));
+            return View(vm);
+        }
+
         [HttpPost("CommitteeForMembers/Votes")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitVote(Guid ideaId, string decision, CancellationToken ct)
+        public async Task<IActionResult> SubmitVote(Guid ideaId, string decision, string? returnUrl, CancellationToken ct)
         {
             var submission = new CommitteeVoteSubmitDto(ideaId, decision);
             var result = await _dashboardService.SubmitVoteAsync(ResolveUserId(), submission, ct);
 
             TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
             TempData["AlertType"] = result.Success ? "success" : "danger";
+
+            if (!string.IsNullOrWhiteSpace(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
 
             return RedirectToAction(nameof(Votes));
         }
