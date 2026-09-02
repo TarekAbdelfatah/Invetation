@@ -8,8 +8,8 @@ namespace Ibtikar.Services.Helpers
         public const string InnovationCommitteeMember = "InnovationCommitteeMember";
         public const string SystemAdmin = "admin";
         public const string Admin = "admin";
-        public const string ExternalBeneficiary = "AuditEmployee";
-        public const string InternalBeneficiary = "AuditEmployee";
+        public const string ExternalBeneficiary = "ExternalBeneficiary";
+        public const string InternalBeneficiary = "InternalBeneficiary";
 
         public static readonly IReadOnlyDictionary<string, string> HomeRedirects =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

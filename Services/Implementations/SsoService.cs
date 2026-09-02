@@ -24,6 +24,7 @@ namespace Ibtikar.Services.Implementations
 
         /// <summary>
         /// Builds the OIDC authorization URL using IdentityModel's RequestUrl builder.
+        /// This ensures spec-compliant, properly encoded query parameters.
         /// </summary>
         public string BuildAuthorizeUrl(
             string redirectUri,
@@ -94,7 +95,6 @@ namespace Ibtikar.Services.Implementations
             {
                 Address = tokenEndpoint,
                 ClientId = _settings.ClientId,
-                ClientSecret = _settings.ClientSecret,
                 Code = code,
                 RedirectUri = redirectUri,
                 CodeVerifier = codeVerifier

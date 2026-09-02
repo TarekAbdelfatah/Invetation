@@ -22,6 +22,12 @@ namespace Ibtikar.Controllers
             return View();
         }
 
+        [HttpGet("/AccessDenied")]
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

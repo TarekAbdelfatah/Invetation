@@ -153,6 +153,22 @@ namespace Ibtikar.Services.Implementations
                     user.Email = userInfo.Email;
             }
 
+            var adminUser = await _db.Admins.FirstOrDefaultAsync(a => a.NetworkUser == username, ct);
+            if (adminUser is null)
+            {
+                var defaultRole = await _db.Roles.FirstOrDefaultAsync(r => r.Code == RoleCodes.AuditEmployee || r.Code == RoleCodes.Admin, ct);
+                if (defaultRole is not null)
+                {
+                    _db.Admins.Add(new Admin
+                    {
+                        NetworkUser = username,
+                        RoleId = defaultRole.Id,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
             user.LastLoginAt = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);
             return user;
