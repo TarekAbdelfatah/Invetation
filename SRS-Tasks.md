@@ -1,4 +1,4 @@
-﻿# نظام "ابتكار" — وثيقة المهام الفنية (SRS Tasks)
+﻿# نظام "أبتكر" — وثيقة المهام الفنية (SRS Tasks)
 ## التقنية: ASP.NET Core MVC (.NET 10 LTS) — EF Core Code First — PostgreSQL (تطوير) → SQL Server (إنتاج)
 
 ---

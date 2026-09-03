@@ -178,7 +178,7 @@
                                             <tbody id="referredTableBody">
                                                 @foreach (var i in Model.ReferralItems)
                                                 {
-                                                    <tr data-status-code="@i.StatusCode" class="@(i.IsOverdue ? "table-danger" : null)" onclick="window.location='@Url.Action("Details", "SpecializedDashboard", new { id = i.Id })'">
+                                                    <tr data-status-code="@i.StatusCode" class="@(i.IsOverdue ? "table-danger" : null)">
                                                         <td data-label="المرجع"><span class="partner-inbox__ref">@i.Reference</span></td>
                                                         <td data-label="العنوان">
                                                             <span class="bog-idea-title" title="@i.Title">@Display.Title(i.Title)</span>
@@ -322,7 +322,7 @@
                                                 @foreach (var i in Model.AdvisoryItems)
                                                 {
                                                     var advState = i.IsReturned ? "returned" : (!i.IsPending ? "submitted" : (i.IsLate ? "late" : "pending"));
-                                                    <tr data-advisory-state="@advState" class="@(i.IsLate ? "table-warning" : null)" onclick="window.location='@Url.Action("Details", "PartnerDashboard", new { assignmentId = i.AssignmentId })'">
+                                                    <tr data-advisory-state="@advState" class="@(i.IsLate ? "table-warning" : null)">
                                                         <td data-label="المرجع"><span class="partner-inbox__ref">@i.IdeaReference</span></td>
                                                         <td data-label="العنوان">
                                                             <span class="bog-idea-title" title="@i.IdeaTitle">@i.IdeaTitle</span>

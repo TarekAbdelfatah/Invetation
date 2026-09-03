@@ -10,8 +10,13 @@ namespace Ibtikar.Repositories
     public sealed class CommitteeRepository : ICommitteeRepository
     {
         private readonly IbtikarDbContext _db;
+        private readonly CommonSysDbContext _commonDb;
 
-        public CommitteeRepository(IbtikarDbContext db) => _db = db;
+        public CommitteeRepository(IbtikarDbContext db, CommonSysDbContext commonDb)
+        {
+            _db = db;
+            _commonDb = commonDb;
+        }
 
         public async Task<IReadOnlyList<CommitteeSummaryDto>> GetAllAsync(CancellationToken ct)
         {
@@ -65,27 +70,79 @@ namespace Ibtikar.Repositories
                 existingMemberUserIds = new HashSet<Guid>(existing);
             }
 
+            var cleanUsers = adminRecords
+                .Select(a => a.NetworkUser?.Trim())
+                .Where(nu => !string.IsNullOrWhiteSpace(nu))
+                .Distinct()
+                .ToList();
+
+            var employees = await _commonDb.Employees.AsNoTracking()
+                .Where(e => e.NetworkUser != null && e.NetworkUser != "")
+                .Select(e => new { e.NetworkUser, e.Name })
+                .ToListAsync(ct);
+
+            var employeeNameByUser = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var emp in employees)
+            {
+                var key = NormalizeNetworkUser(emp.NetworkUser);
+                if (!string.IsNullOrWhiteSpace(key) && !employeeNameByUser.ContainsKey(key))
+                    employeeNameByUser[key] = string.IsNullOrWhiteSpace(emp.Name) ? key : emp.Name.Trim();
+            }
+
             var candidates = new List<CommitteeMemberOptionDto>();
             foreach (var admin in adminRecords)
             {
                 if (string.IsNullOrWhiteSpace(admin.NetworkUser)) continue;
-                var cleanUser = admin.NetworkUser.Trim();
-                if (cleanUser.EndsWith("@bog.gov.sa", StringComparison.OrdinalIgnoreCase))
-                {
-                    cleanUser = cleanUser.Substring(0, cleanUser.Length - "@bog.gov.sa".Length);
-                }
+                var cleanUser = NormalizeNetworkUser(admin.NetworkUser);
+                if (string.IsNullOrWhiteSpace(cleanUser)) continue;
 
                 var userId = AdminIdToGuid(admin.Id);
                 if (existingMemberUserIds.Contains(userId)) continue;
 
+                var fullName = employeeNameByUser.TryGetValue(cleanUser, out var name) ? name : cleanUser;
+
                 candidates.Add(new CommitteeMemberOptionDto(
                     userId,
-                    cleanUser,
+                    fullName,
                     cleanUser,
                     false));
             }
 
             return candidates.OrderBy(c => c.FullName).ToArray();
+        }
+
+        public async Task<HashSet<Guid>> GetActiveCommitteeMemberIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct)
+        {
+            if (ids is null || ids.Count == 0)
+                return new HashSet<Guid>();
+
+            var roleCode = RoleCodes.InnovationCommitteeMember;
+
+            var activeAdminIds = await _db.Admins.AsNoTracking()
+                .Where(a => a.IsActive && a.Role != null && a.Role.Code == roleCode)
+                .Select(a => a.Id)
+                .ToListAsync(ct);
+
+            var activeAdminUserIdSet = new HashSet<Guid>(activeAdminIds.Select(AdminIdToGuid));
+
+            var result = new HashSet<Guid>();
+            foreach (var id in ids)
+            {
+                if (activeAdminUserIdSet.Contains(id))
+                    result.Add(id);
+            }
+
+            return result;
+        }
+
+        private static string NormalizeNetworkUser(string networkUser)
+        {
+            var clean = networkUser.Trim();
+            if (clean.EndsWith("@bog.gov.sa", StringComparison.OrdinalIgnoreCase))
+            {
+                clean = clean.Substring(0, clean.Length - "@bog.gov.sa".Length);
+            }
+            return clean;
         }
 
         private static Guid AdminIdToGuid(int adminId)

@@ -7,7 +7,6 @@ namespace Ibtikar.Services.Helpers
         public const string PartnerDepartment = "SpecializedDepartment";
         public const string InnovationCommitteeMember = "InnovationCommitteeMember";
         public const string SystemAdmin = "admin";
-        public const string Admin = "admin";
         public const string ExternalBeneficiary = "ExternalBeneficiary";
         public const string InternalBeneficiary = "InternalBeneficiary";
 
@@ -16,7 +15,7 @@ namespace Ibtikar.Services.Helpers
             {
                 [AuditEmployee]            = "/Audit/Inbox",
                 [SpecializedDepartment]    = "/SpecializedDashboard",
-                [InnovationCommitteeMember]= "/Committee",
+                [InnovationCommitteeMember]= "/CommitteeForMembers",
                 [SystemAdmin]              = "/AdminOverview"
             };
 
