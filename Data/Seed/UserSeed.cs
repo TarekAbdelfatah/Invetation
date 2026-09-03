@@ -11,18 +11,18 @@ namespace Ibtikar.Data.Seed
 
         public static void SeedTestUsers(IbtikarDbContext db, Pbkdf2PasswordHasher hasher)
         {
-            //EnsureUserForRole(db, hasher, "audit", "audit", "موظف تدقيق", "audit-employee", "internal", "judicial");
-            //EnsureUserForRole(db, hasher, "specialized", "specialized", "الإدارة المختصة", "specialized-department", "internal", "judicial");
-            //EnsureUserForRole(db, hasher, "partner", "partner", "الإدارة الشريكة", "partner-department", "internal", "tech");
-            //EnsureUserForRole(db, hasher, "committee", "committee", "عضو لجنة", "innovation-committee-member", "internal");
-            //EnsureUserForRole(db, hasher, "committee-head", "committee-head", "رئيس لجنة الابتكار", "innovation-committee-member", "internal");
-            //EnsureUserForRole(db, hasher, "committee-member", "committee-member", "عضو لجنة الابتكار", "innovation-committee-member", "internal");
-            //EnsureUserForRole(db, hasher, "admin", "admin", "مدير النظام", "admin", "internal");
-            //EnsureUserForRole(db, hasher, "ext-beneficiary", "ext", "مستفيد خارجي", "external-beneficiary", "external");
-            //EnsureUserForRole(db, hasher, "int-beneficiary", "int", "مستفيد داخلي", "internal-beneficiary", "internal", "judicial");
+            EnsureUserForRole(db, hasher, "audit", "audit", "موظف تدقيق", "AuditEmployee", "audit-employee", null);
+            EnsureUserForRole(db, hasher, "specialized", "specialized", "الإدارة المختصة", "SpecializedDepartment", "specialized-department", "judicial");
+            EnsureUserForRole(db, hasher, "partner", "partner", "الإدارة الشريكة", "SpecializedDepartment", "partner-department", "tech");
+            EnsureUserForRole(db, hasher, "committee", "committee", "عضو لجنة", "InnovationCommitteeMember", "innovation-committee-member", null);
+            EnsureUserForRole(db, hasher, "committee-head", "committee-head", "رئيس لجنة الابتكار", "InnovationCommitteeMember", "innovation-committee-member", null);
+            EnsureUserForRole(db, hasher, "committee-member", "committee-member", "عضو لجنة الابتكار", "InnovationCommitteeMember", "innovation-committee-member", null);
+            EnsureUserForRole(db, hasher, "admin", "admin", "مدير النظام", "admin", "admin", null);
+            EnsureUserForRole(db, hasher, "ext-beneficiary", "ext", "مستفيد خارجي", "ExternalBeneficiary", "external-beneficiary", null);
+            EnsureUserForRole(db, hasher, "int-beneficiary", "int", "مستفيد داخلي", "InternalBeneficiary", "internal-beneficiary", "judicial");
         }
 
-        private static void EnsureUserForRole(IbtikarDbContext db, Pbkdf2PasswordHasher hasher, string username, string emailLocal, string fullName, string roleCode, string userTypeCode, string? departmentCode = null)
+        private static void EnsureUserForRole(IbtikarDbContext db, Pbkdf2PasswordHasher hasher, string username, string emailLocal, string fullName, string roleCode, string roleDisplayName, string? departmentCode = null)
         {
             if (db.Users.Any(u => u.Username == username))
             {

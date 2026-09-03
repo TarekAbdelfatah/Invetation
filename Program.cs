@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Threading.RateLimiting;
 using Serilog;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
 using Ibtikar.Data;
 using Ibtikar.Data.Seed;
 using Ibtikar.Middleware;
@@ -27,7 +26,7 @@ namespace Ibtikar
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
+           
             Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(builder.Configuration)
                 .Enrich.FromLogContext()
@@ -51,10 +50,10 @@ namespace Ibtikar
             });
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddDbContext<IbtikarDbContext>(options =>
-                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
                     .AddInterceptors(new NoHtmlSaveChangesInterceptor()));
             builder.Services.AddDbContext<CommonSysDbContext>(options =>
-                options.UseNpgsql(builder.Configuration.GetConnectionString("CommonSysDB")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("CommonSysDB")));
             builder.Services.AddScoped<Pbkdf2PasswordHasher>();
             builder.Services.AddScoped<AuthService>();
             builder.Services.AddHttpClient();
@@ -125,7 +124,7 @@ namespace Ibtikar
             });
 
             var app = builder.Build();
-
+           
             ApplyPendingMigrations(app);
 
             app.UseExceptionHandler("/Error");
@@ -155,8 +154,6 @@ namespace Ibtikar
                 pattern: "{controller=Home}/{action=Index}/{id?}")
                 .WithStaticAssets();
 
-            ApplyPendingMigrations(app);
-
             app.Run();
         }
 
@@ -164,15 +161,23 @@ namespace Ibtikar
         {
             using var scope = app.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IbtikarDbContext>();
+            var hasher = scope.ServiceProvider.GetRequiredService<Pbkdf2PasswordHasher>();
+            var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
             try
             {
-                AuditSchemaUpgrader.EnsureAuditSchema(db);
                 db.Database.Migrate();
+
+                logger.LogInformation("Seeding lookup data...");
+                DatabaseSeeder.SeedLookups(db);
+                logger.LogInformation("Seeding test users...");
+                DatabaseSeeder.SeedTestUsers(db, hasher);
+                logger.LogInformation("Seeding sample ideas...");
+                DatabaseSeeder.SeedSampleIdeas(db);
+                logger.LogInformation("Database initialization complete.");
             }
             catch (Exception ex)
             {
-                var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Migration");
-                logger.LogWarning(ex, "Database migration skipped: {Message}", ex.Message);
+                logger.LogWarning(ex, "Database initialization skipped: {Message}", ex.Message);
             }
         }
 

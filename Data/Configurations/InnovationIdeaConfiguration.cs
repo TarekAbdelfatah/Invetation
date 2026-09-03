@@ -10,7 +10,7 @@ namespace Ibtikar.Data.Configurations
         {
             builder.HasKey(i => i.Id);
             builder.Property(i => i.ReferenceNumber).IsRequired().HasMaxLength(30);
-            builder.HasIndex(i => i.ReferenceNumber).IsUnique().HasFilter("\"IsDraft\" = false");
+            builder.HasIndex(i => i.ReferenceNumber).IsUnique().HasFilter("[IsDraft] = 0");
             builder.Property(i => i.Title).IsRequired().HasMaxLength(300);
             builder.Property(i => i.Description).IsRequired().HasMaxLength(4000);
             builder.Property(i => i.ProblemStatement).HasMaxLength(4000);
@@ -18,7 +18,7 @@ namespace Ibtikar.Data.Configurations
             builder.Property(i => i.ExpectedBenefits).HasMaxLength(4000);
             builder.Property(i => i.RequiredResources).HasMaxLength(3000);
             builder.Property(i => i.IsDraft).IsRequired();
-            builder.HasIndex(i => i.ApplicantUserId).HasFilter("\"IsDeleted\" = false");
+            builder.HasIndex(i => i.ApplicantUserId).HasFilter("[IsDeleted] = 0");
             builder.Property(i => i.IsDeleted).IsRequired();
             builder.Property(i => i.DeletedAt);
             builder.Property(i => i.CreatedAt).IsRequired();
@@ -51,12 +51,12 @@ namespace Ibtikar.Data.Configurations
             builder.HasOne(i => i.ApplicantDepartment)
                 .WithMany()
                 .HasForeignKey(i => i.ApplicantDepartmentId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction);
 
             builder.HasOne(i => i.AssignedDepartment)
                 .WithMany()
                 .HasForeignKey(i => i.AssignedDepartmentId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }
