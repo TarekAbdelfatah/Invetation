@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Threading.RateLimiting;
 using Serilog;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 using Ibtikar.Data;
 using Ibtikar.Data.Seed;
 using Ibtikar.Middleware;
@@ -49,9 +50,10 @@ namespace Ibtikar
             });
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddDbContext<IbtikarDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+                    .AddInterceptors(new NoHtmlSaveChangesInterceptor()));
             builder.Services.AddDbContext<CommonSysDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("CommonSysDB")));
+                options.UseNpgsql(builder.Configuration.GetConnectionString("CommonSysDB")));
             builder.Services.AddScoped<Pbkdf2PasswordHasher>();
             builder.Services.AddScoped<AuthService>();
             builder.Services.AddHttpClient();
@@ -162,15 +164,12 @@ namespace Ibtikar
             try
             {
                 AuditSchemaUpgrader.EnsureAuditSchema(db);
-                DatabaseSeeder.SeedLookups(db);
-                DatabaseSeeder.SeedSampleIdeas(db);
-                DatabaseSeeder.SeedTestUsers(db, new Pbkdf2PasswordHasher());
                 db.Database.Migrate();
             }
             catch (Exception ex)
             {
                 var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Migration");
-                logger.LogWarning(ex, "Database migration/seed skipped: {Message}", ex.Message);
+                logger.LogWarning(ex, "Database migration skipped: {Message}", ex.Message);
             }
         }
 

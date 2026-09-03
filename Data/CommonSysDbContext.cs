@@ -36,7 +36,7 @@ namespace Ibtikar.Data
 
             modelBuilder.Entity<ErpHrDepartment>(b =>
             {
-                b.ToTable("HR_DEPARTMENT", "COMMON_SYS");
+                b.ToTable("HR_DEPARTMENT", "dbo");
                 b.HasKey(d => d.DeptId);
                 b.Property(d => d.DeptId).HasColumnName("DeptId");
                 b.Property(d => d.DeptName).HasColumnName("DeptName").HasMaxLength(200);

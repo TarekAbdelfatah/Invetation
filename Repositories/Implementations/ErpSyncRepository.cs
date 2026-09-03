@@ -7,11 +7,16 @@ namespace Ibtikar.Repositories.Implementations
 {
     public sealed class ErpSyncRepository : IErpSyncRepository
     {
+        private readonly CommonSysDbContext _commonDb;
         private readonly IbtikarDbContext _db;
         private readonly ILogger<ErpSyncRepository> _logger;
 
-        public ErpSyncRepository(IbtikarDbContext db, ILogger<ErpSyncRepository> logger)
+        public ErpSyncRepository(
+            CommonSysDbContext commonDb,
+            IbtikarDbContext db,
+            ILogger<ErpSyncRepository> logger)
         {
+            _commonDb = commonDb;
             _db = db;
             _logger = logger;
         }
@@ -20,27 +25,23 @@ namespace Ibtikar.Repositories.Implementations
         {
             try
             {
-                if (_db.Database.IsSqlServer())
-                {
-                    var sql = @"
-                        IF EXISTS (SELECT 1 FROM sys.databases WHERE name = N'ErpDatabaseSync')
-                        AND EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID(N'[ErpDatabaseSync].[dbo].[Employees]') AND type in (N'U', N'V'))
-                        BEGIN
-                            SELECT DISTINCT 
-                                CAST([NetworkUser] AS nvarchar(150)) AS NetworkUser,
-                                CAST(COALESCE([Name], [NetworkUser]) AS nvarchar(200)) AS FullName
-                            FROM [ErpDatabaseSync].[dbo].[Employees]
-                            WHERE [NetworkUser] IS NOT NULL AND LTRIM(RTRIM([NetworkUser])) <> ''
-                        END";
+                var erpEmployees = await _commonDb.Employees
+                    .AsNoTracking()
+                    .Where(e => e.NetworkUser != null && e.NetworkUser != "")
+                    .Select(e => new { e.NetworkUser, e.Name })
+                    .ToListAsync(ct);
 
-                    var erpEmployees = await _db.Database.SqlQueryRaw<ErpEmployeeOption>(sql).ToListAsync(ct);
-                    if (erpEmployees.Count > 0)
-                    {
-                        return erpEmployees
-                            .Where(e => !string.IsNullOrWhiteSpace(e.NetworkUser))
-                            .OrderBy(e => e.FullName)
-                            .ToList();
-                    }
+                var result = erpEmployees
+                    .Where(e => !string.IsNullOrWhiteSpace(e.NetworkUser))
+                    .Select(e => new ErpEmployeeOption(
+                        e.NetworkUser,
+                        string.IsNullOrWhiteSpace(e.Name) ? e.NetworkUser : e.Name.Trim()))
+                    .OrderBy(e => e.FullName)
+                    .ToList();
+
+                if (result.Count > 0)
+                {
+                    return result;
                 }
             }
             catch (Exception ex)
@@ -61,22 +62,16 @@ namespace Ibtikar.Repositories.Implementations
         {
             try
             {
-                if (_db.Database.IsSqlServer())
-                {
-                    var sql = @"
-                        IF EXISTS (SELECT 1 FROM sys.databases WHERE name = N'ErpDatabaseSync')
-                        AND EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID(N'[ErpDatabaseSync].[COMMON_SYS].[HR_DEPARTMENT]') AND type in (N'U', N'V'))
-                        BEGIN
-                            SELECT CAST([DeptId] AS int) AS DeptId, CAST([DeptName] AS nvarchar(200)) AS DeptName
-                            FROM [ErpDatabaseSync].[COMMON_SYS].[HR_DEPARTMENT]
-                            WHERE [DeptName] IS NOT NULL AND LTRIM(RTRIM([DeptName])) <> ''
-                        END";
+                var erpDepts = await _commonDb.HrDepartments
+                    .AsNoTracking()
+                    .Where(d => d.DeptName != null && d.DeptName != "")
+                    .OrderBy(d => d.DeptName)
+                    .Select(d => new ErpDepartmentOption((int)d.DeptId, d.DeptName))
+                    .ToListAsync(ct);
 
-                    var erpDepts = await _db.Database.SqlQueryRaw<ErpDepartmentOption>(sql).ToListAsync(ct);
-                    if (erpDepts.Count > 0)
-                    {
-                        return erpDepts.OrderBy(d => d.DeptName).ToList();
-                    }
+                if (erpDepts.Count > 0)
+                {
+                    return erpDepts.OrderBy(d => d.DeptName).ToList();
                 }
             }
             catch (Exception ex)
