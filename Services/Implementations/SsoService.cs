@@ -21,8 +21,19 @@ namespace Ibtikar.Services.Implementations
             _settings = options.Value;
         }
 
-        public string GetSettingsAuthority() => _settings.Authority;
+        public string GetSettingsAuthority() => EnsureHttps(_settings.Authority);
         public string GetClientId() => _settings.ClientId;
+        public string GetRedirectUri() => EnsureHttps(_settings.RedirectUri);
+
+        private static string EnsureHttps(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url)) return url;
+            if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            {
+                return "https://" + url[7..];
+            }
+            return url;
+        }
 
         /// <summary>
         /// Builds the OIDC authorization URL using IdentityModel's RequestUrl builder.
@@ -36,14 +47,16 @@ namespace Ibtikar.Services.Implementations
             string codeChallengeMethod = OidcConstants.CodeChallengeMethods.Sha256,
             string scope = "openid profile")
         {
-            var authorizeEndpoint = $"{_settings.Authority.TrimEnd('/')}/{_settings.AuthorizeEndpoint.TrimStart('/')}";
+            var authority = EnsureHttps(_settings.Authority);
+            var authorizeEndpoint = $"{authority.TrimEnd('/')}/{_settings.AuthorizeEndpoint.TrimStart('/')}";
+            var secureRedirectUri = EnsureHttps(redirectUri);
 
             var ru = new RequestUrl(authorizeEndpoint);
             return ru.CreateAuthorizeUrl(
                 clientId: _settings.ClientId,
                 responseType: OidcConstants.ResponseTypes.Code,
                 scope: scope,
-                redirectUri: redirectUri,
+                redirectUri: secureRedirectUri,
                 state: state,
                 nonce: nonce,
                 codeChallenge: codeChallenge,
@@ -55,12 +68,14 @@ namespace Ibtikar.Services.Implementations
         /// </summary>
         public string BuildLogoutUrl(string postLogoutRedirectUri, string? idTokenHint = null)
         {
-            var endSessionEndpoint = $"{_settings.Authority.TrimEnd('/')}/{_settings.EndSessionEndpoint.TrimStart('/')}";
+            var authority = EnsureHttps(_settings.Authority);
+            var endSessionEndpoint = $"{authority.TrimEnd('/')}/{_settings.EndSessionEndpoint.TrimStart('/')}";
+            var securePostLogoutUri = EnsureHttps(postLogoutRedirectUri);
 
             var ru = new RequestUrl(endSessionEndpoint);
             return ru.CreateEndSessionUrl(
                 idTokenHint: idTokenHint,
-                postLogoutRedirectUri: postLogoutRedirectUri,
+                postLogoutRedirectUri: securePostLogoutUri,
                 extra: new Parameters(new[] { KeyValuePair.Create("client_id", _settings.ClientId) }));
         }
 
@@ -72,7 +87,8 @@ namespace Ibtikar.Services.Implementations
             if (string.IsNullOrWhiteSpace(token))
                 throw new ArgumentException("Token cannot be null or empty", nameof(token));
 
-            var userInfoEndpoint = $"{_settings.Authority.TrimEnd('/')}/{_settings.UserInfo.TrimStart('/')}";
+            var authority = EnsureHttps(_settings.Authority);
+            var userInfoEndpoint = $"{authority.TrimEnd('/')}/{_settings.UserInfo.TrimStart('/')}";
 
             var request = new HttpRequestMessage(HttpMethod.Get, userInfoEndpoint);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Trim());
@@ -85,7 +101,6 @@ namespace Ibtikar.Services.Implementations
                 throw new Exception($"SSO Response Status: {response.StatusCode}, Details: {content}");
             }
 
-
             return JsonSerializer.Deserialize<SSoUserInfo>(content);
         }
 
@@ -94,14 +109,16 @@ namespace Ibtikar.Services.Implementations
         /// </summary>
         public async Task<SsoTokenResult> ExchangeCodeForTokenDetailsAsync(string code, string redirectUri, string? codeVerifier = null)
         {
-            var tokenEndpoint = $"{_settings.Authority.TrimEnd('/')}/{_settings.TokenEndpoint.TrimStart('/')}";
+            var authority = EnsureHttps(_settings.Authority);
+            var tokenEndpoint = $"{authority.TrimEnd('/')}/{_settings.TokenEndpoint.TrimStart('/')}";
+            var secureRedirectUri = EnsureHttps(redirectUri);
 
             var response = await _httpClient.RequestAuthorizationCodeTokenAsync(new AuthorizationCodeTokenRequest
             {
                 Address = tokenEndpoint,
                 ClientId = _settings.ClientId,
                 Code = code,
-                RedirectUri = redirectUri,
+                RedirectUri = secureRedirectUri,
                 CodeVerifier = codeVerifier
             });
 

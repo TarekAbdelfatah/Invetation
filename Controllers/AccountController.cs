@@ -91,7 +91,7 @@ namespace Ibtikar.Controllers
                 ?? await HttpContext.GetTokenAsync("id_token")
                 ?? Request.Cookies["id_token"];
 
-            var postLogoutRedirectUri = $"{Request.Scheme}://{Request.Host}/signout-callback-oidc";
+            var postLogoutRedirectUri = $"https://{Request.Host}/signout-callback-oidc";
             var logoutUrl = _ssoService.BuildLogoutUrl(postLogoutRedirectUri, idTokenHint);
 
             await ClearAllCookiesAndSessionAsync(HttpContext);

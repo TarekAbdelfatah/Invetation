@@ -204,7 +204,7 @@ namespace Ibtikar.Controllers
                 ?? await HttpContext.GetTokenAsync("id_token")
                 ?? Request.Cookies["id_token"];
 
-            var postLogoutRedirectUri = $"{Request.Scheme}://{Request.Host}/signout-callback-oidc";
+            var postLogoutRedirectUri = $"https://{Request.Host}/signout-callback-oidc";
             var logoutUrl = _ssoService.BuildLogoutUrl(postLogoutRedirectUri, idTokenHint);
 
             await ClearAllCookiesAndSessionAsync(HttpContext);
@@ -262,7 +262,12 @@ namespace Ibtikar.Controllers
 
         private string BuildCallbackUrl()
         {
-            return $"{Request.Scheme}://{Request.Host}/signin-callback";
+            var configured = _ssoService.GetRedirectUri();
+            if (!string.IsNullOrWhiteSpace(configured) && configured.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                return configured;
+            }
+            return $"https://{Request.Host}/signin-callback";
         }
 
         private static (string codeVerifier, string codeChallenge) GeneratePkce()
