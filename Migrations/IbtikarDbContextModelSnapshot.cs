@@ -17,7 +17,7 @@ namespace Ibtikar.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -56,7 +56,7 @@ namespace Ibtikar.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("AssessmentCriteria");
+                    b.ToTable("AssessmentCriteria", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.AssessmentDetail", b =>
@@ -84,7 +84,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("CriterionId");
 
-                    b.ToTable("AssessmentDetails");
+                    b.ToTable("AssessmentDetails", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.AssessmentHeader", b =>
@@ -139,7 +139,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("InnovationIdeaId", "Source");
 
-                    b.ToTable("AssessmentHeaders");
+                    b.ToTable("AssessmentHeaders", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.AuditActionItem", b =>
@@ -177,7 +177,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("TargetDepartmentId");
 
-                    b.ToTable("AuditActionItems");
+                    b.ToTable("AuditActionItems", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.AuditLog", b =>
@@ -230,7 +230,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("EntityName", "EntityId");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.CommitteeDelegation", b =>
@@ -267,7 +267,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("InnovationCommitteeId", "StartAt", "EndAt");
 
-                    b.ToTable("CommitteeDelegations");
+                    b.ToTable("CommitteeDelegations", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.CommitteeMember", b =>
@@ -294,7 +294,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("CommitteeMembers");
+                    b.ToTable("CommitteeMembers", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.CommitteeVote", b =>
@@ -330,7 +330,7 @@ namespace Ibtikar.Migrations
                     b.HasIndex("InnovationIdeaId", "MemberUserId")
                         .IsUnique();
 
-                    b.ToTable("CommitteeVotes");
+                    b.ToTable("CommitteeVotes", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.CriterionScoring", b =>
@@ -353,7 +353,7 @@ namespace Ibtikar.Migrations
                     b.HasIndex("Score")
                         .IsUnique();
 
-                    b.ToTable("CriterionScorings");
+                    b.ToTable("CriterionScorings", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.Department", b =>
@@ -387,7 +387,7 @@ namespace Ibtikar.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("Departments");
+                    b.ToTable("Departments", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.ExecutionProgress", b =>
@@ -423,7 +423,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("InnovationIdeaId", "ChangedAt");
 
-                    b.ToTable("ExecutionProgresses");
+                    b.ToTable("ExecutionProgresses", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.ExecutionStage", b =>
@@ -459,7 +459,7 @@ namespace Ibtikar.Migrations
                     b.HasIndex("Order")
                         .IsUnique();
 
-                    b.ToTable("ExecutionStages");
+                    b.ToTable("ExecutionStages", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.ExpectedImpact", b =>
@@ -495,7 +495,7 @@ namespace Ibtikar.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("ExpectedImpacts");
+                    b.ToTable("ExpectedImpacts", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.IdeaAttachment", b =>
@@ -537,7 +537,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("UploadedByUserId");
 
-                    b.ToTable("IdeaAttachments");
+                    b.ToTable("IdeaAttachments", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.IdeaStatus", b =>
@@ -582,7 +582,7 @@ namespace Ibtikar.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("IdeaStatuses");
+                    b.ToTable("IdeaStatuses", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.IdeaStatusHistory", b =>
@@ -620,7 +620,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("ToStatusId");
 
-                    b.ToTable("IdeaStatusHistories");
+                    b.ToTable("IdeaStatusHistories", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.InnovationCommittee", b =>
@@ -656,7 +656,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("IsActive");
 
-                    b.ToTable("InnovationCommittees");
+                    b.ToTable("InnovationCommittees", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.InnovationDomain", b =>
@@ -689,7 +689,7 @@ namespace Ibtikar.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("InnovationDomains");
+                    b.ToTable("InnovationDomains", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.InnovationIdea", b =>
@@ -804,7 +804,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("TargetAudienceId");
 
-                    b.ToTable("InnovationIdeas");
+                    b.ToTable("InnovationIdeas", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.PartnerAssignment", b =>
@@ -848,7 +848,7 @@ namespace Ibtikar.Migrations
                     b.HasIndex("InnovationIdeaId", "PartnerDepartmentId")
                         .IsUnique();
 
-                    b.ToTable("PartnerAssignments");
+                    b.ToTable("PartnerAssignments", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.Role", b =>
@@ -882,7 +882,7 @@ namespace Ibtikar.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.TargetAudience", b =>
@@ -918,7 +918,7 @@ namespace Ibtikar.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("TargetAudiences");
+                    b.ToTable("TargetAudiences", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.Technology", b =>
@@ -954,7 +954,7 @@ namespace Ibtikar.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("Technologies");
+                    b.ToTable("Technologies", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.User", b =>
@@ -1007,7 +1007,7 @@ namespace Ibtikar.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.UserRole", b =>
@@ -1025,7 +1025,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("UserRoles");
+                    b.ToTable("UserRoles", (string)null);
                 });
 
             modelBuilder.Entity("Ibtikar.Models.AssessmentDetail", b =>

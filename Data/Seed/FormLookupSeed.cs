@@ -15,7 +15,16 @@ namespace Ibtikar.Data.Seed
 
             EnsureAudience(db, "other", "أخرى", true, 1);
 
-            EnsureTechnology(db, "other", "أخرى", true, 1);
+            EnsureTechnology(db, "ai", "الذكاء الاصطناعي", false, 1);
+            EnsureTechnology(db, "iot", "إنترنت الأشياء", false, 2);
+            EnsureTechnology(db, "blockchain", "بلوكتشين", false, 3);
+            EnsureTechnology(db, "cloud", "الحوسبة السحابية", false, 4);
+            EnsureTechnology(db, "bigdata", "تحليل البيانات الضخمة", false, 5);
+            EnsureTechnology(db, "ar_vr", "الواقع المعزز والافتراضي", false, 6);
+            EnsureTechnology(db, "rpa", "الأتمتة الروبوتية", false, 7);
+            EnsureTechnology(db, "5g", "شبكات الجيل الخامس", false, 8);
+            EnsureTechnology(db, "cybersecurity", "الأمن السيبراني", false, 9);
+            EnsureTechnology(db, "other", "أخرى", true, 99);
 
             EnsureExecutionStage(db, 1, "initiation", "البدء");
             EnsureExecutionStage(db, 2, "planning", "التخطيط");

@@ -61,7 +61,6 @@
         var techPanel = document.querySelector('[data-emerging-tech="true"]');
         if (!toggle || !techPanel) { return; }
 
-        var techList = document.querySelector('[data-tech-list="true"]');
         function refresh() {
             techPanel.classList.toggle('d-none', !toggle.checked);
         }
@@ -70,10 +69,39 @@
         refresh();
     }
 
+    function initTechOtherField() {
+        var techList = document.querySelector('[data-tech-list="true"]');
+        var otherField = document.querySelector('[data-other-field="TechnologyOther"]');
+        if (!techList || !otherField) { return; }
+
+        var checkboxes = techList.querySelectorAll('input[type="checkbox"]');
+        function refresh() {
+            var isOtherChecked = false;
+            for (var i = 0; i < checkboxes.length; i++) {
+                var label = checkboxes[i].nextElementSibling;
+                if (label && label.textContent.indexOf('أخرى') !== -1 && checkboxes[i].checked) {
+                    isOtherChecked = true;
+                    break;
+                }
+            }
+            otherField.classList.toggle('d-none', !isOtherChecked);
+            if (!isOtherChecked) {
+                var input = otherField.querySelector('input');
+                if (input) { input.value = ''; }
+            }
+        }
+
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].addEventListener('change', refresh);
+        }
+        refresh();
+    }
+
     function bootstrap() {
         initCounters();
         initOtherFields();
         initEmergingTech();
+        initTechOtherField();
     }
 
     if (document.readyState === 'loading') {
