@@ -9,18 +9,15 @@ namespace Ibtikar.Services.Implementations
     public sealed class CommitteeFormationService : ICommitteeFormationService
     {
         private readonly ICommitteeRepository _committees;
-        private readonly IUserRepository _users;
         private readonly INotificationClient _notifier;
         private readonly ILogger<CommitteeFormationService> _logger;
 
         public CommitteeFormationService(
             ICommitteeRepository committees,
-            IUserRepository users,
             INotificationClient notifier,
             ILogger<CommitteeFormationService> logger)
         {
             _committees = committees;
-            _users = users;
             _notifier = notifier;
             _logger = logger;
         }
@@ -58,16 +55,21 @@ namespace Ibtikar.Services.Implementations
                 return new CommitteeCreateResultDto(false, "لا يمكن اختيار رئيس اللجنة من ضمن الأعضاء؛ يُضاف الرئيس تلقائياً كعضو للجنة.", null);
             }
 
-            var headIsActive = await _users.ExistsAndActiveAsync(dto.HeadUserId, ct);
-            if (!headIsActive)
+            var memberIds = distinctMembers
+                .Append(dto.HeadUserId)
+                .Where(id => id != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            var activeCommitteeMemberIds = await _committees.GetActiveCommitteeMemberIdsAsync(memberIds, ct);
+            if (!activeCommitteeMemberIds.Contains(dto.HeadUserId))
             {
-                return new CommitteeCreateResultDto(false, "المستخدم المختار كرئيس غير موجود أو غير فعال.", null);
+                return new CommitteeCreateResultDto(false, "المستخدم المختار كرئيس ليس عضواً نشطاً في اللجان.", null);
             }
 
-            var activeMembers = await _users.GetActiveUserIdsAsync(distinctMembers, ct);
-            if (activeMembers.Count != distinctMembers.Count)
+            if (activeCommitteeMemberIds.Count != memberIds.Count)
             {
-                return new CommitteeCreateResultDto(false, "بعض الأعضاء المختارين غير موجودين أو غير فعالين.", null);
+                return new CommitteeCreateResultDto(false, "بعض الأعضاء المختارين ليسوا أعضاء نشطين في اللجان.", null);
             }
 
             var committee = new InnovationCommittee
@@ -78,8 +80,7 @@ namespace Ibtikar.Services.Implementations
                 IsActive = false,
                 CreatedAt = DateTime.UtcNow,
                 CreatedByUserId = actorUserId,
-                Members = distinctMembers
-                    .Append(dto.HeadUserId)
+                Members = memberIds
                     .Select(uid => new CommitteeMember
                     {
                         Id = Guid.NewGuid(),
