@@ -33,10 +33,10 @@ namespace Ibtikar.Services.Implementations
             return await _repo.GetSnapshotAsync(departmentId.Value, ct);
         }
 
-        public async Task<PartnerInboxDto?> GetInboxAsync(Guid? departmentId, CancellationToken ct)
+        public async Task<PartnerInboxDto?> GetInboxAsync(Guid? departmentId, string? reference, string? status, CancellationToken ct)
         {
             if (departmentId is null || departmentId == Guid.Empty) return null;
-            return await _repo.GetInboxAsync(departmentId.Value, ct);
+            return await _repo.GetInboxAsync(departmentId.Value, reference, status, ct);
         }
 
         public async Task<PartnerDetailsDto?> GetDetailsAsync(Guid? departmentId, Guid assignmentId, CancellationToken ct)

@@ -28,14 +28,16 @@ namespace Ibtikar.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(CancellationToken ct)
+        public async Task<IActionResult> Index(string? reference, string? status, string? advisoryReference, string? advisoryStatus, string? tab, CancellationToken ct)
         {
             var departmentId = await ResolveDepartmentIdAsync(ct);
             var departmentName = await ResolveDepartmentNameAsync(ct);
             var dto = await _service.GetSnapshotAsync(departmentId, ct);
             var advisoryDto = await _partnerService.GetSnapshotAsync(departmentId, ct);
-            var advisoryInbox = await _partnerService.GetInboxAsync(departmentId, ct);
-            var referralsDto = await _service.GetReferralsAsync(departmentId, null, 1, 50, ct);
+            var advisoryInbox = await _partnerService.GetInboxAsync(departmentId, advisoryReference, advisoryStatus, ct);
+            var referralsDto = await _service.GetReferralsAsync(departmentId, status, reference, 1, 200, ct);
+            var statusOptions = await _service.GetStatusOptionsAsync(ct);
+            var requestedTab = tab == "advisory" ? "advisory" : "referred";
 
             var vm = new SpecializedDashboardVm
             {
@@ -47,6 +49,14 @@ namespace Ibtikar.Controllers
                 AdvisoryLate = advisoryDto?.OverdueLate ?? 0,
                 AdvisorySubmitted = advisoryDto?.SubmittedThisCycle ?? 0,
                 DepartmentName = await ResolveDepartmentNameAsync(ct),
+                ReferenceFilter = reference,
+                StatusFilter = status,
+                AdvisoryReferenceFilter = advisoryReference,
+                AdvisoryStatusFilter = advisoryStatus,
+                ActiveTab = requestedTab,
+                AvailableStatuses = statusOptions
+                    .Select(s => new SpecializedStatusOptionVm(s.Id, s.Name, s.Color))
+                    .ToList(),
                 ReferralItems = (referralsDto?.Items ?? new List<SpecializedReferralRowDto>())
                     .Select(i => new SpecializedReferralRowVm(
                         i.Id, i.Reference, i.Title,
@@ -65,12 +75,12 @@ namespace Ibtikar.Controllers
         }
 
         [HttpGet("SpecializedDashboard/Referrals")]
-        public async Task<IActionResult> Referrals(string? status, int? page, int? pageSize, CancellationToken ct)
+        public async Task<IActionResult> Referrals(string? status, string? reference, int? page, int? pageSize, CancellationToken ct)
         {
             var departmentId = await ResolveDepartmentIdAsync(ct);
             var departmentName = await ResolveDepartmentNameAsync(ct);
             var (p, ps) = PagedRequest.Normalize(page, pageSize);
-            var dto = await _service.GetReferralsAsync(departmentId, status, p, ps, ct);
+            var dto = await _service.GetReferralsAsync(departmentId, status, reference, p, ps, ct);
             if (dto is null) return Forbid();
 
             var vm = new SpecializedReferralsVm

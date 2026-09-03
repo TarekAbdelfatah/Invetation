@@ -5,7 +5,7 @@ namespace Ibtikar.Services.Interfaces
     public interface IPartnerDashboardService
     {
         Task<PartnerDashboardDto?> GetSnapshotAsync(Guid? departmentId, CancellationToken ct);
-        Task<PartnerInboxDto?> GetInboxAsync(Guid? departmentId, CancellationToken ct);
+        Task<PartnerInboxDto?> GetInboxAsync(Guid? departmentId, string? reference, string? status, CancellationToken ct);
         Task<PartnerDetailsDto?> GetDetailsAsync(Guid? departmentId, Guid assignmentId, CancellationToken ct);
         Task<PartnerSubmitOutcomeDto> SubmitAsync(
             Guid? departmentId,

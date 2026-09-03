@@ -9,7 +9,7 @@ namespace Ibtikar.Repositories
     public interface IPartnerDashboardRepository
     {
         Task<PartnerDashboardDto> GetSnapshotAsync(Guid departmentId, CancellationToken ct);
-        Task<PartnerInboxDto> GetInboxAsync(Guid departmentId, CancellationToken ct);
+        Task<PartnerInboxDto> GetInboxAsync(Guid departmentId, string? referenceFilter, string? statusFilter, CancellationToken ct);
         Task<PartnerDetailsDto?> GetDetailsAsync(Guid assignmentId, Guid departmentId, CancellationToken ct);
         Task<AssessmentHeader?> GetExistingPartnerHeaderAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
         Task<AssessmentHeader?> GetSpecializedAssessmentAsync(Guid ideaId, CancellationToken ct);
@@ -52,12 +52,27 @@ namespace Ibtikar.Repositories
             return new PartnerDashboardDto(pending, late, submitted);
         }
 
-        public async Task<PartnerInboxDto> GetInboxAsync(Guid departmentId, CancellationToken ct)
+        public async Task<PartnerInboxDto> GetInboxAsync(Guid departmentId, string? referenceFilter, string? statusFilter, CancellationToken ct)
         {
             var now = DateTime.UtcNow;
             var thresholdDate = now.AddDays(-LateThresholdDays);
 
-            var rawRows = await _query.ForDepartment(_db.PartnerAssignments.AsNoTracking(), departmentId)
+            var query = _query.ForDepartment(_db.PartnerAssignments.AsNoTracking(), departmentId);
+
+            if (!string.IsNullOrWhiteSpace(referenceFilter))
+            {
+                var refTerm = referenceFilter.Trim();
+                query = query.Where(p => p.InnovationIdea != null
+                    && p.InnovationIdea.ReferenceNumber != null
+                    && p.InnovationIdea.ReferenceNumber.Contains(refTerm));
+            }
+
+            if (Guid.TryParse(statusFilter, out var statusGuid))
+            {
+                query = query.Where(p => p.InnovationIdea != null && p.InnovationIdea.CurrentStatusId == statusGuid);
+            }
+
+            var rawRows = await query
                 .OrderByDescending(p => p.SentAt)
                 .Select(p => new
                 {

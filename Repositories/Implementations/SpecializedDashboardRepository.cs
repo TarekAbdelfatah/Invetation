@@ -9,7 +9,8 @@ namespace Ibtikar.Repositories
     public interface ISpecializedDashboardRepository
     {
         Task<SpecializedDashboardDto> GetSnapshotAsync(Guid departmentId, CancellationToken ct);
-        Task<SpecializedReferralsDto> GetReferralsAsync(Guid departmentId, string statusFilter, int page, int pageSize, CancellationToken ct);
+        Task<SpecializedReferralsDto> GetReferralsAsync(Guid departmentId, string statusFilter, string? referenceFilter, int page, int pageSize, CancellationToken ct);
+        Task<IReadOnlyList<SpecializedStatusOptionDto>> GetStatusOptionsAsync(CancellationToken ct);
         Task<SpecializedDetailsDto?> GetDetailsAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
         Task<SpecializedAssessVmDto?> GetAssessVmAsync(Guid ideaId, Guid departmentId, CancellationToken ct);
         Task<IReadOnlyList<SpecializedPartnerOptionDto>> GetAvailablePartnersAsync(Guid excludeDepartmentId, IReadOnlyCollection<Guid> alreadyAssignedIds, CancellationToken ct);
@@ -92,7 +93,7 @@ namespace Ibtikar.Repositories
             return new SpecializedDashboardDto(underStudy, sentToPartner, sentToExecution, rejectedAfterRouting);
         }
 
-        public async Task<SpecializedReferralsDto> GetReferralsAsync(Guid departmentId, string statusFilter, int page, int pageSize, CancellationToken ct)
+        public async Task<SpecializedReferralsDto> GetReferralsAsync(Guid departmentId, string statusFilter, string? referenceFilter, int page, int pageSize, CancellationToken ct)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 10;
@@ -107,16 +108,30 @@ namespace Ibtikar.Repositories
                         || (i.AssignedDepartmentId.HasValue && matchingDeptIds.Contains(i.AssignedDepartmentId.Value))
                         || _db.AuditActionItems.Any(a => a.IdeaId == i.Id && a.TargetDepartmentId.HasValue && matchingDeptIds.Contains(a.TargetDepartmentId.Value))));
 
-            query = statusFilter switch
+            if (!string.IsNullOrWhiteSpace(referenceFilter))
             {
-                "under_study" => query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.UnderStudy),
-                "sent_to_partner" => query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.UnderStudy
-                    && _db.PartnerAssignments.Any(p => p.InnovationIdeaId == i.Id
-                        && (p.Status == PartnerAssignment.StatusPending || p.Status == PartnerAssignment.StatusLate))),
-                "in_execution" => query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.InExecution),
-                "rejected" => query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.Rejected),
-                _ => query
-            };
+                var refTerm = referenceFilter.Trim();
+                query = query.Where(i => i.ReferenceNumber != null && i.ReferenceNumber.Contains(refTerm));
+            }
+
+            if (Guid.TryParse(statusFilter, out var statusGuid))
+            {
+                query = query.Where(i => i.CurrentStatusId == statusGuid);
+            }
+            else
+            {
+                query = statusFilter switch
+                {
+                    "under_study" => query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.UnderStudy),
+                    "sent_to_partner" => query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.UnderStudy
+                        && _db.PartnerAssignments.Any(p => p.InnovationIdeaId == i.Id
+                            && (p.Status == PartnerAssignment.StatusPending || p.Status == PartnerAssignment.StatusLate))),
+                    "in_execution" => query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.InExecution),
+                    "rejected" => query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.Rejected),
+                    "" or null => query,
+                    _ => query.Where(i => i.CurrentStatus != null && i.CurrentStatus.Code == statusFilter)
+                };
+            }
 
             var totalCount = await query.CountAsync(ct);
 
@@ -138,6 +153,18 @@ namespace Ibtikar.Repositories
                 .ToListAsync(ct);
 
             return new SpecializedReferralsDto(rows, statusFilter, page, pageSize, totalCount);
+        }
+
+        public async Task<IReadOnlyList<SpecializedStatusOptionDto>> GetStatusOptionsAsync(CancellationToken ct)
+        {
+            var statuses = await _db.IdeaStatuses
+                .AsNoTracking()
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.Name)
+                .Select(s => new SpecializedStatusOptionDto(s.Id, s.Code, s.Name, s.Color))
+                .ToListAsync(ct);
+
+            return statuses;
         }
 
         public async Task<SpecializedDetailsDto?> GetDetailsAsync(Guid ideaId, Guid departmentId, CancellationToken ct)
