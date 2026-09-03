@@ -6,207 +6,509 @@
     var deptLabel = string.IsNullOrWhiteSpace(Model.DepartmentName) ? "الإدارة" : Model.DepartmentName;
 }
 
-<div class="container py-4">
-    <div class="partner-hero">
-        <div class="partner-hero__content">
-            <span class="partner-hero__icon" aria-hidden="true">
-                <span class="material-icons">engineering</span>
-            </span>
-            <div>
-                <h1 class="partner-hero__title">لوحة @deptLabel</h1>
-                <p class="partner-hero__subtitle">تابع الأفكار المحوّلة لإدارتك والاستشارات الواردة من إدارات أخرى.</p>
-            </div>
-            <span class="partner-hero__badge">
-                <span class="material-icons" style="font-size:16px">apartment</span>
-                @deptLabel
-            </span>
+<div class="bog-main">
+    <div class="container py-4">
+        <div class="bog-page-header">
+            <h1>
+                <span class="bog-page-icon" aria-hidden="true">
+                    <span class="material-icons">engineering</span>
+                </span>
+                <span class="bog-page-title">لوحة @deptLabel</span>
+                <span class="bog-page-role">
+                    <span class="material-icons" aria-hidden="true">apartment</span>
+                    @deptLabel
+                </span>
+            </h1>
         </div>
-    </div>
 
-    @if (TempData["AlertMessage"] is string ok)
-    {
-        <div class="alert alert-success bog-alert" role="alert">
-            <span class="material-icons bog-alert-icon">check_circle</span>
-            <span class="bog-alert-text">@ok</span>
-        </div>
-    }
-    @if (TempData["AlertError"] is string err)
-    {
-        <div class="alert alert-danger bog-alert" role="alert">
-            <span class="material-icons bog-alert-icon">error</span>
-            <span class="bog-alert-text">@err</span>
-        </div>
-    }
-
-    @* ============ القسم الأول: الأفكار المحوّلة لإدارتك (التخصص) ============ *@
-    <div class="partner-section-head">
-        <h2 class="partner-section-head__title">
-            <span class="material-icons">assignment</span>
-            الأفكار المحوّلة لإدارتك
-        </h2>
-        <a class="btn btn-sm btn-outline-primary" asp-action="Referrals">
-            <span class="material-icons align-middle" style="font-size:16px">list_alt</span>
-            كل الأفكار المحوّلة
-        </a>
-    </div>
-
-    <div class="row g-3 mb-4">
-        <div class="col-lg-3 col-md-6">
-            <a class="partner-kpi partner-kpi--pending text-decoration-none d-block" asp-action="Referrals" asp-route-status="under_study">
-                <div class="partner-kpi__head">
-                    <span class="partner-kpi__icon"><span class="material-icons">hourglass_top</span></span>
-                    <span class="partner-kpi__chip">بانتظار تقييمك</span>
-                </div>
-                <div class="partner-kpi__value">@Model.UnderStudy</div>
-                <div class="partner-kpi__label">قيد الدراسة</div>
-                <div class="partner-kpi__meta">أفكار بانتظار تقييم إدارتك</div>
-            </a>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <a class="partner-kpi partner-kpi--done text-decoration-none d-block" asp-action="Referrals" asp-route-status="sent_to_partner">
-                <div class="partner-kpi__head">
-                    <span class="partner-kpi__icon"><span class="material-icons">send</span></span>
-                    <span class="partner-kpi__chip">بانتظار الردود</span>
-                </div>
-                <div class="partner-kpi__value">@Model.SentToPartner</div>
-                <div class="partner-kpi__label">أُرسل لجهات أخرى</div>
-                <div class="partner-kpi__meta">بانتظار ردود الاستشارة</div>
-            </a>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <a class="partner-kpi partner-kpi--done text-decoration-none d-block" asp-action="Referrals" asp-route-status="in_execution">
-                <div class="partner-kpi__head">
-                    <span class="partner-kpi__icon"><span class="material-icons">rocket_launch</span></span>
-                    <span class="partner-kpi__chip">قُبلت من اللجنة</span>
-                </div>
-                <div class="partner-kpi__value">@Model.SentToExecution</div>
-                <div class="partner-kpi__label">أُرسلت للتنفيذ</div>
-                <div class="partner-kpi__meta">أفكار قُبلت وانتقلت للتنفيذ</div>
-            </a>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <a class="partner-kpi partner-kpi--late text-decoration-none d-block" asp-action="Referrals" asp-route-status="rejected">
-                <div class="partner-kpi__head">
-                    <span class="partner-kpi__icon"><span class="material-icons">cancel</span></span>
-                    <span class="partner-kpi__chip">بعد التحويل</span>
-                </div>
-                <div class="partner-kpi__value">@Model.RejectedAfterRouting</div>
-                <div class="partner-kpi__label">مرفوضة بعد التحويل</div>
-                <div class="partner-kpi__meta">باستثناء رفض التدقيق</div>
-            </a>
-        </div>
-    </div>
-
-    @* ============ القسم الثاني: الاستشارات الواردة ============ *@
-    <div class="partner-section-head">
-        <h2 class="partner-section-head__title">
-            <span class="material-icons">forum</span>
-            الاستشارات الواردة
-        </h2>
-        <span class="partner-section-head__count">@Model.AdvisoryItems.Count</span>
-    </div>
-
-    <div class="row g-3 mb-4">
-        <div class="col-lg-4 col-md-6">
-            <div class="partner-kpi partner-kpi--pending">
-                <div class="partner-kpi__head">
-                    <span class="partner-kpi__icon"><span class="material-icons">hourglass_top</span></span>
-                    <span class="partner-kpi__chip">بانتظار ردك</span>
-                </div>
-                <div class="partner-kpi__value">@Model.AdvisoryPending</div>
-                <div class="partner-kpi__label">استشارات بانتظار الرد</div>
-                <div class="partner-kpi__meta">من إدارات أخرى</div>
-            </div>
-        </div>
-        <div class="col-lg-4 col-md-6">
-            <div class="partner-kpi partner-kpi--late">
-                <div class="partner-kpi__head">
-                    <span class="partner-kpi__icon"><span class="material-icons">schedule</span></span>
-                    <span class="partner-kpi__chip">تجاوزت 4 أيام</span>
-                </div>
-                <div class="partner-kpi__value">@Model.AdvisoryLate</div>
-                <div class="partner-kpi__label">استشارات متأخرة</div>
-                <div class="partner-kpi__meta">تحتاج استجابة عاجلة</div>
-            </div>
-        </div>
-        <div class="col-lg-4 col-md-6">
-            <div class="partner-kpi partner-kpi--done">
-                <div class="partner-kpi__head">
-                    <span class="partner-kpi__icon"><span class="material-icons">check_circle</span></span>
-                    <span class="partner-kpi__chip">آخر 30 يوم</span>
-                </div>
-                <div class="partner-kpi__value">@Model.AdvisorySubmitted</div>
-                <div class="partner-kpi__label">تم الرد خلال 30 يوم</div>
-                <div class="partner-kpi__meta">دورة المراجعة الحالية</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card bog-section partner-inbox">
-        @if (!Model.AdvisoryItems.Any())
+        @if (TempData["AlertMessage"] is string ok)
         {
-            <div class="card-body text-center text-muted p-5">
-                <span class="material-icons d-block mb-3" style="font-size:56px;color:var(--gray-300)">forum</span>
-                <p class="mb-1 fs-6 fw-medium">لا توجد استشارات حالياً.</p>
-                <p class="small">ستظهر هنا أي استشارات تحوّلها إدارات أخرى لطلب رأي إدارتك في أفكارها.</p>
+            <div class="alert alert-success bog-alert" role="alert">
+                <span class="material-icons bog-alert-icon">check_circle</span>
+                <span class="bog-alert-text">@ok</span>
             </div>
         }
-        else
+        @if (TempData["AlertError"] is string err)
         {
-            <div class="table-responsive">
-                <table class="bog-card-list mb-0">
-                    <thead>
-                        <tr>
-                            <th>المرجع</th>
-                            <th>العنوان</th>
-                            <th>الإدارة الطالبة</th>
-                            <th>منذ الإحالة</th>
-                            <th>الحالة</th>
-                            <th class="text-end">إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var i in Model.AdvisoryItems)
-                        {
-                            <tr class="@(i.IsLate ? "table-warning" : null)" onclick="window.location='@Url.Action("Details", "PartnerDashboard", new { assignmentId = i.AssignmentId })'">
-                                <td data-label="المرجع"><span class="partner-inbox__ref">@i.IdeaReference</span></td>
-                                <td data-label="العنوان">@i.IdeaTitle</td>
-                                <td data-label="الإدارة الطالبة">@i.SourceDepartmentName</td>
-                                <td data-label="منذ الإحالة">
-                                    <span class="partner-inbox__days">
-                                        <span class="material-icons">timelapse</span>
-                                        <span dir="ltr">@Math.Ceiling(i.DaysOpen).ToString("0") يوم</span>
+            <div class="alert alert-danger bog-alert" role="alert">
+                <span class="material-icons bog-alert-icon">error</span>
+                <span class="bog-alert-text">@err</span>
+            </div>
+        }
+
+        <!-- Tab Bar Navigation -->
+        <div class="card bog-section mb-4">
+            <div class="card-header bg-white p-2">
+                <ul class="nav nav-pills nav-fill specialized-tabs" id="specializedDashboardTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active d-flex align-items-center justify-content-center gap-2 py-3 px-4 fw-bold"
+                                id="referred-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#referred-pane"
+                                type="button"
+                                role="tab"
+                                aria-controls="referred-pane"
+                                aria-selected="true">
+                            <span class="material-icons">assignment</span>
+                            <span>الأفكار المحوّلة لإدارتك</span>
+                            <span class="badge rounded-pill bg-success ms-1">@Model.ReferralItems.Count</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link d-flex align-items-center justify-content-center gap-2 py-3 px-4 fw-bold"
+                                id="advisory-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#advisory-pane"
+                                type="button"
+                                role="tab"
+                                aria-controls="advisory-pane"
+                                aria-selected="false">
+                            <span class="material-icons">forum</span>
+                            <span>الاستشارات الواردة من إدارات أخرى</span>
+                            <span class="badge rounded-pill bg-warning text-dark ms-1">@Model.AdvisoryItems.Count</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tab Panes Content -->
+        <div class="tab-content" id="specializedDashboardTabContent">
+
+            <!-- ============ TAB 1: الأفكار المحوّلة لإدارتك ============ -->
+            <div class="tab-pane fade show active" id="referred-pane" role="tabpanel" aria-labelledby="referred-tab">
+                <div class="row g-3 mb-4">
+                    <!-- Right Sidebar: Filter -->
+                    <div class="col-lg-2">
+                        <div class="card bog-section h-100">
+                            <div class="card-header bg-white d-flex align-items-center gap-2">
+                                <span class="material-icons text-primary">donut_large</span>
+                                <strong class="fs-6">تصنيف بالحالة</strong>
+                            </div>
+                            <div class="card-body p-0">
+                                <a href="javascript:void(0)" id="ref-filter-all"
+                                   class="referral-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
+                                   style="background-color:var(--brand-50,#F3FCF6);font-weight:600"
+                                   data-filter="all">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <span class="bog-status-dot" style="background-color:#0d6efd"></span>
+                                        الكل
                                     </span>
-                                </td>
-                                <td data-label="الحالة">
-                                    @if (i.IsReturned)
-                                    {
-                                        <span class="partner-status partner-status--returned"><span class="partner-status__dot"></span>مرتجَع</span>
-                                    }
-                                    else if (!i.IsPending)
-                                    {
-                                        <span class="partner-status partner-status--submitted"><span class="partner-status__dot"></span>تم الرد</span>
-                                    }
-                                    else if (i.IsLate)
-                                    {
-                                        <span class="partner-status partner-status--late"><span class="partner-status__dot"></span>متأخر</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="partner-status partner-status--pending"><span class="partner-status__dot"></span>قيد المراجعة</span>
-                                    }
-                                </td>
-                                <td class="bog-card-list__actions" data-label="">
-                                    <a class="btn btn-sm btn-primary" asp-controller="PartnerDashboard" asp-action="Details" asp-route-assignmentId="@i.AssignmentId">
-                                        <span class="material-icons align-middle" style="font-size:16px">rate_review</span>
-                                        مراجعة
-                                    </a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                                    <span class="fw-semibold" id="referredVisibleCount">@Model.ReferralItems.Count</span>
+                                </a>
+                                <a href="javascript:void(0)"
+                                   class="referral-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
+                                   data-filter="under_study">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <span class="bog-status-dot" style="background-color:#f59e0b"></span>
+                                        قيد الدراسة
+                                    </span>
+                                    <span class="fw-semibold">@Model.UnderStudy</span>
+                                </a>
+                                <a href="javascript:void(0)"
+                                   class="referral-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
+                                   data-filter="sent_to_partner">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <span class="bog-status-dot" style="background-color:#0ea5e9"></span>
+                                        أُرسل لجهات أخرى
+                                    </span>
+                                    <span class="fw-semibold">@Model.SentToPartner</span>
+                                </a>
+                                <a href="javascript:void(0)"
+                                   class="referral-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
+                                   data-filter="in_execution">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <span class="bog-status-dot" style="background-color:#22c55e"></span>
+                                        أُرسلت للتنفيذ
+                                    </span>
+                                    <span class="fw-semibold">@Model.SentToExecution</span>
+                                </a>
+                                <a href="javascript:void(0)"
+                                   class="referral-filter-link d-flex justify-content-between align-items-center py-2 px-3 text-decoration-none text-body"
+                                   data-filter="rejected">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <span class="bog-status-dot" style="background-color:#ef4444"></span>
+                                        مرفوضة بعد التحويل
+                                    </span>
+                                    <span class="fw-semibold">@Model.RejectedAfterRouting</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Content: Referred Ideas Grid -->
+                    <div class="col-lg-10">
+                        <div class="card bog-section">
+                            <div class="card-header bg-white d-flex align-items-center gap-2">
+                                <span class="material-icons text-primary align-middle">assignment</span>
+                                <strong>سجل الأفكار المحوّلة لإدارتك</strong>
+                                <span class="badge bg-secondary" id="referredCountBadge">@Model.ReferralItems.Count</span>
+                            </div>
+                            <div class="card-body p-0">
+                                @if (!Model.ReferralItems.Any())
+                                {
+                                    <div class="text-center text-muted p-5">
+                                        <span class="material-icons d-block mb-3" style="font-size:56px;color:var(--gray-300)">inventory_2</span>
+                                        <p class="mb-1 fs-6 fw-medium">لا توجد أفكار محوّلة حالياً.</p>
+                                        <p class="small">ستظهر هنا أي أفكار تحوّلها إدارات التدقيق لإدارتك لدراستها وتقييمها.</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="table-responsive d-none d-md-block bog-table-no-hscroll">
+                                        <table class="bog-card-list mb-0">
+                                            <colgroup>
+                                                <col style="width:14%" />
+                                                <col style="width:30%" />
+                                                <col style="width:10%" />
+                                                <col style="width:16%" />
+                                                <col style="width:10%" />
+                                                <col style="width:20%" />
+                                            </colgroup>
+                                            <thead>
+                                                <tr>
+                                                    <th>المرجع</th>
+                                                    <th>العنوان</th>
+                                                    <th>الحالة</th>
+                                                    <th>المُقدِّم</th>
+                                                    <th>منذ التحويل</th>
+                                                    <th class="text-end">إجراءات</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="referredTableBody">
+                                                @foreach (var i in Model.ReferralItems)
+                                                {
+                                                    <tr data-status-code="@i.StatusCode" class="@(i.IsOverdue ? "table-danger" : null)" onclick="window.location='@Url.Action("Details", "SpecializedDashboard", new { id = i.Id })'">
+                                                        <td data-label="المرجع"><span class="partner-inbox__ref">@i.Reference</span></td>
+                                                        <td data-label="العنوان">
+                                                            <span class="bog-idea-title" title="@i.Title">@Display.Title(i.Title)</span>
+                                                        </td>
+                                                        <td data-label="الحالة">
+                                                            <span class="badge rounded-pill" style="background-color:@i.StatusColor">@i.StatusName</span>
+                                                        </td>
+                                                        <td data-label="المُقدِّم">
+                                                            <span class="bog-idea-title">@(i.ApplicantName ?? "—")</span>
+                                                        </td>
+                                                        <td data-label="منذ التحويل">
+                                                            <span class="partner-inbox__days">
+                                                                <span class="material-icons" style="font-size:16px">timelapse</span>
+                                                                <span dir="ltr">@Math.Ceiling(i.StayDays).ToString("0") يوم</span>
+                                                            </span>
+                                                            @if (i.IsOverdue)
+                                                            {
+                                                                <span class="badge bg-danger ms-1">متأخر</span>
+                                                            }
+                                                        </td>
+                                                        <td class="bog-card-list__actions text-end" data-label="" onclick="event.stopPropagation()">
+                                                            <div class="d-flex align-items-center justify-content-end gap-1">
+                                                                <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@i.Id">
+                                                                    <span class="material-icons align-middle" style="font-size:14px">visibility</span>
+                                                                    تفاصيل
+                                                                </a>
+                                                                <a class="btn btn-sm btn-primary" asp-action="Assess" asp-route-id="@i.Id">
+                                                                    <span class="material-icons align-middle" style="font-size:14px">edit_note</span>
+                                                                    تقييم
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div id="referredEmptyFilter" class="text-center text-muted p-5 d-none">
+                                        <span class="material-icons d-block mb-3" style="font-size:48px;color:var(--gray-300)">filter_list_off</span>
+                                        <p class="mb-1 fs-6 fw-medium">لا توجد أفكار تطابق التصفية المحددة.</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        }
+
+            <!-- ============ TAB 2: الاستشارات الواردة ============ -->
+            <div class="tab-pane fade" id="advisory-pane" role="tabpanel" aria-labelledby="advisory-tab">
+                <div class="row g-3 mb-4">
+                    <!-- Right Sidebar: Filter -->
+                    <div class="col-lg-2">
+                        <div class="card bog-section h-100">
+                            <div class="card-header bg-white d-flex align-items-center gap-2">
+                                <span class="material-icons text-primary">donut_large</span>
+                                <strong class="fs-6">تصنيف بالحالة</strong>
+                            </div>
+                            <div class="card-body p-0">
+                                <a href="javascript:void(0)" id="adv-filter-all"
+                                   class="advisory-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
+                                   style="background-color:var(--brand-50,#F3FCF6);font-weight:600"
+                                   data-advisory-filter="all">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <span class="bog-status-dot" style="background-color:#0d6efd"></span>
+                                        الكل
+                                    </span>
+                                    <span class="fw-semibold" id="advisoryVisibleCount">@Model.AdvisoryItems.Count</span>
+                                </a>
+                                <a href="javascript:void(0)"
+                                   class="advisory-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
+                                   data-advisory-filter="pending">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <span class="bog-status-dot" style="background-color:#f59e0b"></span>
+                                        بانتظار الرد
+                                    </span>
+                                    <span class="fw-semibold">@Model.AdvisoryPending</span>
+                                </a>
+                                <a href="javascript:void(0)"
+                                   class="advisory-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
+                                   data-advisory-filter="late">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <span class="bog-status-dot" style="background-color:#ef4444"></span>
+                                        متأخرة (&gt; 4 أيام)
+                                    </span>
+                                    <span class="fw-semibold">@Model.AdvisoryLate</span>
+                                </a>
+                                <a href="javascript:void(0)"
+                                   class="advisory-filter-link d-flex justify-content-between align-items-center py-2 px-3 text-decoration-none text-body"
+                                   data-advisory-filter="submitted">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <span class="bog-status-dot" style="background-color:#22c55e"></span>
+                                        تم الرد (آخر 30 يوم)
+                                    </span>
+                                    <span class="fw-semibold">@Model.AdvisorySubmitted</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Content: Advisory Grid -->
+                    <div class="col-lg-10">
+                        <div class="card bog-section">
+                            <div class="card-header bg-white d-flex align-items-center gap-2">
+                                <span class="material-icons text-primary align-middle">forum</span>
+                                <strong>سجل الاستشارات الواردة من إدارات أخرى</strong>
+                                <span class="badge bg-secondary" id="advisoryCountBadge">@Model.AdvisoryItems.Count</span>
+                            </div>
+                            <div class="card-body p-0">
+                                @if (!Model.AdvisoryItems.Any())
+                                {
+                                    <div class="text-center text-muted p-5">
+                                        <span class="material-icons d-block mb-3" style="font-size:56px;color:var(--gray-300)">forum</span>
+                                        <p class="mb-1 fs-6 fw-medium">لا توجد استشارات حالياً.</p>
+                                        <p class="small">ستظهر هنا أي استشارات تحوّلها إدارات أخرى لطلب رأي إدارتك في أفكارها.</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="table-responsive d-none d-md-block bog-table-no-hscroll">
+                                        <table class="bog-card-list mb-0">
+                                            <colgroup>
+                                                <col style="width:14%" />
+                                                <col style="width:32%" />
+                                                <col style="width:18%" />
+                                                <col style="width:10%" />
+                                                <col style="width:12%" />
+                                                <col style="width:14%" />
+                                            </colgroup>
+                                            <thead>
+                                                <tr>
+                                                    <th>المرجع</th>
+                                                    <th>العنوان</th>
+                                                    <th>الإدارة الطالبة</th>
+                                                    <th>منذ الإحالة</th>
+                                                    <th>الحالة</th>
+                                                    <th class="text-end">إجراءات</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="advisoryTableBody">
+                                                @foreach (var i in Model.AdvisoryItems)
+                                                {
+                                                    var advState = i.IsReturned ? "returned" : (!i.IsPending ? "submitted" : (i.IsLate ? "late" : "pending"));
+                                                    <tr data-advisory-state="@advState" class="@(i.IsLate ? "table-warning" : null)" onclick="window.location='@Url.Action("Details", "PartnerDashboard", new { assignmentId = i.AssignmentId })'">
+                                                        <td data-label="المرجع"><span class="partner-inbox__ref">@i.IdeaReference</span></td>
+                                                        <td data-label="العنوان">
+                                                            <span class="bog-idea-title" title="@i.IdeaTitle">@i.IdeaTitle</span>
+                                                        </td>
+                                                        <td data-label="الإدارة الطالبة">
+                                                            <small>@i.SourceDepartmentName</small>
+                                                        </td>
+                                                        <td data-label="منذ الإحالة">
+                                                            <span class="partner-inbox__days">
+                                                                <span class="material-icons" style="font-size:16px">timelapse</span>
+                                                                <span dir="ltr">@Math.Ceiling(i.DaysOpen).ToString("0") يوم</span>
+                                                            </span>
+                                                        </td>
+                                                        <td data-label="الحالة">
+                                                            @if (i.IsReturned)
+                                                            {
+                                                                <span class="partner-status partner-status--returned"><span class="partner-status__dot"></span>مرتجَع</span>
+                                                            }
+                                                            else if (!i.IsPending)
+                                                            {
+                                                                <span class="partner-status partner-status--submitted"><span class="partner-status__dot"></span>تم الرد</span>
+                                                            }
+                                                            else if (i.IsLate)
+                                                            {
+                                                                <span class="partner-status partner-status--late"><span class="partner-status__dot"></span>متأخر</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="partner-status partner-status--pending"><span class="partner-status__dot"></span>قيد المراجعة</span>
+                                                            }
+                                                        </td>
+                                                        <td class="bog-card-list__actions text-end" data-label="" onclick="event.stopPropagation()">
+                                                            <a class="btn btn-sm btn-outline-primary" asp-controller="PartnerDashboard" asp-action="Details" asp-route-assignmentId="@i.AssignmentId">
+                                                                <span class="material-icons align-middle" style="font-size:14px">rate_review</span>
+                                                                مراجعة
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div id="advisoryEmptyFilter" class="text-center text-muted p-5 d-none">
+                                        <span class="material-icons d-block mb-3" style="font-size:48px;color:var(--gray-300)">filter_list_off</span>
+                                        <p class="mb-1 fs-6 fw-medium">لا توجد استشارات تطابق التصفية المحددة.</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+@section Scripts {
+    <style>
+        .specialized-tabs .nav-link {
+            color: var(--gray-700, #333741);
+            background: transparent;
+            border-radius: var(--radius-lg, 10px);
+            transition: all 0.2s ease-in-out;
+            border: 1px solid transparent;
+        }
+        .specialized-tabs .nav-link:hover {
+            background: var(--gray-50, #F5F5F6);
+            color: var(--primary, #1B8354);
+        }
+        .specialized-tabs .nav-link.active {
+            background: var(--brand-600, #1B8354) !important;
+            color: #ffffff !important;
+            box-shadow: var(--shadow-sm, 0 1px 3px rgba(16,24,40,0.1));
+        }
+        .specialized-tabs .nav-link.active .badge {
+            background-color: rgba(255,255,255,0.25) !important;
+            color: #ffffff !important;
+        }
+        /* Filter link rows — match AdminOverview exactly */
+        .referral-filter-link,
+        .advisory-filter-link {
+            transition: background-color 0.12s ease-in-out;
+        }
+        .referral-filter-link:hover,
+        .advisory-filter-link:hover {
+            background-color: var(--gray-50, #F5F5F6) !important;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // ── Tab switching ──────────────────────────────────────────────
+            var tabButtons = document.querySelectorAll('#specializedDashboardTabs button');
+            tabButtons.forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var targetSelector = btn.getAttribute('data-bs-target');
+                    if (!targetSelector) return;
+
+                    tabButtons.forEach(function (b) {
+                        b.classList.remove('active');
+                        b.setAttribute('aria-selected', 'false');
+                    });
+                    document.querySelectorAll('#specializedDashboardTabContent .tab-pane').forEach(function (p) {
+                        p.classList.remove('show', 'active');
+                    });
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-selected', 'true');
+                    var pane = document.querySelector(targetSelector);
+                    if (pane) pane.classList.add('show', 'active');
+                });
+            });
+
+            // ── Helper: set active filter link (AdminOverview style inline bg) ──
+            function setActiveLink(links, clickedLink) {
+                links.forEach(function (l) {
+                    l.style.backgroundColor = '';
+                    l.style.fontWeight = '';
+                });
+                clickedLink.style.backgroundColor = 'var(--brand-50, #F3FCF6)';
+                clickedLink.style.fontWeight = '600';
+            }
+
+            // ── Referral In-Page Filtering ─────────────────────────────────
+            var refLinks  = document.querySelectorAll('.referral-filter-link');
+            var refRows   = document.querySelectorAll('#referredTableBody tr');
+            var refBadge  = document.getElementById('referredVisibleCount');
+            var refCount  = document.getElementById('referredCountBadge');
+            var refEmpty  = document.getElementById('referredEmptyFilter');
+
+            refLinks.forEach(function (link) {
+                link.addEventListener('click', function () {
+                    setActiveLink(refLinks, link);
+
+                    var filter = link.getAttribute('data-filter');
+                    var visible = 0;
+
+                    refRows.forEach(function (row) {
+                        var code = (row.getAttribute('data-status-code') || '').toLowerCase();
+                        var show = false;
+                        if (filter === 'all') {
+                            show = true;
+                        } else if (filter === 'under_study') {
+                            show = (code === 'under_study' || code === 'under-study' || code === 'under-assessment');
+                        } else if (filter === 'sent_to_partner') {
+                            show = (code === 'sent_to_partner' || code === 'sent-to-partner');
+                        } else if (filter === 'in_execution') {
+                            show = (code === 'in_execution' || code === 'in-execution' || code === 'in_implementation');
+                        } else if (filter === 'rejected') {
+                            show = (code === 'rejected' || code === 'refused');
+                        }
+                        row.classList.toggle('d-none', !show);
+                        if (show) visible++;
+                    });
+
+                    if (refBadge) refBadge.textContent = visible;
+                    if (refCount) refCount.textContent = visible;
+                    if (refEmpty) refEmpty.classList.toggle('d-none', !(visible === 0 && refRows.length > 0));
+                });
+            });
+
+            // ── Advisory In-Page Filtering ─────────────────────────────────
+            var advLinks  = document.querySelectorAll('.advisory-filter-link');
+            var advRows   = document.querySelectorAll('#advisoryTableBody tr');
+            var advBadge  = document.getElementById('advisoryVisibleCount');
+            var advCount  = document.getElementById('advisoryCountBadge');
+            var advEmpty  = document.getElementById('advisoryEmptyFilter');
+
+            advLinks.forEach(function (link) {
+                link.addEventListener('click', function () {
+                    setActiveLink(advLinks, link);
+
+                    var filter = link.getAttribute('data-advisory-filter');
+                    var visible = 0;
+
+                    advRows.forEach(function (row) {
+                        var state = (row.getAttribute('data-advisory-state') || '').toLowerCase();
+                        var show = (filter === 'all' || state === filter);
+                        row.classList.toggle('d-none', !show);
+                        if (show) visible++;
+                    });
+
+                    if (advBadge) advBadge.textContent = visible;
+                    if (advCount) advCount.textContent = visible;
+                    if (advEmpty) advEmpty.classList.toggle('d-none', !(visible === 0 && advRows.length > 0));
+                });
+            });
+        });
+    </script>
+}

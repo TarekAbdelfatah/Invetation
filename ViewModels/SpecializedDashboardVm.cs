@@ -15,6 +15,7 @@ namespace Ibtikar.ViewModels
         public int AdvisoryLate { get; set; }
         public int AdvisorySubmitted { get; set; }
         public List<PartnerAssignmentRowVm> AdvisoryItems { get; set; } = new();
+        public List<SpecializedReferralRowVm> ReferralItems { get; set; } = new();
     }
 
     public class SpecializedReferralsVm

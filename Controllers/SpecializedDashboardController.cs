@@ -30,6 +30,7 @@ namespace Ibtikar.Controllers
             var dto = await _service.GetSnapshotAsync(departmentId, ct);
             var advisoryDto = await _partnerService.GetSnapshotAsync(departmentId, ct);
             var advisoryInbox = await _partnerService.GetInboxAsync(departmentId, ct);
+            var referralsDto = await _service.GetReferralsAsync(departmentId, null, 1, 50, ct);
 
             var vm = new SpecializedDashboardVm
             {
@@ -41,6 +42,12 @@ namespace Ibtikar.Controllers
                 AdvisoryLate = advisoryDto?.OverdueLate ?? 0,
                 AdvisorySubmitted = advisoryDto?.SubmittedThisCycle ?? 0,
                 DepartmentName = ResolveDepartmentName(),
+                ReferralItems = (referralsDto?.Items ?? new List<SpecializedReferralRowDto>())
+                    .Select(i => new SpecializedReferralRowVm(
+                        i.Id, i.Reference, i.Title,
+                        i.StatusCode, i.StatusName, i.StatusColor,
+                        i.AssignedAt, i.StayDays, i.ApplicantName, i.IsOverdue))
+                    .ToList(),
                 AdvisoryItems = (advisoryInbox?.Items ?? new List<PartnerAssignmentRowDto>())
                     .Select(i => new PartnerAssignmentRowVm(
                         i.AssignmentId, i.IdeaId, i.IdeaReference, i.IdeaTitle,
