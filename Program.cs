@@ -14,6 +14,7 @@ using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Hosted;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Notifications;
+using Ibtikar.Options;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -96,6 +97,8 @@ namespace Ibtikar
             builder.Services.Configure<ErrorOptions>(builder.Configuration.GetSection("Errors"));
             builder.Services.AddHttpClient<ProcedureGatewayService>();
             builder.Services.AddHttpClient<INotificationClient, NotificationService>();
+            builder.Services.Configure<ExternalNotificationOptions>(builder.Configuration.GetSection("ExternalNotifications"));
+            builder.Services.AddHttpClient<IExternalNotificationService, ExternalNotificationService>();
             builder.Services.AddOptions<FileStorageOptions>()
                 .Configure<IConfiguration>((opts, cfg) =>
                 {
