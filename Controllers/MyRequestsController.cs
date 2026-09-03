@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = RoleCodes.ExternalBeneficiary + "," + RoleCodes.InternalBeneficiary)]
+    [IbtikarAuthorize(RoleCodes.ExternalBeneficiary, RoleCodes.InternalBeneficiary)]
     public class MyRequestsController : Controller
     {
         private readonly IMyRequestsService _service;

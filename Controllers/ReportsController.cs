@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = RoleCodes.SystemAdmin)]
+    [IbtikarAuthorize(RoleCodes.SystemAdmin)]
     public class ReportsController : Controller
     {
         private const string EmptyRangeMessage = "لا توجد بيانات في الفترة المختارة.";

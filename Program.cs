@@ -1,9 +1,13 @@
 using System.Globalization;
 using System.Threading.RateLimiting;
+using Serilog;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 using Ibtikar.Data;
 using Ibtikar.Data.Seed;
 using Ibtikar.Middleware;
 using Ibtikar.Repositories;
+using Ibtikar.Repositories.Interfaces;
+using Ibtikar.Repositories.Implementations;
 using Ibtikar.Services;
 using Ibtikar.Services.Implementations;
 using Ibtikar.Services.Interfaces;
@@ -23,16 +27,37 @@ namespace Ibtikar
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration)
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .WriteTo.File(
+                    path: Path.Combine(Directory.GetCurrentDirectory(), "Logs", "log-.txt"),
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 30,
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{TraceId}] {Message:lj}{NewLine}{Exception}")
+                .CreateLogger();
+
+            builder.Host.UseSerilog();
+
             builder.Services.AddControllersWithViews(options =>
             {
                 options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+                var globalPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .Build();
+                options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(globalPolicy));
             });
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddDbContext<IbtikarDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
                     .AddInterceptors(new NoHtmlSaveChangesInterceptor()));
+            builder.Services.AddDbContext<CommonSysDbContext>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("CommonSysDB")));
             builder.Services.AddScoped<Pbkdf2PasswordHasher>();
             builder.Services.AddScoped<AuthService>();
+            builder.Services.AddHttpClient();
+            builder.Services.AddScoped<SsoService>();
             builder.Services.AddScoped<AuditLogService>();
             builder.Services.AddSingleton<PdfValidator>();
             builder.Services.AddScoped<FileStorageService>();
@@ -52,6 +77,8 @@ namespace Ibtikar
             builder.Services.AddScoped<IPartnerDashboardService, PartnerDashboardService>();
             builder.Services.AddScoped<ICommitteeFormationService, CommitteeFormationService>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+            builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
             builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
             builder.Services.AddScoped<ICommitteeRepository, CommitteeRepository>();
@@ -120,11 +147,12 @@ namespace Ibtikar
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapStaticAssets();
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}")
                 .WithStaticAssets();
+
+            ApplyPendingMigrations(app);
 
             app.Run();
         }
@@ -136,15 +164,12 @@ namespace Ibtikar
             try
             {
                 AuditSchemaUpgrader.EnsureAuditSchema(db);
-                DatabaseSeeder.SeedLookups(db);
-                DatabaseSeeder.SeedSampleIdeas(db);
-                DatabaseSeeder.SeedTestUsers(db, new Pbkdf2PasswordHasher());
                 db.Database.Migrate();
             }
             catch (Exception ex)
             {
                 var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Migration");
-                logger.LogWarning(ex, "Database migration/seed skipped: {Message}", ex.Message);
+                logger.LogWarning(ex, "Database migration skipped: {Message}", ex.Message);
             }
         }
 

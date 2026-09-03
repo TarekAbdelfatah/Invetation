@@ -5,11 +5,12 @@ using Ibtikar.Services.Interfaces;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = $"{RoleCodes.SpecializedDepartment},{RoleCodes.PartnerDepartment}")]
+    [IbtikarAuthorize(RoleCodes.SpecializedDepartment, RoleCodes.PartnerDepartment)]
     public class PartnerDashboardController : Controller
     {
         private readonly IPartnerDashboardService _service;

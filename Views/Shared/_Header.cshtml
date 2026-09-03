@@ -13,7 +13,9 @@
     var departmentName = isAuth ? User.FindFirst(RoleCodes.DepartmentNameClaim)?.Value : null;
     var isInternal = isAuth && !string.IsNullOrEmpty(User.FindFirst(RoleCodes.DepartmentIdClaim)?.Value);
     var roleClaims = isAuth
-                     ? User.FindAll(RoleCodes.ClaimType).Select(c => c.Value).ToHashSet(StringComparer.OrdinalIgnoreCase)
+                     ? User.FindAll(RoleCodes.ClaimType).Select(c => c.Value)
+                           .Concat(User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value))
+                           .ToHashSet(StringComparer.OrdinalIgnoreCase)
                      : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     var hasAnyRoleClaim = roleClaims.Count > 0;
     var showAdmin = isAuth && roleClaims.Contains(RoleCodes.SystemAdmin);
@@ -74,6 +76,13 @@
                             <a class="bog-nav-link @IsActive("CommitteeForAdmins")" asp-controller="CommitteeForAdmins" asp-action="Index">
                                 <span class="material-icons" aria-hidden="true">groups</span>
                                 لجان الابتكار
+                            </a>
+                        }
+                        @if (showAdmin)
+                        {
+                            <a class="bog-nav-link @IsActive("AdminRoles")" asp-controller="AdminRoles" asp-action="Index">
+                                <span class="material-icons" aria-hidden="true">admin_panel_settings</span>
+                                إدارة الصلاحيات
                             </a>
                         }
                         @if (showIdeasIndex)

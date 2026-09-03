@@ -1,11 +1,14 @@
+using Ibtikar.Options;
 using Ibtikar.Services.Helpers;
 using Ibtikar.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 namespace Ibtikar.Controllers
 {
+    [AllowAnonymous]
     public class HomeController : Controller
     {
         private readonly IWebHostEnvironment _env;
@@ -24,12 +27,21 @@ namespace Ibtikar.Controllers
 
         public IActionResult Index()
         {
-            var home = RoleRedirect.ResolveHomeFor(User);
-            if (!string.IsNullOrEmpty(home)) return Redirect(home);
+            if (User.Identity is { IsAuthenticated: true })
+            {
+                var home = RoleRedirect.ResolveHomeFor(User);
+                if (!string.IsNullOrEmpty(home)) return Redirect(home);
+            }
             return View();
         }
 
         public IActionResult Privacy()
+        {
+            return View();
+        }
+
+        [HttpGet("/AccessDenied")]
+        public IActionResult AccessDenied()
         {
             return View();
         }

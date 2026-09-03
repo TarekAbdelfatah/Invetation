@@ -13,7 +13,6 @@ namespace Ibtikar.Repositories
 
         public async Task<User?> GetActiveByUsernameWithRolesAsync(string username, CancellationToken ct)
             => await _db.Users
-                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
                 .Include(u => u.Department)
                 .FirstOrDefaultAsync(u => u.Username == username && u.IsActive, ct);
 
@@ -34,9 +33,8 @@ namespace Ibtikar.Repositories
             => await _db.Users
                 .AsNoTracking()
                 .Where(u => u.IsActive)
-                .SelectMany(u => u.UserRoles, (u, ur) => new { u.Username, u.FullName, RoleName = ur.Role!.Name })
-                .OrderBy(x => x.Username)
-                .Select(x => new DemoUserDto(x.Username, x.FullName, x.RoleName))
+                .OrderBy(u => u.Username)
+                .Select(u => new DemoUserDto(u.Username, u.FullName, "User"))
                 .ToListAsync(ct);
 
         public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);

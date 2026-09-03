@@ -1,15 +1,19 @@
+using Ibtikar.Data;
 using Ibtikar.DTOs.PartnerDashboard;
 using Ibtikar.DTOs.SpecializedDashboard;
+using Ibtikar.Models;
+using Ibtikar.Repositories.Interfaces;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Interfaces;
 using Ibtikar.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = $"{RoleCodes.SpecializedDepartment},{RoleCodes.PartnerDepartment}")]
+    [IbtikarAuthorize(RoleCodes.SpecializedDepartment, RoleCodes.PartnerDepartment)]
     public class SpecializedDashboardController : Controller
     {
         private readonly ISpecializedDashboardService _service;
@@ -26,7 +30,8 @@ namespace Ibtikar.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(CancellationToken ct)
         {
-            var departmentId = ResolveDepartmentId();
+            var departmentId = await ResolveDepartmentIdAsync(ct);
+            var departmentName = await ResolveDepartmentNameAsync(ct);
             var dto = await _service.GetSnapshotAsync(departmentId, ct);
             var advisoryDto = await _partnerService.GetSnapshotAsync(departmentId, ct);
             var advisoryInbox = await _partnerService.GetInboxAsync(departmentId, ct);
@@ -41,7 +46,7 @@ namespace Ibtikar.Controllers
                 AdvisoryPending = advisoryDto?.PendingAssignments ?? 0,
                 AdvisoryLate = advisoryDto?.OverdueLate ?? 0,
                 AdvisorySubmitted = advisoryDto?.SubmittedThisCycle ?? 0,
-                DepartmentName = ResolveDepartmentName(),
+                DepartmentName = await ResolveDepartmentNameAsync(ct),
                 ReferralItems = (referralsDto?.Items ?? new List<SpecializedReferralRowDto>())
                     .Select(i => new SpecializedReferralRowVm(
                         i.Id, i.Reference, i.Title,
@@ -62,7 +67,8 @@ namespace Ibtikar.Controllers
         [HttpGet("SpecializedDashboard/Referrals")]
         public async Task<IActionResult> Referrals(string? status, int? page, int? pageSize, CancellationToken ct)
         {
-            var departmentId = ResolveDepartmentId();
+            var departmentId = await ResolveDepartmentIdAsync(ct);
+            var departmentName = await ResolveDepartmentNameAsync(ct);
             var (p, ps) = PagedRequest.Normalize(page, pageSize);
             var dto = await _service.GetReferralsAsync(departmentId, status, p, ps, ct);
             if (dto is null) return Forbid();
@@ -70,7 +76,7 @@ namespace Ibtikar.Controllers
             var vm = new SpecializedReferralsVm
             {
                 StatusFilter = dto.StatusFilter ?? string.Empty,
-                DepartmentName = ResolveDepartmentName(),
+                DepartmentName = departmentName,
                 Page = dto.Page,
                 PageSize = dto.PageSize,
                 TotalCount = dto.TotalCount,
@@ -85,7 +91,8 @@ namespace Ibtikar.Controllers
         [HttpGet("SpecializedDashboard/Details/{id:guid}")]
         public async Task<IActionResult> Details(Guid id, CancellationToken ct)
         {
-            var dto = await _service.GetDetailsAsync(ResolveDepartmentId(), id, ct);
+            var departmentId = await ResolveDepartmentIdAsync(ct);
+            var dto = await _service.GetDetailsAsync(departmentId, id, ct);
             if (dto is null) return Forbid();
 
             var vm = new SpecializedDetailsVm
@@ -117,7 +124,8 @@ namespace Ibtikar.Controllers
         [HttpGet("SpecializedDashboard/Assess/{id:guid}")]
         public async Task<IActionResult> Assess(Guid id, CancellationToken ct)
         {
-            var dto = await _service.GetAssessVmAsync(ResolveDepartmentId(), id, ct);
+            var departmentId = await ResolveDepartmentIdAsync(ct);
+            var dto = await _service.GetAssessVmAsync(departmentId, id, ct);
             if (dto is null) return Forbid();
 
             var vm = new SpecializedAssessVm
@@ -159,8 +167,9 @@ namespace Ibtikar.Controllers
                 scores.Add(new SpecializedScoreInputDto(criterionId, score, c));
             }
 
+            var departmentId = await ResolveDepartmentIdAsync(ct);
             var submission = new SpecializedAssessmentSubmissionDto(ideaId, headerId, scores, comment, saveDraft);
-            var result = await _service.SaveAssessmentAsync(ResolveDepartmentId(), ResolveUserId(), submission, ct);
+            var result = await _service.SaveAssessmentAsync(departmentId, ResolveUserId(), submission, ct);
 
             TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
             TempData["AlertType"] = result.Success ? "success" : "danger";
@@ -174,7 +183,8 @@ namespace Ibtikar.Controllers
         [HttpGet("SpecializedDashboard/Send/{id:guid}")]
         public async Task<IActionResult> SendToCommittee(Guid id, CancellationToken ct)
         {
-            var dto = await _service.GetSendToCommitteeSummaryAsync(ResolveDepartmentId(), id, ct);
+            var departmentId = await ResolveDepartmentIdAsync(ct);
+            var dto = await _service.GetSendToCommitteeSummaryAsync(departmentId, id, ct);
             if (dto is null) return Forbid();
 
             var vm = new SpecializedSendToCommitteeVm
@@ -194,7 +204,8 @@ namespace Ibtikar.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmSendToCommittee(Guid ideaId, bool skipPartnerWarning, CancellationToken ct)
         {
-            var result = await _service.SendToCommitteeAsync(ResolveDepartmentId(), ResolveUserId(), ideaId, skipPartnerWarning, ct);
+            var departmentId = await ResolveDepartmentIdAsync(ct);
+            var result = await _service.SendToCommitteeAsync(departmentId, ResolveUserId(), ideaId, skipPartnerWarning, ct);
 
             if (!result.Success)
             {
@@ -216,7 +227,8 @@ namespace Ibtikar.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReturnNotCompetent(Guid ideaId, string reason, CancellationToken ct)
         {
-            var result = await _service.ReturnNotCompetentAsync(ResolveDepartmentId(), ResolveUserId(), ideaId, reason ?? string.Empty, ct);
+            var departmentId = await ResolveDepartmentIdAsync(ct);
+            var result = await _service.ReturnNotCompetentAsync(departmentId, ResolveUserId(), ideaId, reason ?? string.Empty, ct);
 
             if (result.Success)
             {
@@ -272,11 +284,12 @@ namespace Ibtikar.Controllers
                 return View("Request", requestVm);
             }
 
+            var departmentId = await ResolveDepartmentIdAsync(ct);
             var submission = new SpecializedRequestSubmissionDto(
                 vm.IdeaId,
                 vm.PartnerIds,
                 vm.Notes.Select(n => new SpecializedRequestPartnerNoteDto(n.PartnerId, n.Note)).ToList());
-            var result = await _service.RequestPartnerOpinionsAsync(ResolveDepartmentId(), ResolveUserId(), submission, ct);
+            var result = await _service.RequestPartnerOpinionsAsync(departmentId, ResolveUserId(), submission, ct);
 
             TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";
             TempData["AlertType"] = result.Success ? "success" : "danger";
@@ -285,7 +298,8 @@ namespace Ibtikar.Controllers
 
         private async Task<SpecializedRequestVm?> BuildRequestVmAsync(Guid id, CancellationToken ct)
         {
-            var dto = await _service.GetRequestVmAsync(ResolveDepartmentId(), id, ct);
+            var departmentId = await ResolveDepartmentIdAsync(ct);
+            var dto = await _service.GetRequestVmAsync(departmentId, id, ct);
             if (dto is null) return null;
 
             return new SpecializedRequestVm
@@ -301,7 +315,8 @@ namespace Ibtikar.Controllers
         [HttpGet("SpecializedDashboard/Partners/{id:guid}")]
         public async Task<IActionResult> PartnerOpinion(Guid id, CancellationToken ct)
         {
-            var dto = await _service.GetPartnerOpinionAsync(ResolveDepartmentId(), id, ct);
+            var departmentId = await ResolveDepartmentIdAsync(ct);
+            var dto = await _service.GetPartnerOpinionAsync(departmentId, id, ct);
             if (dto is null) return Forbid();
 
             var vm = new SpecializedPartnerOpinionVm
@@ -321,14 +336,65 @@ namespace Ibtikar.Controllers
             return View(vm);
         }
 
-        private Guid? ResolveDepartmentId()
+        private async Task<Guid> ResolveDepartmentIdAsync(CancellationToken ct = default)
         {
             var raw = User.FindFirst(RoleCodes.DepartmentIdClaim)?.Value;
-            return Guid.TryParse(raw, out var id) ? id : null;
+            return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
         }
 
-        private string? ResolveDepartmentName()
-            => User.FindFirst(RoleCodes.DepartmentNameClaim)?.Value;
+        private async Task<string?> ResolveDepartmentNameAsync(CancellationToken ct = default)
+        {
+            if (HttpContext.Items.TryGetValue("DepartmentName", out var deptObj) && deptObj is string deptName && !string.IsNullOrWhiteSpace(deptName))
+            {
+                return deptName;
+            }
+
+            if (HttpContext.Items.TryGetValue("CommonDepartment", out var commonObj) && commonObj is ErpHrDepartment hrDept && !string.IsNullOrWhiteSpace(hrDept.DeptName))
+            {
+                return hrDept.DeptName;
+            }
+
+            var claimDeptName = User.FindFirst(RoleCodes.DepartmentNameClaim)?.Value;
+            if (!string.IsNullOrWhiteSpace(claimDeptName))
+            {
+                return claimDeptName;
+            }
+
+            // Try resolving directly via IDepartmentRepository using AdminUser DeptId
+            var adminUser = HttpContext.Items["AdminUser"] as Admin;
+            if (adminUser == null)
+            {
+                var username = User.Identity?.Name;
+                if (!string.IsNullOrWhiteSpace(username))
+                {
+                    if (username.EndsWith("@bog.gov.sa", StringComparison.OrdinalIgnoreCase))
+                    {
+                        username = username.Substring(0, username.Length - "@bog.gov.sa".Length);
+                    }
+                    var db = HttpContext.RequestServices.GetService<IbtikarDbContext>();
+                    if (db != null)
+                    {
+                        adminUser = await db.Admins.AsNoTracking().FirstOrDefaultAsync(a => a.NetworkUser == username, ct);
+                    }
+                }
+            }
+
+            if (adminUser?.DeptId.HasValue == true)
+            {
+                var deptRepo = HttpContext.RequestServices.GetService<IDepartmentRepository>();
+                if (deptRepo != null)
+                {
+                    var hrDepts = await deptRepo.GetHrDepartmentsAsync(ct);
+                    var match = hrDepts.FirstOrDefault(d => d.DeptId == adminUser.DeptId.Value);
+                    if (match != null)
+                    {
+                        return match.DeptName;
+                    }
+                }
+            }
+
+            return null;
+        }
 
         private Guid ResolveUserId()
         {

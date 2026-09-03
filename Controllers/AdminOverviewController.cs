@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = RoleCodes.SystemAdmin)]
+    [IbtikarAuthorize(RoleCodes.SystemAdmin)]
     public class AdminOverviewController : Controller
     {
         private readonly IAdminOverviewService _service;
