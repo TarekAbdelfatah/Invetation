@@ -3,6 +3,7 @@ using System;
 using Ibtikar.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Ibtikar.Migrations
 {
     [DbContext(typeof(IbtikarDbContext))]
-    partial class IbtikarDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260901035200_AddExecutionProgress")]
+    partial class AddExecutionProgress
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -93,7 +96,7 @@ namespace Ibtikar.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("AssessorDepartmentId")
+                    b.Property<Guid>("AssessorDepartmentId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("AssessorUserId")
@@ -719,9 +722,6 @@ namespace Ibtikar.Migrations
                     b.Property<Guid>("CurrentStatusId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(4000)
@@ -740,9 +740,6 @@ namespace Ibtikar.Migrations
                     b.Property<Guid>("InnovationDomainId")
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
                     b.Property<bool>("IsDraft")
                         .HasColumnType("boolean");
 
@@ -758,10 +755,6 @@ namespace Ibtikar.Migrations
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
-
-                    b.Property<string>("RequiredResources")
-                        .HasMaxLength(3000)
-                        .HasColumnType("character varying(3000)");
 
                     b.Property<DateTime?>("SubmittedAt")
                         .HasColumnType("timestamp with time zone");
@@ -787,8 +780,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("ApplicantDepartmentId");
 
-                    b.HasIndex("ApplicantUserId")
-                        .HasFilter("\"IsDeleted\" = false");
+                    b.HasIndex("ApplicantUserId");
 
                     b.HasIndex("AssignedDepartmentId");
 
@@ -995,6 +987,9 @@ namespace Ibtikar.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<Guid>("UserTypeId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -1003,6 +998,8 @@ namespace Ibtikar.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DepartmentId");
+
+                    b.HasIndex("UserTypeId");
 
                     b.HasIndex("Username")
                         .IsUnique();
@@ -1026,6 +1023,39 @@ namespace Ibtikar.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("UserRoles");
+                });
+
+            modelBuilder.Entity("Ibtikar.Models.UserTypeLookup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("UserTypes");
                 });
 
             modelBuilder.Entity("Ibtikar.Models.AssessmentDetail", b =>
@@ -1052,7 +1082,8 @@ namespace Ibtikar.Migrations
                     b.HasOne("Ibtikar.Models.Department", "AssessorDepartment")
                         .WithMany()
                         .HasForeignKey("AssessorDepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Ibtikar.Models.User", "Assessor")
                         .WithMany()
@@ -1352,7 +1383,15 @@ namespace Ibtikar.Migrations
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("Ibtikar.Models.UserTypeLookup", "UserType")
+                        .WithMany()
+                        .HasForeignKey("UserTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Department");
+
+                    b.Navigation("UserType");
                 });
 
             modelBuilder.Entity("Ibtikar.Models.UserRole", b =>

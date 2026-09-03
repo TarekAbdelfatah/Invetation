@@ -3,6 +3,7 @@ using System;
 using Ibtikar.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Ibtikar.Migrations
 {
     [DbContext(typeof(IbtikarDbContext))]
-    partial class IbtikarDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260831112430_AddIdeaAttachmentsAndHistory3")]
+    partial class AddIdeaAttachmentsAndHistory3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -57,127 +60,6 @@ namespace Ibtikar.Migrations
                         .IsUnique();
 
                     b.ToTable("AssessmentCriteria");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.AssessmentDetail", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AssessmentHeaderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Comment")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<Guid>("CriterionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Score")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssessmentHeaderId");
-
-                    b.HasIndex("CriterionId");
-
-                    b.ToTable("AssessmentDetails");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.AssessmentHeader", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("AssessorDepartmentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AssessorUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Comment")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("InnovationIdeaId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsDraft")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsLocked")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("LockedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTime?>("SubmittedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal?>("TotalScore")
-                        .HasColumnType("numeric");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssessorDepartmentId");
-
-                    b.HasIndex("AssessorUserId");
-
-                    b.HasIndex("InnovationIdeaId");
-
-                    b.HasIndex("InnovationIdeaId", "Source");
-
-                    b.ToTable("AssessmentHeaders");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.AuditActionItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("AuditDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("AuditorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Decision")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("DecisionText")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<Guid>("IdeaId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("TargetDepartmentId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AuditorId");
-
-                    b.HasIndex("IdeaId");
-
-                    b.HasIndex("TargetDepartmentId");
-
-                    b.ToTable("AuditActionItems");
                 });
 
             modelBuilder.Entity("Ibtikar.Models.AuditLog", b =>
@@ -231,106 +113,6 @@ namespace Ibtikar.Migrations
                     b.HasIndex("EntityName", "EntityId");
 
                     b.ToTable("AuditLogs");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.CommitteeDelegation", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DelegateMemberUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("EndAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("HeadUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("InnovationCommitteeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("StartAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DelegateMemberUserId");
-
-                    b.HasIndex("HeadUserId");
-
-                    b.HasIndex("InnovationCommitteeId");
-
-                    b.HasIndex("InnovationCommitteeId", "StartAt", "EndAt");
-
-                    b.ToTable("CommitteeDelegations");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.CommitteeMember", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("InnovationCommitteeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsHead")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("JoinedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InnovationCommitteeId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("CommitteeMembers");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.CommitteeVote", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Decision")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<Guid>("InnovationIdeaId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("MemberUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<DateTime>("VotedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InnovationIdeaId");
-
-                    b.HasIndex("MemberUserId");
-
-                    b.HasIndex("InnovationIdeaId", "MemberUserId")
-                        .IsUnique();
-
-                    b.ToTable("CommitteeVotes");
                 });
 
             modelBuilder.Entity("Ibtikar.Models.CriterionScoring", b =>
@@ -388,42 +170,6 @@ namespace Ibtikar.Migrations
                         .IsUnique();
 
                     b.ToTable("Departments");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.ExecutionProgress", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("ChangedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ChangedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ExecutionStageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("InnovationIdeaId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Note")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedByUserId");
-
-                    b.HasIndex("ExecutionStageId");
-
-                    b.HasIndex("InnovationIdeaId");
-
-                    b.HasIndex("InnovationIdeaId", "ChangedAt");
-
-                    b.ToTable("ExecutionProgresses");
                 });
 
             modelBuilder.Entity("Ibtikar.Models.ExecutionStage", b =>
@@ -623,42 +369,6 @@ namespace Ibtikar.Migrations
                     b.ToTable("IdeaStatusHistories");
                 });
 
-            modelBuilder.Entity("Ibtikar.Models.InnovationCommittee", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("ActivatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CreatedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedByUserId");
-
-                    b.HasIndex("IsActive");
-
-                    b.ToTable("InnovationCommittees");
-                });
-
             modelBuilder.Entity("Ibtikar.Models.InnovationDomain", b =>
                 {
                     b.Property<Guid>("Id")
@@ -704,23 +414,11 @@ namespace Ibtikar.Migrations
                     b.Property<Guid>("ApplicantUserId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("AssignedDepartmentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("AuditAssignedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("AuditEmployeeId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("CurrentStatusId")
                         .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -740,9 +438,6 @@ namespace Ibtikar.Migrations
                     b.Property<Guid>("InnovationDomainId")
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
                     b.Property<bool>("IsDraft")
                         .HasColumnType("boolean");
 
@@ -758,10 +453,6 @@ namespace Ibtikar.Migrations
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
-
-                    b.Property<string>("RequiredResources")
-                        .HasMaxLength(3000)
-                        .HasColumnType("character varying(3000)");
 
                     b.Property<DateTime?>("SubmittedAt")
                         .HasColumnType("timestamp with time zone");
@@ -787,10 +478,7 @@ namespace Ibtikar.Migrations
 
                     b.HasIndex("ApplicantDepartmentId");
 
-                    b.HasIndex("ApplicantUserId")
-                        .HasFilter("\"IsDeleted\" = false");
-
-                    b.HasIndex("AssignedDepartmentId");
+                    b.HasIndex("ApplicantUserId");
 
                     b.HasIndex("CurrentStatusId");
 
@@ -799,56 +487,11 @@ namespace Ibtikar.Migrations
                     b.HasIndex("InnovationDomainId");
 
                     b.HasIndex("ReferenceNumber")
-                        .IsUnique()
-                        .HasFilter("\"IsDraft\" = false");
+                        .IsUnique();
 
                     b.HasIndex("TargetAudienceId");
 
                     b.ToTable("InnovationIdeas");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.PartnerAssignment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("InnovationIdeaId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<Guid>("PartnerDepartmentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RequestedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("RespondedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("SentAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InnovationIdeaId");
-
-                    b.HasIndex("PartnerDepartmentId");
-
-                    b.HasIndex("RequestedByUserId");
-
-                    b.HasIndex("InnovationIdeaId", "PartnerDepartmentId")
-                        .IsUnique();
-
-                    b.ToTable("PartnerAssignments");
                 });
 
             modelBuilder.Entity("Ibtikar.Models.Role", b =>
@@ -995,6 +638,9 @@ namespace Ibtikar.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<Guid>("UserTypeId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -1003,6 +649,8 @@ namespace Ibtikar.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DepartmentId");
+
+                    b.HasIndex("UserTypeId");
 
                     b.HasIndex("Username")
                         .IsUnique();
@@ -1028,75 +676,37 @@ namespace Ibtikar.Migrations
                     b.ToTable("UserRoles");
                 });
 
-            modelBuilder.Entity("Ibtikar.Models.AssessmentDetail", b =>
+            modelBuilder.Entity("Ibtikar.Models.UserTypeLookup", b =>
                 {
-                    b.HasOne("Ibtikar.Models.AssessmentHeader", "AssessmentHeader")
-                        .WithMany("Details")
-                        .HasForeignKey("AssessmentHeaderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
-                    b.HasOne("Ibtikar.Models.AssessmentCriterion", "Criterion")
-                        .WithMany()
-                        .HasForeignKey("CriterionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
-                    b.Navigation("AssessmentHeader");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Navigation("Criterion");
-                });
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
 
-            modelBuilder.Entity("Ibtikar.Models.AssessmentHeader", b =>
-                {
-                    b.HasOne("Ibtikar.Models.Department", "AssessorDepartment")
-                        .WithMany()
-                        .HasForeignKey("AssessorDepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
-                    b.HasOne("Ibtikar.Models.User", "Assessor")
-                        .WithMany()
-                        .HasForeignKey("AssessorUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
-                    b.HasOne("Ibtikar.Models.InnovationIdea", "InnovationIdea")
-                        .WithMany()
-                        .HasForeignKey("InnovationIdeaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasKey("Id");
 
-                    b.Navigation("Assessor");
+                    b.HasIndex("Code")
+                        .IsUnique();
 
-                    b.Navigation("AssessorDepartment");
-
-                    b.Navigation("InnovationIdea");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.AuditActionItem", b =>
-                {
-                    b.HasOne("Ibtikar.Models.User", "Auditor")
-                        .WithMany()
-                        .HasForeignKey("AuditorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Ibtikar.Models.InnovationIdea", "Idea")
-                        .WithMany("AuditActions")
-                        .HasForeignKey("IdeaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Ibtikar.Models.Department", "TargetDepartment")
-                        .WithMany()
-                        .HasForeignKey("TargetDepartmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Auditor");
-
-                    b.Navigation("Idea");
-
-                    b.Navigation("TargetDepartment");
+                    b.ToTable("UserTypes");
                 });
 
             modelBuilder.Entity("Ibtikar.Models.AuditLog", b =>
@@ -1107,97 +717,6 @@ namespace Ibtikar.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.CommitteeDelegation", b =>
-                {
-                    b.HasOne("Ibtikar.Models.User", "DelegateMember")
-                        .WithMany()
-                        .HasForeignKey("DelegateMemberUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Ibtikar.Models.User", "Head")
-                        .WithMany()
-                        .HasForeignKey("HeadUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Ibtikar.Models.InnovationCommittee", "InnovationCommittee")
-                        .WithMany()
-                        .HasForeignKey("InnovationCommitteeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("DelegateMember");
-
-                    b.Navigation("Head");
-
-                    b.Navigation("InnovationCommittee");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.CommitteeMember", b =>
-                {
-                    b.HasOne("Ibtikar.Models.InnovationCommittee", "InnovationCommittee")
-                        .WithMany("Members")
-                        .HasForeignKey("InnovationCommitteeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Ibtikar.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("InnovationCommittee");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.CommitteeVote", b =>
-                {
-                    b.HasOne("Ibtikar.Models.InnovationIdea", "InnovationIdea")
-                        .WithMany()
-                        .HasForeignKey("InnovationIdeaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Ibtikar.Models.User", "Member")
-                        .WithMany()
-                        .HasForeignKey("MemberUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("InnovationIdea");
-
-                    b.Navigation("Member");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.ExecutionProgress", b =>
-                {
-                    b.HasOne("Ibtikar.Models.User", "ChangedBy")
-                        .WithMany()
-                        .HasForeignKey("ChangedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Ibtikar.Models.ExecutionStage", "ExecutionStage")
-                        .WithMany()
-                        .HasForeignKey("ExecutionStageId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Ibtikar.Models.InnovationIdea", "InnovationIdea")
-                        .WithMany()
-                        .HasForeignKey("InnovationIdeaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ChangedBy");
-
-                    b.Navigation("ExecutionStage");
-
-                    b.Navigation("InnovationIdea");
                 });
 
             modelBuilder.Entity("Ibtikar.Models.IdeaAttachment", b =>
@@ -1252,17 +771,6 @@ namespace Ibtikar.Migrations
                     b.Navigation("ToStatus");
                 });
 
-            modelBuilder.Entity("Ibtikar.Models.InnovationCommittee", b =>
-                {
-                    b.HasOne("Ibtikar.Models.User", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CreatedBy");
-                });
-
             modelBuilder.Entity("Ibtikar.Models.InnovationIdea", b =>
                 {
                     b.HasOne("Ibtikar.Models.Department", "ApplicantDepartment")
@@ -1275,11 +783,6 @@ namespace Ibtikar.Migrations
                         .HasForeignKey("ApplicantUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("Ibtikar.Models.Department", "AssignedDepartment")
-                        .WithMany()
-                        .HasForeignKey("AssignedDepartmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Ibtikar.Models.IdeaStatus", "CurrentStatus")
                         .WithMany()
@@ -1307,8 +810,6 @@ namespace Ibtikar.Migrations
 
                     b.Navigation("ApplicantUser");
 
-                    b.Navigation("AssignedDepartment");
-
                     b.Navigation("CurrentStatus");
 
                     b.Navigation("ExpectedImpact");
@@ -1318,33 +819,6 @@ namespace Ibtikar.Migrations
                     b.Navigation("TargetAudience");
                 });
 
-            modelBuilder.Entity("Ibtikar.Models.PartnerAssignment", b =>
-                {
-                    b.HasOne("Ibtikar.Models.InnovationIdea", "InnovationIdea")
-                        .WithMany()
-                        .HasForeignKey("InnovationIdeaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Ibtikar.Models.Department", "PartnerDepartment")
-                        .WithMany()
-                        .HasForeignKey("PartnerDepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Ibtikar.Models.User", "RequestedBy")
-                        .WithMany()
-                        .HasForeignKey("RequestedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("InnovationIdea");
-
-                    b.Navigation("PartnerDepartment");
-
-                    b.Navigation("RequestedBy");
-                });
-
             modelBuilder.Entity("Ibtikar.Models.User", b =>
                 {
                     b.HasOne("Ibtikar.Models.Department", "Department")
@@ -1352,7 +826,15 @@ namespace Ibtikar.Migrations
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("Ibtikar.Models.UserTypeLookup", "UserType")
+                        .WithMany()
+                        .HasForeignKey("UserTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Department");
+
+                    b.Navigation("UserType");
                 });
 
             modelBuilder.Entity("Ibtikar.Models.UserRole", b =>
@@ -1374,21 +856,9 @@ namespace Ibtikar.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Ibtikar.Models.AssessmentHeader", b =>
-                {
-                    b.Navigation("Details");
-                });
-
-            modelBuilder.Entity("Ibtikar.Models.InnovationCommittee", b =>
-                {
-                    b.Navigation("Members");
-                });
-
             modelBuilder.Entity("Ibtikar.Models.InnovationIdea", b =>
                 {
                     b.Navigation("Attachments");
-
-                    b.Navigation("AuditActions");
 
                     b.Navigation("StatusHistory");
                 });

@@ -46,7 +46,7 @@ namespace Ibtikar.Controllers
                 AdvisoryPending = advisoryDto?.PendingAssignments ?? 0,
                 AdvisoryLate = advisoryDto?.OverdueLate ?? 0,
                 AdvisorySubmitted = advisoryDto?.SubmittedThisCycle ?? 0,
-                DepartmentName = ResolveDepartmentName(),
+                DepartmentName = await ResolveDepartmentNameAsync(ct),
                 ReferralItems = (referralsDto?.Items ?? new List<SpecializedReferralRowDto>())
                     .Select(i => new SpecializedReferralRowVm(
                         i.Id, i.Reference, i.Title,
