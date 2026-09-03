@@ -79,15 +79,6 @@ namespace Ibtikar.Controllers
                 ByStatus = dto.ByStatus
                     .Select(s => new AdminOverviewVm.StatusCount(s.Code, s.Name, s.Color, s.Count))
                     .ToList(),
-                Recent = dto.Recent
-                    .Select(r => new AdminOverviewVm.RecentIdea(
-                        r.Reference,
-                        r.Title,
-                        r.StatusName,
-                        r.StatusColor,
-                        r.Domain,
-                        r.CreatedAt))
-                    .ToList(),
                 StatusFilter = ideas.StatusFilter,
                 Ideas = ideas.Rows.Select(i => new AdminOverviewVm.IdeaRow(
                     i.Id, i.Reference, i.Title, i.DomainName, i.ApplicantName,

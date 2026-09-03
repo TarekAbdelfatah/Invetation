@@ -79,81 +79,15 @@
             </div>
         </div>
 
+        @{
+            var allIdeasCount = Model.ByStatus.Sum(s => s.Count);
+        }
         <div class="row g-3 mb-4">
-            <div class="col-lg-8">
-                <div class="card bog-section">
-                    <div class="card-header bg-white d-flex align-items-center gap-2">
-                        <span class="material-icons text-primary">history</span>
-                        <strong>أحدث الأفكار</strong>
-                        <span class="badge bg-secondary ms-auto">@Model.Recent.Count</span>
-                    </div>
-                    <div class="card-body p-0">
-                        @if (Model.Recent.Any())
-                        {
-                            <div class="bog-mobile-cards d-md-none">
-                                @foreach (var r in Model.Recent)
-                                {
-                                    <div class="bog-idea-card">
-                                        <div class="bog-idea-card__head">
-                                            <span class="bog-idea-card__ref"><code>@r.Reference</code></span>
-                                            <span class="bog-idea-card__status" style="--chip-bg:@r.StatusColor">
-                                                <span class="bog-idea-card__status-dot" style="background-color:@r.StatusColor"></span>
-                                                @r.StatusName
-                                            </span>
-                                        </div>
-                                        <h3 class="bog-idea-card__title">@r.Title</h3>
-                                        <div class="bog-idea-card__foot">
-                                            <small class="bog-idea-card__date">
-                                                <span class="material-icons" style="font-size:14px">apartment</span>
-                                                @r.Domain
-                                            </small>
-                                            <small class="bog-idea-card__date">
-                                                <span class="material-icons" style="font-size:14px">event</span>
-                                                @r.CreatedAt.FormatDate()
-                                            </small>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-
-                            <div class="table-responsive d-none d-md-block">
-                                <table class="bog-card-list">
-                                    <thead>
-                                        <tr>
-                                            <th>المرجع</th>
-                                            <th>العنوان</th>
-                                            <th>المجال</th>
-                                            <th>الحالة</th>
-                                            <th>التاريخ</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var r in Model.Recent)
-                                        {
-                                            <tr>
-                                                <td data-label="المرجع"><code>@r.Reference</code></td>
-                                                <td data-label="العنوان"><span title="@r.Title">@Display.Title(r.Title)</span></td>
-                                                <td data-label="المجال"><small>@r.Domain</small></td>
-                                                <td data-label="الحالة"><span class="badge rounded-pill" style="background-color:@r.StatusColor">@r.StatusName</span></td>
-                                                <td data-label="التاريخ"><small>@r.CreatedAt.FormatDate()</small></td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="text-center text-muted p-4">لا توجد أفكار بعد.</div>
-                        }
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="card bog-section">
+            <div class="col-lg-2">
+                <div class="card bog-section h-100">
                     <div class="card-header bg-white d-flex align-items-center gap-2">
                         <span class="material-icons text-primary">donut_large</span>
-                        <strong>توزيع الأفكار حسب الحالة</strong>
+                        <strong class="fs-6">تصنيف بالحالة</strong>
                     </div>
                     <div class="card-body p-0">
                         <a asp-action="Index" class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body" style="@(string.IsNullOrEmpty(currentStatus) ? "background-color:var(--brand-50,#F3FCF6);font-weight:600" : null)">
@@ -161,7 +95,7 @@
                                 <span class="bog-status-dot" style="background-color:#0d6efd"></span>
                                 الكل
                             </span>
-                            <span class="fw-semibold">@Model.TotalIdeas</span>
+                            <span class="fw-semibold">@allIdeasCount</span>
                         </a>
                         @foreach (var s in Model.ByStatus)
                         {
@@ -178,121 +112,116 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="card bog-section mb-3">
-            <div class="card-header bg-white d-flex align-items-center gap-2 flex-wrap">
-                <span class="material-icons text-primary align-middle">list_alt</span>
-                <strong>سجل الأفكار الكامل</strong>
-                <span class="badge bg-secondary">@Model.IdeasTotalCount</span>
-                <form method="get" asp-action="Index" class="ms-auto d-flex gap-2 align-items-center" id="adminStatusFilterForm">
-                    <label for="status" class="form-label small mb-0">تصفية بالحالة</label>
-                    <select id="status" name="status" class="form-select form-select-sm" data-testid="admin-status-filter" onchange="this.form.submit()">
-                        <option value="" selected="@(string.IsNullOrEmpty(currentStatus))">كل الحالات</option>
-                        @foreach (var s in Model.ByStatus)
-                        {
-                            <option value="@s.Code" selected="@(currentStatus == s.Code)">@s.Name</option>
-                        }
-                    </select>
-                    @if (!string.IsNullOrEmpty(currentStatus))
-                    {
-                        <a class="btn btn-sm btn-outline-secondary" asp-action="Index">
-                            <span class="material-icons align-middle" style="font-size:14px">restart_alt</span>
-                            إعادة ضبط
-                        </a>
-                    }
-                </form>
-            </div>
-            <div class="card-body p-0">
-                @if (!Model.Ideas.Any())
-                {
-                    <div class="text-center text-muted p-5">
-                        <span class="material-icons" style="font-size:48px;color:var(--text-muted)">inbox</span>
-                        <p class="mb-1 mt-2">لا توجد أفكار بهذه التصفية.</p>
+            <div class="col-lg-10">
+                <div class="card bog-section">
+                    <div class="card-header bg-white d-flex align-items-center gap-2">
+                        <span class="material-icons text-primary align-middle">list_alt</span>
+                        <strong>سجل الأفكار</strong>
+                        <span class="badge bg-secondary">@Model.IdeasTotalCount</span>
                     </div>
-                }
-                else
-                {
-                    <div class="bog-mobile-cards d-md-none">
-                        @foreach (var i in Model.Ideas)
+                    <div class="card-body p-0">
+                        @if (!Model.Ideas.Any())
                         {
-                            <div class="bog-idea-card" data-testid="admin-idea-card">
-                                <div class="bog-idea-card__head">
-                                    <span class="bog-idea-card__ref"><code>@i.Reference</code></span>
-                                    <span class="bog-idea-card__status" style="--chip-bg:@i.StatusColor">
-                                        <span class="bog-idea-card__status-dot" style="background-color:@i.StatusColor"></span>
-                                        @i.StatusName
-                                    </span>
-                                </div>
-                                <h3 class="bog-idea-card__title">@i.Title</h3>
-                                <div class="bog-idea-card__foot">
-                                    <small class="bog-idea-card__date">
-                                        <span class="material-icons" style="font-size:14px">person</span>
-                                        @i.ApplicantName
-                                    </small>
-                                    <small class="bog-idea-card__date">
-                                        <span class="material-icons" style="font-size:14px">apartment</span>
-                                        @i.ApplicantDepartmentName
-                                    </small>
-                                </div>
-                                <div class="mt-2">
-                                    <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@i.Id">
-                                        <span class="material-icons align-middle" style="font-size:14px">visibility</span>
-                                        تفاصيل
-                                    </a>
-                                </div>
+                            <div class="text-center text-muted p-5">
+                                <span class="material-icons" style="font-size:48px;color:var(--text-muted)">inbox</span>
+                                <p class="mb-1 mt-2">لا توجد أفكار بهذه التصنيف.</p>
                             </div>
                         }
-                    </div>
-                    <div class="table-responsive d-none d-md-block">
-                        <table class="bog-card-list mb-0" data-testid="admin-ideas-table">
-                            <thead>
-                                <tr>
-                                    <th>المرجع</th>
-                                    <th>العنوان</th>
-                                    <th>المجال</th>
-                                    <th>المُقدِّم</th>
-                                    <th>الإدارة المحالة</th>
-                                    <th>الحالة</th>
-                                    <th>التاريخ</th>
-                                    <th class="text-end">إجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        else
+                        {
+                            <div class="bog-mobile-cards d-md-none">
                                 @foreach (var i in Model.Ideas)
                                 {
-                                    <tr>
-                                        <td data-label="المرجع"><code>@i.Reference</code></td>
-                                        <td data-label="العنوان"><span title="@i.Title">@Display.Title(i.Title)</span></td>
-                                        <td data-label="المجال"><small>@i.DomainName</small></td>
-                                        <td data-label="المُقدِّم"><small>@i.ApplicantName<br />@i.ApplicantDepartmentName</small></td>
-                                        <td data-label="الإدارة المحالة"><small>@(i.AssignedDepartmentName ?? "—")</small></td>
-                                        <td data-label="الحالة"><span class="badge rounded-pill" style="background-color:@i.StatusColor">@i.StatusName</span></td>
-                                        <td data-label="التاريخ"><small>@i.CreatedAt.FormatDateTime()</small></td>
-                                        <td class="bog-card-list__actions" data-label="">
+                                    <div class="bog-idea-card" data-testid="admin-idea-card">
+                                        <div class="bog-idea-card__head">
+                                            <span class="bog-idea-card__status" style="--chip-bg:@i.StatusColor">
+                                                <span class="bog-idea-card__status-dot" style="background-color:@i.StatusColor"></span>
+                                                @i.StatusName
+                                            </span>
+                                        </div>
+                                        <h3 class="bog-idea-card__title">@i.Title</h3>
+                                        <div class="bog-idea-card__foot">
+                                            <small class="bog-idea-card__date">
+                                                <span class="material-icons" style="font-size:14px">person</span>
+                                                @i.ApplicantName
+                                            </small>
+                                            <small class="bog-idea-card__date">
+                                                <span class="material-icons" style="font-size:14px">event</span>
+                                                @i.CreatedAt.FormatDate()
+                                            </small>
+                                        </div>
+                                        <div class="mt-2">
                                             <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@i.Id">
                                                 <span class="material-icons align-middle" style="font-size:14px">visibility</span>
                                                 تفاصيل
                                             </a>
-                                        </td>
-                                    </tr>
+                                        </div>
+                                    </div>
                                 }
-                            </tbody>
-                        </table>
+                            </div>
+                            <div class="table-responsive d-none d-md-block bog-table-no-hscroll">
+                                <table class="bog-card-list mb-0" data-testid="admin-ideas-table">
+                                    <colgroup>
+                                        <col style="width:26%" />
+                                        <col style="width:12%" />
+                                        <col style="width:17%" />
+                                        <col style="width:14%" />
+                                        <col style="width:11%" />
+                                        <col style="width:20%" />
+                                    </colgroup>
+                                    <thead>
+                                        <tr>
+                                            <th>العنوان</th>
+                                            <th>المجال</th>
+                                            <th>المُقدِّم</th>
+                                            <th>الإدارة المحالة</th>
+                                            <th>الحالة</th>
+                                            <th class="text-end">تاريخ التقديم</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var i in Model.Ideas)
+                                        {
+                                            <tr>
+                                                <td data-label="العنوان">
+                                                    <span class="bog-idea-title" title="@i.Title">@i.Title</span>
+                                                </td>
+                                                <td data-label="المجال"><small>@i.DomainName</small></td>
+                                                <td data-label="المُقدِّم">
+                                                    <span class="bog-idea-title">@i.ApplicantName</span>
+                                                    <small class="text-muted d-block">@i.ApplicantDepartmentName</small>
+                                                </td>
+                                                <td data-label="الإدارة المحالة"><small>@(i.AssignedDepartmentName ?? "—")</small></td>
+                                                <td data-label="الحالة"><span class="badge rounded-pill" style="background-color:@i.StatusColor">@i.StatusName</span></td>
+                                                <td class="bog-card-list__actions" data-label="تاريخ التقديم">
+                                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                                        <small dir="ltr">@i.CreatedAt.FormatDate()</small>
+                                                        <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@i.Id">
+                                                            <span class="material-icons align-middle" style="font-size:14px">visibility</span>
+                                                            تفاصيل
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        @if (Model.Ideas.Any())
+                        {
+                            <div class="p-2 border-top bg-white">
+                                @await Html.PartialAsync("_Pagination", null,
+                                    new ViewDataDictionary(ViewData)
+                                    {
+                                        { "Page", Model.Page },
+                                        { "PageSize", Model.PageSize },
+                                        { "TotalCount", Model.IdeasTotalCount }
+                                    })
+                            </div>
+                        }
                     </div>
-                }
-                @if (Model.Ideas.Any())
-                {
-                    <div class="p-2 border-top bg-white">
-                        @await Html.PartialAsync("_Pagination", null,
-                            new ViewDataDictionary(ViewData)
-                            {
-                                { "Page", Model.Page },
-                                { "PageSize", Model.PageSize },
-                                { "TotalCount", Model.IdeasTotalCount }
-                            })
-                    </div>
-                }
+                </div>
             </div>
         </div>
     </div>

@@ -96,11 +96,19 @@
                     <strong>التحديات والحلول المقترحة</strong>
                     <span class="badge bg-secondary ms-auto">@Model.TotalCount</span>
                 </div>
-                <div class="table-responsive">
+                <div class="table-responsive bog-table-no-hscroll">
                     <table class="bog-card-list mb-0">
+                        <colgroup>
+                            <col style="width:16%" />
+                            <col style="width:10%" />
+                            <col style="width:14%" />
+                            <col style="width:21%" />
+                            <col style="width:21%" />
+                            <col style="width:9%" />
+                            <col style="width:9%" />
+                        </colgroup>
                         <thead>
                             <tr>
-                                <th>المرجع</th>
                                 <th>العنوان</th>
                                 <th>المجال</th>
                                 <th>المُقدِّم</th>
@@ -114,17 +122,21 @@
                             @foreach (var r in Model.Rows)
                             {
                                 <tr>
-                                    <td data-label="المرجع"><code>@r.Reference</code></td>
-                                    <td data-label="العنوان"><span title="@r.Title">@Display.Title(r.Title)</span></td>
-                                    <td data-label="المجال"><span class="badge bg-light text-dark">@r.DomainName</span></td>
-                                    <td data-label="المُقدِّم">@r.ApplicantName<br /><small class="text-muted">@r.ApplicantDepartmentName</small></td>
-                                    <td data-label="التحدي" style="max-width: 260px;">
-                                        <div style="white-space:pre-wrap; max-height: 120px; overflow:auto;">@r.ProblemStatement</div>
+                                    <td data-label="العنوان">
+                                        <span class="bog-idea-title" title="@r.Title">@r.Title</span>
                                     </td>
-                                    <td data-label="الحل المقترح" style="max-width: 260px;">
+                                    <td data-label="المجال"><span class="badge bg-light text-dark">@r.DomainName</span></td>
+                                    <td data-label="المُقدِّم">
+                                        <span class="bog-idea-title">@r.ApplicantName</span>
+                                        <small class="text-muted d-block">@r.ApplicantDepartmentName</small>
+                                    </td>
+                                    <td data-label="التحدي">
+                                        <div class="bog-idea-clamp">@r.ProblemStatement</div>
+                                    </td>
+                                    <td data-label="الحل المقترح">
                                         @if (!string.IsNullOrWhiteSpace(r.ProposedSolution))
                                         {
-                                            <div style="white-space:pre-wrap; max-height: 120px; overflow:auto;">@r.ProposedSolution</div>
+                                            <div class="bog-idea-clamp">@r.ProposedSolution</div>
                                         }
                                         else
                                         {
