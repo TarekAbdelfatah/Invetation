@@ -1,0 +1,197 @@
+﻿/* BOG portal footer - scoped from bog.gov.sa bog_design-v2.2.8.css
+   Custom properties resolved to their computed values. */
+
+footer .socila-media-links > a::before {
+    display: none;
+}
+
+a:not(.btn) {
+    text-decoration: none;
+}
+
+.socila-media-links {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    justify-items: center;
+    gap: 4px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+footer .android,
+footer .ios {
+    background-size: 24px !important;
+}
+
+footer {
+    background-color: #074D31;
+    padding: 24px 0;
+    color: #ffffff;
+}
+
+.footer-nav-links {
+    display: grid;
+    padding: 16px 0;
+    align-items: flex-start;
+    align-content: flex-start;
+    gap: 24px;
+    align-self: stretch;
+    flex-wrap: wrap;
+    grid-template-columns: repeat(auto-fill, minmax(256px, 1fr));
+}
+
+.footer-nav-links-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 180px;
+}
+
+.footer-titletext-white {
+    color: #ffffff;
+    display: flex;
+    padding-bottom: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    border-bottom: 1px solid #ffffff4c;
+    font: 700 18px/28px 'IBM Plex Sans Arabic', sans-serif;
+    width: 100%;
+}
+
+footer .nav-link {
+    font: 400 16px/24px 'IBM Plex Sans Arabic', sans-serif;
+    transition: all .3s ease-in-out;
+    display: inline-flex;
+    padding: 0 4px;
+    align-items: center;
+    gap: 8px;
+    border-radius: 4px;
+}
+
+.footer-nav-links-column ul {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+footer .nav-link:hover {
+    text-decoration: underline;
+}
+
+footer .socila-media-links {
+    justify-content: flex-start;
+}
+
+footer .socila-media-links > a {
+    display: inline-block;
+    position: relative;
+    background-repeat: no-repeat;
+    margin: 24px .375em;
+    filter: none !important;
+    width: 32px;
+    height: 32px;
+    background-position: center !important;
+    background-size: 18px;
+    outline: #ffffff30 solid 1px;
+    margin: 0;
+}
+
+footer #deviceLocation::before,
+footer a#unnifiedNumber::before,
+footer a#email::before {
+    display: none;
+}
+
+footer .nav-link,
+footer .text-muted.text-primary-hover {
+    color: #ffffff !important;
+}
+
+.footer-basic {
+    display: flex;
+    padding: 16px 0;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 24px;
+    width: 100%;
+}
+
+.footer-actions-copyright {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    flex: 1;
+}
+
+.footer-logos {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+    flex-direction: row;
+    flex-wrap: nowrap;
+}
+
+.footer-logo {
+    display: flex;
+    text-decoration: unset;
+}
+
+.footer-logo img {
+    display: inline-block;
+    height: 64px;
+    filter: brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(782%) hue-rotate(197deg) brightness(108%) contrast(101%);
+}
+
+.footer-actions,
+.footer-extra-actions {
+    display: flex;
+    align-items: flex-start;
+    align-content: flex-start;
+    gap: 16px;
+    align-self: stretch;
+    flex-wrap: wrap;
+    list-style: none;
+    padding: 0 4px;
+}
+
+.link-neutral,
+a.footer-links {
+    color: #ffffff !important;
+    padding: 0 4px;
+    text-align: center;
+    font: 400 14px/20px 'IBM Plex Sans Arabic', sans-serif;
+    transition: all .2s ease-in-out;
+    text-decoration: underline;
+}
+
+.link-neutral:hover,
+a.footer-links:hover {
+    text-decoration: underline;
+    color: #D0D5DD !important;
+}
+
+.footer-copyright {
+    font: 700 16px/24px 'IBM Plex Sans Arabic', sans-serif;
+    color: #ffffff !important;
+}
+
+/* Social / contact / app brand icons (local SVG files under wwwroot/img/bog-icons) */
+.twitter::before, footer .twitter { background-image: url("/img/bog-icons/twitter.svg"); }
+.youtube::before, footer .youtube { background-image: url("/img/bog-icons/youtube.svg"); }
+.instagram::before, footer .instagram { background-image: url("/img/bog-icons/instagram.svg"); }
+.telegram::before, footer .telegram { background-image: url("/img/bog-icons/telegram.svg"); }
+.whatsapp::before, footer .whatsapp { background-image: url("/img/bog-icons/whatsapp.svg"); }
+.snapchat::before, footer .snapchat { background-image: url("/img/bog-icons/snapchat.svg"); }
+.tiktok::before, footer .tiktok { background-image: url("/img/bog-icons/tiktok.svg"); }
+.linkedin::before, footer .linkedin { background-image: url("/img/bog-icons/linkedin.svg"); }
+footer .ios { background-image: url("/img/bog-icons/ios.svg"); }
+footer .android { background-image: url("/img/bog-icons/android.svg"); }
+footer #deviceLocation { background-image: url("/img/bog-icons/deviceLocation.svg"); }
+footer a#unnifiedNumber { background-image: url("/img/bog-icons/unnifiedNumber.svg"); }
+footer a#email { background-image: url("/img/bog-icons/email.svg"); }
