@@ -135,30 +135,36 @@ namespace Ibtikar.Controllers
                 _logger.LogWarning(ex, "Session.Clear() failed during logout.");
             }
 
-            try
+            var pathBase = context.Request.PathBase.HasValue ? context.Request.PathBase.Value : string.Empty;
+            var pathsToDelete = new List<string> { "/", "" };
+            if (!string.IsNullOrEmpty(pathBase))
             {
-                foreach (var cookieKey in context.Request.Cookies.Keys)
-                {
-                    context.Response.Cookies.Delete(cookieKey);
-                    context.Response.Cookies.Delete(cookieKey, new CookieOptions { Path = "/" });
-                }
+                pathsToDelete.Add(pathBase);
+                pathsToDelete.Add(pathBase + "/");
+                if (pathBase.EndsWith("/")) pathsToDelete.Add(pathBase.TrimEnd('/'));
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to delete request cookies during logout.");
-            }
+            pathsToDelete = pathsToDelete.Distinct().ToList();
 
-            var explicitCookies = new[] { ".Ibtikar.Auth", ".AspNetCore.Cookies", ".AspNetCore.Session", "pkce_verifier", "idsvr.session", "ARRAffinity", "ARRAffinitySameSite" };
-            foreach (var name in explicitCookies)
+            var requestCookies = context.Request.Cookies.Keys.ToList();
+            var explicitCookies = new[] { ".Ibtikar.Auth", ".AspNetCore.Cookies", ".AspNetCore.Session", "id_token", ".Ibtikar.OidcState", "pkce_verifier", "idsvr.session", "ARRAffinity", "ARRAffinitySameSite" };
+            var allKeys = requestCookies.Union(explicitCookies).Distinct();
+
+            foreach (var key in allKeys)
             {
-                try
+                foreach (var path in pathsToDelete)
                 {
-                    context.Response.Cookies.Delete(name);
-                    context.Response.Cookies.Delete(name, new CookieOptions { Path = "/" });
-                    context.Response.Cookies.Delete(name, new CookieOptions { Path = "/", Secure = true });
-                    context.Response.Cookies.Delete(name, new CookieOptions { Path = "/", HttpOnly = true });
+                    try
+                    {
+                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path });
+                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, Secure = true });
+                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, HttpOnly = true });
+                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, Secure = true, HttpOnly = true });
+                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, SameSite = SameSiteMode.Lax });
+                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, SameSite = SameSiteMode.Lax, Secure = true });
+                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, SameSite = SameSiteMode.None, Secure = true });
+                    }
+                    catch { }
                 }
-                catch { }
             }
         }
 
