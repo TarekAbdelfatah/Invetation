@@ -35,13 +35,13 @@ namespace Ibtikar.Services.Implementations
                 return new CommitteeCreateResultDto(false, "اسم اللجنة مطلوب.", null);
             }
 
-            if (dto.HeadUserId == Guid.Empty)
+            if (dto.HeadAdminId <= 0)
             {
                 return new CommitteeCreateResultDto(false, "يجب اختيار رئيس واحد للجنة.", null);
             }
 
-            var distinctMembers = (dto.MemberUserIds ?? Array.Empty<Guid>())
-                .Where(id => id != Guid.Empty)
+            var distinctMembers = (dto.MemberAdminIds ?? Array.Empty<int>())
+                .Where(id => id > 0)
                 .Distinct()
                 .ToList();
 
@@ -50,19 +50,19 @@ namespace Ibtikar.Services.Implementations
                 return new CommitteeCreateResultDto(false, "يجب إضافة عضو واحد على الأقل للجنة.", null);
             }
 
-            if (distinctMembers.Contains(dto.HeadUserId))
+            if (distinctMembers.Contains(dto.HeadAdminId))
             {
                 return new CommitteeCreateResultDto(false, "لا يمكن اختيار رئيس اللجنة من ضمن الأعضاء؛ يُضاف الرئيس تلقائياً كعضو للجنة.", null);
             }
 
             var memberIds = distinctMembers
-                .Append(dto.HeadUserId)
-                .Where(id => id != Guid.Empty)
+                .Append(dto.HeadAdminId)
+                .Where(id => id > 0)
                 .Distinct()
                 .ToList();
 
             var activeCommitteeMemberIds = await _committees.GetActiveCommitteeMemberIdsAsync(memberIds, ct);
-            if (!activeCommitteeMemberIds.Contains(dto.HeadUserId))
+            if (!activeCommitteeMemberIds.Contains(dto.HeadAdminId))
             {
                 return new CommitteeCreateResultDto(false, "المستخدم المختار كرئيس ليس عضواً نشطاً في اللجان.", null);
             }
@@ -81,11 +81,11 @@ namespace Ibtikar.Services.Implementations
                 CreatedAt = DateTime.UtcNow,
                 CreatedByUserId = actorUserId,
                 Members = memberIds
-                    .Select(uid => new CommitteeMember
+                    .Select(adminId => new CommitteeMember
                     {
                         Id = Guid.NewGuid(),
-                        UserId = uid,
-                        IsHead = uid == dto.HeadUserId,
+                        AdminId = adminId,
+                        IsHead = adminId == dto.HeadAdminId,
                         JoinedAt = DateTime.UtcNow
                     }).ToList()
             };
@@ -112,7 +112,7 @@ namespace Ibtikar.Services.Implementations
                 return new CommitteeCreateResultDto(false, "اللجنة مفعّلة مسبقًا.", null);
             }
 
-            var members = committee.Members.Where(m => m.User is not null).ToList();
+            var members = committee.Members.Where(m => m.Admin is not null).ToList();
             if (members.Count < 1)
             {
                 return new CommitteeCreateResultDto(false, "لا يمكن تفعيل لجنة بلا أعضاء.", null);
@@ -128,8 +128,8 @@ namespace Ibtikar.Services.Implementations
                 {
                     ["committeeId"] = committee.Id.ToString(),
                     ["committeeName"] = committee.Name,
-                    ["memberUserId"] = member.UserId.ToString(),
-                    ["memberName"] = member.User?.FullName ?? string.Empty,
+                    ["memberAdminId"] = member.AdminId.ToString(),
+                    ["memberName"] = member.Admin?.NetworkUser ?? string.Empty,
                     ["isHead"] = member.IsHead ? "true" : "false",
                     ["activatedAt"] = DateTime.UtcNow.ToString("O")
                 }, ct);

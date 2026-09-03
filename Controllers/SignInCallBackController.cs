@@ -204,7 +204,8 @@ namespace Ibtikar.Controllers
                 ?? await HttpContext.GetTokenAsync("id_token")
                 ?? Request.Cookies["id_token"];
 
-            var postLogoutRedirectUri = $"https://{Request.Host}/signout-callback-oidc";
+            var pathBase = Request.PathBase.HasValue ? Request.PathBase.Value.TrimEnd('/') : string.Empty;
+            var postLogoutRedirectUri = $"https://{Request.Host}{pathBase}/signout-callback-oidc";
             var logoutUrl = _ssoService.BuildLogoutUrl(postLogoutRedirectUri, idTokenHint);
 
             await ClearAllCookiesAndSessionAsync(HttpContext);
@@ -262,12 +263,18 @@ namespace Ibtikar.Controllers
 
         private string BuildCallbackUrl()
         {
+            var pathBase = Request.PathBase.HasValue ? Request.PathBase.Value.TrimEnd('/') : string.Empty;
             var configured = _ssoService.GetRedirectUri();
-            if (!string.IsNullOrWhiteSpace(configured) && configured.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(configured))
             {
-                return configured;
+                if (configured.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || configured.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                {
+                    return configured;
+                }
+                var relativePath = configured.StartsWith("/") ? configured : "/" + configured;
+                return $"https://{Request.Host}{pathBase}{relativePath}";
             }
-            return $"https://{Request.Host}/signin-callback";
+            return $"https://{Request.Host}{pathBase}/signin-callback";
         }
 
         private static (string codeVerifier, string codeChallenge) GeneratePkce()

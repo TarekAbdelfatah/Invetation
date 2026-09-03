@@ -1,14 +1,12 @@
 using Ibtikar.DTOs.Committee;
-using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Helpers;
+using Ibtikar.Services.Interfaces;
 using Ibtikar.ViewModels;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
-    [IbtikarAuthorize(RoleCodes.InnovationCommitteeMember)]
+    [IbtikarAuthorize(RoleCodes.InnovationCommitteeMember, RoleCodes.InnovationCommitteeHead)]
     public class CommitteeForMembersController : Controller
     {
         private readonly ICommitteeDashboardService _dashboardService;
@@ -32,7 +30,7 @@ namespace Ibtikar.Controllers
             try
             {
                 var userId = ResolveUserId();
-                
+
 
                 var (p, ps) = PagedRequest.Normalize(page, pageSize);
                 var dto = await _dashboardService.GetSnapshotAsync(userId, ct);

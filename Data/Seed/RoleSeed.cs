@@ -10,9 +10,9 @@ namespace Ibtikar.Data.Seed
             EnsureRole(db, "AuditEmployee", "موظف تدقيق", "Audit Employee");
             EnsureRole(db, "SpecializedDepartment", "الإدارة المختصة", "Specialized Department");
             EnsureRole(db, "InnovationCommitteeMember", "عضو لجنة الابتكار", "Innovation Committee Member");
+            EnsureRole(db, "InnovationCommitteeHead", "رئيس لجنة الابتكار", "Innovation Committee Head");
             EnsureRole(db, "admin", "مدير النظام", "Admin");
-            EnsureRole(db, "ExternalBeneficiary", "مستفيد خارجي", "External Beneficiary");
-            EnsureRole(db, "InternalBeneficiary", "مستفيد داخلي", "Internal Beneficiary");
+            
         }
 
         private static void EnsureRole(IbtikarDbContext db, string code, string name, string? description)

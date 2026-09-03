@@ -17,7 +17,7 @@ namespace Ibtikar.ViewModels
 
     public sealed class CommitteeMemberOptionVm
     {
-        public Guid UserId { get; set; }
+        public int AdminId { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
     }
@@ -39,10 +39,10 @@ namespace Ibtikar.ViewModels
         public string? Description { get; set; }
 
         [Required(ErrorMessage = "يرجى اختيار رئيس اللجنة.")]
-        public Guid? HeadUserId { get; set; }
+        public int? HeadAdminId { get; set; }
 
         [MinLength(1, ErrorMessage = "يرجى إضافة عضو واحد على الأقل.")]
-        public List<Guid> MemberUserIds { get; set; } = new();
+        public List<int> MemberAdminIds { get; set; } = new();
         public List<CommitteeMemberOptionVm> MemberCandidates { get; set; } = new();
         public List<CommitteeMemberOptionVm> HeadCandidates { get; set; } = new();
     }

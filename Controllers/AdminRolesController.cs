@@ -79,14 +79,17 @@ namespace Ibtikar.Controllers
             var existingAdmin = await _db.Admins.FirstOrDefaultAsync(a => a.NetworkUser == networkUser, ct);
             if (existingAdmin is null)
             {
-                _db.Admins.Add(new Admin
+                var newAdmin = new Admin
                 {
                     NetworkUser = networkUser,
                     RoleId = input.RoleId,
                     DeptId = input.DeptId,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
-                });
+                };
+                _db.Admins.Add(newAdmin);
+                await _db.SaveChangesAsync(ct);
+                await SyncCommitteeMembershipAsync(newAdmin.Id, selectedRole.Code, ct);
                 TempData["SuccessMessage"] = $"تم إسناد صلاحية ({selectedRole!.Name}) للموظف ({networkUser}) بنجاح.";
             }
             else
@@ -94,11 +97,51 @@ namespace Ibtikar.Controllers
                 existingAdmin.RoleId = input.RoleId;
                 existingAdmin.DeptId = input.DeptId;
                 existingAdmin.IsActive = true;
+                await _db.SaveChangesAsync(ct);
+                await SyncCommitteeMembershipAsync(existingAdmin.Id, selectedRole.Code, ct);
                 TempData["SuccessMessage"] = $"تم تحديث صلاحية الموظف ({networkUser}) إلى ({selectedRole!.Name}) بنجاح.";
             }
 
-            await _db.SaveChangesAsync(ct);
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task SyncCommitteeMembershipAsync(int adminId, string roleCode, CancellationToken ct)
+        {
+            bool? isHead = null;
+            if (string.Equals(roleCode, RoleCodes.InnovationCommitteeMember, StringComparison.OrdinalIgnoreCase))
+            {
+                isHead = false;
+            }
+            else if (string.Equals(roleCode, RoleCodes.InnovationCommitteeHead, StringComparison.OrdinalIgnoreCase))
+            {
+                isHead = true;
+            }
+
+            var membership = await _db.CommitteeMembers
+                .FirstOrDefaultAsync(m => m.AdminId == adminId && m.InnovationCommitteeId == null, ct);
+
+            if (isHead is null)
+            {
+                return;
+            }
+
+            if (membership is null)
+            {
+                _db.CommitteeMembers.Add(new CommitteeMember
+                {
+                    Id = Guid.NewGuid(),
+                    AdminId = adminId,
+                    InnovationCommitteeId = null,
+                    IsHead = isHead.Value,
+                    JoinedAt = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                membership.IsHead = isHead.Value;
+            }
+
+            await _db.SaveChangesAsync(ct);
         }
 
         [HttpPost("/AdminRoles/ToggleStatus/{id:int}")]

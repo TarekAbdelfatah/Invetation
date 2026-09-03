@@ -21,7 +21,7 @@ namespace Ibtikar.Data.Configurations
             builder.HasMany(c => c.Members)
                 .WithOne(m => m.InnovationCommittee)
                 .HasForeignKey(m => m.InnovationCommitteeId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.SetNull);
 
             builder.HasIndex(c => c.IsActive);
         }

@@ -53,15 +53,15 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label" asp-for="HeadUserId">رئيس اللجنة <span class="text-danger">*</span></label>
-                        <select asp-for="HeadUserId" class="form-select">
+                        <label class="form-label" asp-for="HeadAdminId">رئيس اللجنة <span class="text-danger">*</span></label>
+                        <select asp-for="HeadAdminId" class="form-select">
                             <option value="">— اختر رئيس اللجنة —</option>
                             @foreach (var h in Model.HeadCandidates)
                             {
-                                <option value="@h.UserId">@h.FullName (@h.Username)</option>
+                                <option value="@h.AdminId">@h.FullName (@h.Username)</option>
                             }
                         </select>
-                        <span asp-validation-for="HeadUserId" class="text-danger"></span>
+                        <span asp-validation-for="HeadAdminId" class="text-danger"></span>
                         <div class="form-text">يجب اختيار رئيس واحد فقط، ويُضاف تلقائياً ضمن أعضاء اللجنة. لا تختاره من قائمة الأعضاء.</div>
                     </div>
 
@@ -73,16 +73,16 @@
                                 <div class="form-check">
                                     <input class="form-check-input member-check"
                                            type="checkbox"
-                                           name="MemberUserIds"
-                                           id="member_@m.UserId"
-                                           value="@m.UserId" />
-                                    <label class="form-check-label" for="member_@m.UserId">
+                                           name="MemberAdminIds"
+                                           id="member_@m.AdminId"
+                                           value="@m.AdminId" />
+                                    <label class="form-check-label" for="member_@m.AdminId">
                                         @m.FullName (@m.Username)
                                     </label>
                                 </div>
                             }
                         </div>
-                        <span asp-validation-for="MemberUserIds" class="text-danger"></span>
+                        <span asp-validation-for="MemberAdminIds" class="text-danger"></span>
                         <div class="form-text">يجب إضافة عضو واحد على الأقل من غير رئيس اللجنة. الرئيس يُضاف تلقائياً كعضو.</div>
                     </div>
                 </div>
@@ -116,7 +116,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var form = document.getElementById('committeeForm');
-        var head = document.getElementById('HeadUserId');
+        var head = document.getElementById('HeadAdminId');
         var memberChecks = Array.prototype.slice.call(document.querySelectorAll('.member-check'));
         var modal = document.getElementById('committeeValidationModal');
         var messageEl = modal ? modal.querySelector('#committeeValidationMessage') : null;

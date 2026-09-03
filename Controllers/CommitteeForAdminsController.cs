@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = RoleCodes.SystemAdmin)]
+    [Authorize(Roles = RoleCodes.InnovationCommitteeHead)]
     public class CommitteeForAdminsController : Controller
     {
         private readonly ICommitteeFormationService _service;
@@ -48,13 +48,13 @@ namespace Ibtikar.Controllers
             {
                 MemberCandidates = candidates.Select(c => new CommitteeMemberOptionVm
                 {
-                    UserId = c.UserId,
+                    AdminId = c.AdminId,
                     FullName = c.FullName,
                     Username = c.Username
                 }).ToList(),
                 HeadCandidates = candidates.Select(c => new CommitteeMemberOptionVm
                 {
-                    UserId = c.UserId,
+                    AdminId = c.AdminId,
                     FullName = c.FullName,
                     Username = c.Username
                 }).ToList()
@@ -75,8 +75,8 @@ namespace Ibtikar.Controllers
             var dto = new CommitteeCreateDto(
                 vm.Name,
                 vm.Description,
-                vm.HeadUserId ?? Guid.Empty,
-                vm.MemberUserIds ?? new List<Guid>());
+                vm.HeadAdminId ?? 0,
+                vm.MemberAdminIds ?? new List<int>());
 
             var result = await _service.CreateAsync(ResolveUserId(), dto, ct);
 
@@ -109,7 +109,7 @@ namespace Ibtikar.Controllers
             var candidates = await _service.GetMemberCandidatesAsync(null, ct);
             var list = candidates.Select(c => new CommitteeMemberOptionVm
             {
-                UserId = c.UserId,
+                AdminId = c.AdminId,
                 FullName = c.FullName,
                 Username = c.Username
             }).ToList();

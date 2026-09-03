@@ -6,6 +6,7 @@ namespace Ibtikar.Services.Helpers
         public const string SpecializedDepartment = "SpecializedDepartment";
         public const string PartnerDepartment = "SpecializedDepartment";
         public const string InnovationCommitteeMember = "InnovationCommitteeMember";
+        public const string InnovationCommitteeHead = "InnovationCommitteeHead";
         public const string SystemAdmin = "admin";
         public const string ExternalBeneficiary = "ExternalBeneficiary";
         public const string InternalBeneficiary = "InternalBeneficiary";
