@@ -20,7 +20,7 @@ namespace Ibtikar.Data
 
             modelBuilder.Entity<CommonDepartment>(b =>
             {
-                b.ToTable("Departments");
+                b.ToTable("Departments", "COMMON_SYS");
                 b.HasKey(d => d.Id);
                 b.Property(d => d.Name).IsRequired().HasMaxLength(200);
                 b.Property(d => d.Code).HasMaxLength(50);
@@ -36,7 +36,7 @@ namespace Ibtikar.Data
 
             modelBuilder.Entity<ErpHrDepartment>(b =>
             {
-                b.ToTable("HR_DEPARTMENT", "dbo");
+                b.ToTable("HR_DEPARTMENT", "COMMON_SYS");
                 b.HasKey(d => d.DeptId);
                 b.Property(d => d.DeptId).HasColumnName("DeptId");
                 b.Property(d => d.DeptName).HasColumnName("DeptName").HasMaxLength(200);
