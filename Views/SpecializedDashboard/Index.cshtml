@@ -41,28 +41,28 @@
             <div class="card-header bg-white p-2">
                 <ul class="nav nav-pills nav-fill specialized-tabs" id="specializedDashboardTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active d-flex align-items-center justify-content-center gap-2 py-3 px-4 fw-bold"
+                        <button class="nav-link @(Model.ActiveTab == "referred" ? "active" : null) d-flex align-items-center justify-content-center gap-2 py-3 px-4 fw-bold"
                                 id="referred-tab"
                                 data-bs-toggle="tab"
                                 data-bs-target="#referred-pane"
                                 type="button"
                                 role="tab"
                                 aria-controls="referred-pane"
-                                aria-selected="true">
+                                aria-selected="@(Model.ActiveTab == "referred" ? "true" : "false")">
                             <span class="material-icons">assignment</span>
                             <span>الأفكار المحوّلة لإدارتك</span>
                             <span class="badge rounded-pill bg-success ms-1">@Model.ReferralItems.Count</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link d-flex align-items-center justify-content-center gap-2 py-3 px-4 fw-bold"
+                        <button class="nav-link @(Model.ActiveTab == "advisory" ? "active" : null) d-flex align-items-center justify-content-center gap-2 py-3 px-4 fw-bold"
                                 id="advisory-tab"
                                 data-bs-toggle="tab"
                                 data-bs-target="#advisory-pane"
                                 type="button"
                                 role="tab"
                                 aria-controls="advisory-pane"
-                                aria-selected="false">
+                                aria-selected="@(Model.ActiveTab == "advisory" ? "true" : "false")">
                             <span class="material-icons">forum</span>
                             <span>الاستشارات الواردة من إدارات أخرى</span>
                             <span class="badge rounded-pill bg-warning text-dark ms-1">@Model.AdvisoryItems.Count</span>
@@ -76,68 +76,46 @@
         <div class="tab-content" id="specializedDashboardTabContent">
 
             <!-- ============ TAB 1: الأفكار المحوّلة لإدارتك ============ -->
-            <div class="tab-pane fade show active" id="referred-pane" role="tabpanel" aria-labelledby="referred-tab">
+            <div class="tab-pane fade @(Model.ActiveTab == "referred" ? "show active" : null)" id="referred-pane" role="tabpanel" aria-labelledby="referred-tab">
                 <div class="row g-3 mb-4">
-                    <!-- Right Sidebar: Filter -->
-                    <div class="col-lg-2">
-                        <div class="card bog-section h-100">
+                    <!-- Main Content: Referred Ideas Grid -->
+                    <div class="col-lg-12">
+                        <div class="card bog-section mb-3">
                             <div class="card-header bg-white d-flex align-items-center gap-2">
-                                <span class="material-icons text-primary">donut_large</span>
-                                <strong class="fs-6">تصنيف بالحالة</strong>
+                                <span class="material-icons text-primary">manage_search</span>
+                                <strong>معايير البحث</strong>
                             </div>
-                            <div class="card-body p-0">
-                                <a href="javascript:void(0)" id="ref-filter-all"
-                                   class="referral-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
-                                   style="background-color:var(--brand-50,#F3FCF6);font-weight:600"
-                                   data-filter="all">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <span class="bog-status-dot" style="background-color:#0d6efd"></span>
-                                        الكل
-                                    </span>
-                                    <span class="fw-semibold" id="referredVisibleCount">@Model.ReferralItems.Count</span>
-                                </a>
-                                <a href="javascript:void(0)"
-                                   class="referral-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
-                                   data-filter="under_study">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <span class="bog-status-dot" style="background-color:#f59e0b"></span>
-                                        قيد الدراسة
-                                    </span>
-                                    <span class="fw-semibold">@Model.UnderStudy</span>
-                                </a>
-                                <a href="javascript:void(0)"
-                                   class="referral-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
-                                   data-filter="sent_to_partner">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <span class="bog-status-dot" style="background-color:#0ea5e9"></span>
-                                        أُرسل لجهات أخرى
-                                    </span>
-                                    <span class="fw-semibold">@Model.SentToPartner</span>
-                                </a>
-                                <a href="javascript:void(0)"
-                                   class="referral-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
-                                   data-filter="in_execution">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <span class="bog-status-dot" style="background-color:#22c55e"></span>
-                                        أُرسلت للتنفيذ
-                                    </span>
-                                    <span class="fw-semibold">@Model.SentToExecution</span>
-                                </a>
-                                <a href="javascript:void(0)"
-                                   class="referral-filter-link d-flex justify-content-between align-items-center py-2 px-3 text-decoration-none text-body"
-                                   data-filter="rejected">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <span class="bog-status-dot" style="background-color:#ef4444"></span>
-                                        مرفوضة بعد التحويل
-                                    </span>
-                                    <span class="fw-semibold">@Model.RejectedAfterRouting</span>
-                                </a>
+                            <div class="card-body">
+                                <form method="get" asp-action="Index" asp-controller="SpecializedDashboard" class="row g-2 align-items-end">
+                                    <div class="col-12 col-md-4">
+                                        <label for="referredSearchRef" class="form-label small mb-1">الرقم المرجعي</label>
+                                        <input type="search" id="referredSearchRef" name="reference" value="@Model.ReferenceFilter"
+                                               class="form-control form-control-sm" placeholder="ابحث بالرقم المرجعي…" autocomplete="off" />
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label for="referredSearchStatus" class="form-label small mb-1">الحالة</label>
+                                        <select id="referredSearchStatus" name="status" class="form-select form-select-sm">
+                                            <option value="">كل الحالات</option>
+                                            @foreach (var s in Model.AvailableStatuses)
+                                            {
+                                                <option value="@s.Id" selected="@(Model.StatusFilter == s.Id.ToString())">@s.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-4 d-flex gap-2">
+                                        <button type="submit" class="btn btn-sm btn-primary">
+                                            <span class="material-icons align-middle" style="font-size:16px">search</span>
+                                            بحث
+                                        </button>
+                                        <a asp-action="Index" asp-controller="SpecializedDashboard" class="btn btn-sm btn-outline-secondary">
+                                            <span class="material-icons align-middle" style="font-size:16px">restart_alt</span>
+                                            إعادة تعيين
+                                        </a>
+                                    </div>
+                                </form>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Main Content: Referred Ideas Grid -->
-                    <div class="col-lg-10">
                         <div class="card bog-section">
                             <div class="card-header bg-white d-flex align-items-center gap-2">
                                 <span class="material-icons text-primary align-middle">assignment</span>
@@ -147,11 +125,22 @@
                             <div class="card-body p-0">
                                 @if (!Model.ReferralItems.Any())
                                 {
-                                    <div class="text-center text-muted p-5">
-                                        <span class="material-icons d-block mb-3" style="font-size:56px;color:var(--gray-300)">inventory_2</span>
-                                        <p class="mb-1 fs-6 fw-medium">لا توجد أفكار محوّلة حالياً.</p>
-                                        <p class="small">ستظهر هنا أي أفكار تحوّلها إدارات التدقيق لإدارتك لدراستها وتقييمها.</p>
-                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(Model.ReferenceFilter) || !string.IsNullOrWhiteSpace(Model.StatusFilter))
+                                    {
+                                        <div class="text-center text-muted p-5">
+                                            <span class="material-icons d-block mb-3" style="font-size:56px;color:var(--gray-300)">filter_list_off</span>
+                                            <p class="mb-1 fs-6 fw-medium">لا توجد أفكار تطابق معايير البحث.</p>
+                                            <p class="small">جرّب تعديل الرقم المرجعي أو الحالة.</p>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center text-muted p-5">
+                                            <span class="material-icons d-block mb-3" style="font-size:56px;color:var(--gray-300)">inventory_2</span>
+                                            <p class="mb-1 fs-6 fw-medium">لا توجد أفكار محوّلة حالياً.</p>
+                                            <p class="small">ستظهر هنا أي أفكار تحوّلها إدارات التدقيق لإدارتك لدراستها وتقييمها.</p>
+                                        </div>
+                                    }
                                 }
                                 else
                                 {
@@ -216,10 +205,6 @@
                                             </tbody>
                                         </table>
                                     </div>
-                                    <div id="referredEmptyFilter" class="text-center text-muted p-5 d-none">
-                                        <span class="material-icons d-block mb-3" style="font-size:48px;color:var(--gray-300)">filter_list_off</span>
-                                        <p class="mb-1 fs-6 fw-medium">لا توجد أفكار تطابق التصفية المحددة.</p>
-                                    </div>
                                 }
                             </div>
                         </div>
@@ -228,59 +213,47 @@
             </div>
 
             <!-- ============ TAB 2: الاستشارات الواردة ============ -->
-            <div class="tab-pane fade" id="advisory-pane" role="tabpanel" aria-labelledby="advisory-tab">
+            <div class="tab-pane fade @(Model.ActiveTab == "advisory" ? "show active" : null)" id="advisory-pane" role="tabpanel" aria-labelledby="advisory-tab">
                 <div class="row g-3 mb-4">
-                    <!-- Right Sidebar: Filter -->
-                    <div class="col-lg-2">
-                        <div class="card bog-section h-100">
+                    <!-- Main Content: Advisory Grid -->
+                    <div class="col-lg-12">
+                        <div class="card bog-section mb-3">
                             <div class="card-header bg-white d-flex align-items-center gap-2">
-                                <span class="material-icons text-primary">donut_large</span>
-                                <strong class="fs-6">تصنيف بالحالة</strong>
+                                <span class="material-icons text-primary">manage_search</span>
+                                <strong>معايير البحث</strong>
                             </div>
-                            <div class="card-body p-0">
-                                <a href="javascript:void(0)" id="adv-filter-all"
-                                   class="advisory-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
-                                   style="background-color:var(--brand-50,#F3FCF6);font-weight:600"
-                                   data-advisory-filter="all">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <span class="bog-status-dot" style="background-color:#0d6efd"></span>
-                                        الكل
-                                    </span>
-                                    <span class="fw-semibold" id="advisoryVisibleCount">@Model.AdvisoryItems.Count</span>
-                                </a>
-                                <a href="javascript:void(0)"
-                                   class="advisory-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
-                                   data-advisory-filter="pending">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <span class="bog-status-dot" style="background-color:#f59e0b"></span>
-                                        بانتظار الرد
-                                    </span>
-                                    <span class="fw-semibold">@Model.AdvisoryPending</span>
-                                </a>
-                                <a href="javascript:void(0)"
-                                   class="advisory-filter-link d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-decoration-none text-body"
-                                   data-advisory-filter="late">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <span class="bog-status-dot" style="background-color:#ef4444"></span>
-                                        متأخرة (&gt; 4 أيام)
-                                    </span>
-                                    <span class="fw-semibold">@Model.AdvisoryLate</span>
-                                </a>
-                                <a href="javascript:void(0)"
-                                   class="advisory-filter-link d-flex justify-content-between align-items-center py-2 px-3 text-decoration-none text-body"
-                                   data-advisory-filter="submitted">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <span class="bog-status-dot" style="background-color:#22c55e"></span>
-                                        تم الرد (آخر 30 يوم)
-                                    </span>
-                                    <span class="fw-semibold">@Model.AdvisorySubmitted</span>
-                                </a>
+                            <div class="card-body">
+                                <form method="get" asp-action="Index" asp-controller="SpecializedDashboard" class="row g-2 align-items-end">
+                                    <input type="hidden" name="tab" value="advisory" />
+                                    <div class="col-12 col-md-4">
+                                        <label for="advisorySearchRef" class="form-label small mb-1">الرقم المرجعي</label>
+                                        <input type="search" id="advisorySearchRef" name="advisoryReference" value="@Model.AdvisoryReferenceFilter"
+                                               class="form-control form-control-sm" placeholder="ابحث بالرقم المرجعي…" autocomplete="off" />
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label for="advisorySearchStatus" class="form-label small mb-1">الحالة</label>
+                                        <select id="advisorySearchStatus" name="advisoryStatus" class="form-select form-select-sm">
+                                            <option value="">كل الحالات</option>
+                                            @foreach (var s in Model.AvailableStatuses)
+                                            {
+                                                <option value="@s.Id" selected="@(Model.AdvisoryStatusFilter == s.Id.ToString())">@s.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-4 d-flex gap-2">
+                                        <button type="submit" class="btn btn-sm btn-primary">
+                                            <span class="material-icons align-middle" style="font-size:16px">search</span>
+                                            بحث
+                                        </button>
+                                        <a asp-action="Index" asp-controller="SpecializedDashboard" asp-route-tab="advisory" class="btn btn-sm btn-outline-secondary">
+                                            <span class="material-icons align-middle" style="font-size:16px">restart_alt</span>
+                                            إعادة تعيين
+                                        </a>
+                                    </div>
+                                </form>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Main Content: Advisory Grid -->
-                    <div class="col-lg-10">
                         <div class="card bog-section">
                             <div class="card-header bg-white d-flex align-items-center gap-2">
                                 <span class="material-icons text-primary align-middle">forum</span>
@@ -290,11 +263,22 @@
                             <div class="card-body p-0">
                                 @if (!Model.AdvisoryItems.Any())
                                 {
-                                    <div class="text-center text-muted p-5">
-                                        <span class="material-icons d-block mb-3" style="font-size:56px;color:var(--gray-300)">forum</span>
-                                        <p class="mb-1 fs-6 fw-medium">لا توجد استشارات حالياً.</p>
-                                        <p class="small">ستظهر هنا أي استشارات تحوّلها إدارات أخرى لطلب رأي إدارتك في أفكارها.</p>
-                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(Model.AdvisoryReferenceFilter) || !string.IsNullOrWhiteSpace(Model.AdvisoryStatusFilter))
+                                    {
+                                        <div class="text-center text-muted p-5">
+                                            <span class="material-icons d-block mb-3" style="font-size:56px;color:var(--gray-300)">filter_list_off</span>
+                                            <p class="mb-1 fs-6 fw-medium">لا توجد استشارات تطابق معايير البحث.</p>
+                                            <p class="small">جرّب تعديل الرقم المرجعي أو الحالة.</p>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center text-muted p-5">
+                                            <span class="material-icons d-block mb-3" style="font-size:56px;color:var(--gray-300)">forum</span>
+                                            <p class="mb-1 fs-6 fw-medium">لا توجد استشارات حالياً.</p>
+                                            <p class="small">ستظهر هنا أي استشارات تحوّلها إدارات أخرى لطلب رأي إدارتك في أفكارها.</p>
+                                        </div>
+                                    }
                                 }
                                 else
                                 {
@@ -365,10 +349,6 @@
                                             </tbody>
                                         </table>
                                     </div>
-                                    <div id="advisoryEmptyFilter" class="text-center text-muted p-5 d-none">
-                                        <span class="material-icons d-block mb-3" style="font-size:48px;color:var(--gray-300)">filter_list_off</span>
-                                        <p class="mb-1 fs-6 fw-medium">لا توجد استشارات تطابق التصفية المحددة.</p>
-                                    </div>
                                 }
                             </div>
                         </div>
@@ -401,15 +381,6 @@
             background-color: rgba(255,255,255,0.25) !important;
             color: #ffffff !important;
         }
-        /* Filter link rows — match AdminOverview exactly */
-        .referral-filter-link,
-        .advisory-filter-link {
-            transition: background-color 0.12s ease-in-out;
-        }
-        .referral-filter-link:hover,
-        .advisory-filter-link:hover {
-            background-color: var(--gray-50, #F5F5F6) !important;
-        }
     </style>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -432,81 +403,6 @@
                     btn.setAttribute('aria-selected', 'true');
                     var pane = document.querySelector(targetSelector);
                     if (pane) pane.classList.add('show', 'active');
-                });
-            });
-
-            // ── Helper: set active filter link (AdminOverview style inline bg) ──
-            function setActiveLink(links, clickedLink) {
-                links.forEach(function (l) {
-                    l.style.backgroundColor = '';
-                    l.style.fontWeight = '';
-                });
-                clickedLink.style.backgroundColor = 'var(--brand-50, #F3FCF6)';
-                clickedLink.style.fontWeight = '600';
-            }
-
-            // ── Referral In-Page Filtering ─────────────────────────────────
-            var refLinks  = document.querySelectorAll('.referral-filter-link');
-            var refRows   = document.querySelectorAll('#referredTableBody tr');
-            var refBadge  = document.getElementById('referredVisibleCount');
-            var refCount  = document.getElementById('referredCountBadge');
-            var refEmpty  = document.getElementById('referredEmptyFilter');
-
-            refLinks.forEach(function (link) {
-                link.addEventListener('click', function () {
-                    setActiveLink(refLinks, link);
-
-                    var filter = link.getAttribute('data-filter');
-                    var visible = 0;
-
-                    refRows.forEach(function (row) {
-                        var code = (row.getAttribute('data-status-code') || '').toLowerCase();
-                        var show = false;
-                        if (filter === 'all') {
-                            show = true;
-                        } else if (filter === 'under_study') {
-                            show = (code === 'under_study' || code === 'under-study' || code === 'under-assessment');
-                        } else if (filter === 'sent_to_partner') {
-                            show = (code === 'sent_to_partner' || code === 'sent-to-partner');
-                        } else if (filter === 'in_execution') {
-                            show = (code === 'in_execution' || code === 'in-execution' || code === 'in_implementation');
-                        } else if (filter === 'rejected') {
-                            show = (code === 'rejected' || code === 'refused');
-                        }
-                        row.classList.toggle('d-none', !show);
-                        if (show) visible++;
-                    });
-
-                    if (refBadge) refBadge.textContent = visible;
-                    if (refCount) refCount.textContent = visible;
-                    if (refEmpty) refEmpty.classList.toggle('d-none', !(visible === 0 && refRows.length > 0));
-                });
-            });
-
-            // ── Advisory In-Page Filtering ─────────────────────────────────
-            var advLinks  = document.querySelectorAll('.advisory-filter-link');
-            var advRows   = document.querySelectorAll('#advisoryTableBody tr');
-            var advBadge  = document.getElementById('advisoryVisibleCount');
-            var advCount  = document.getElementById('advisoryCountBadge');
-            var advEmpty  = document.getElementById('advisoryEmptyFilter');
-
-            advLinks.forEach(function (link) {
-                link.addEventListener('click', function () {
-                    setActiveLink(advLinks, link);
-
-                    var filter = link.getAttribute('data-advisory-filter');
-                    var visible = 0;
-
-                    advRows.forEach(function (row) {
-                        var state = (row.getAttribute('data-advisory-state') || '').toLowerCase();
-                        var show = (filter === 'all' || state === filter);
-                        row.classList.toggle('d-none', !show);
-                        if (show) visible++;
-                    });
-
-                    if (advBadge) advBadge.textContent = visible;
-                    if (advCount) advCount.textContent = visible;
-                    if (advEmpty) advEmpty.classList.toggle('d-none', !(visible === 0 && advRows.length > 0));
                 });
             });
         });

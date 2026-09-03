@@ -16,7 +16,15 @@ namespace Ibtikar.ViewModels
         public int AdvisorySubmitted { get; set; }
         public List<PartnerAssignmentRowVm> AdvisoryItems { get; set; } = new();
         public List<SpecializedReferralRowVm> ReferralItems { get; set; } = new();
+        public string? ReferenceFilter { get; set; }
+        public string? StatusFilter { get; set; }
+        public string? AdvisoryReferenceFilter { get; set; }
+        public string? AdvisoryStatusFilter { get; set; }
+        public string ActiveTab { get; set; } = "referred";
+        public List<SpecializedStatusOptionVm> AvailableStatuses { get; set; } = new();
     }
+
+    public sealed record SpecializedStatusOptionVm(Guid Id, string Name, string Color);
 
     public class SpecializedReferralsVm
     {

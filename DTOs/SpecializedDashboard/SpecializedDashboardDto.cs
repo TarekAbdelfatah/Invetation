@@ -60,6 +60,12 @@ namespace Ibtikar.DTOs.SpecializedDashboard
         int PageSize,
         int TotalCount);
 
+    public sealed record SpecializedStatusOptionDto(
+        Guid Id,
+        string Code,
+        string Name,
+        string Color);
+
     public sealed record SpecializedCriterionDto(
         Guid Id,
         string Code,

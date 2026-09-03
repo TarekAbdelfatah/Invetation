@@ -36,12 +36,17 @@ namespace Ibtikar.Services.Implementations
             return await _repo.GetSnapshotAsync(departmentId.Value, ct);
         }
 
-        public async Task<SpecializedReferralsDto?> GetReferralsAsync(Guid? departmentId, string? status, int page, int pageSize, CancellationToken ct)
+        public async Task<SpecializedReferralsDto?> GetReferralsAsync(Guid? departmentId, string? status, string? reference, int page, int pageSize, CancellationToken ct)
         {
             if (departmentId is null || departmentId == Guid.Empty) return null;
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 10;
-            return await _repo.GetReferralsAsync(departmentId.Value, status ?? string.Empty, page, pageSize, ct);
+            return await _repo.GetReferralsAsync(departmentId.Value, status ?? string.Empty, reference, page, pageSize, ct);
+        }
+
+        public async Task<IReadOnlyList<SpecializedStatusOptionDto>> GetStatusOptionsAsync(CancellationToken ct)
+        {
+            return await _repo.GetStatusOptionsAsync(ct);
         }
 
         public async Task<SpecializedDetailsDto?> GetDetailsAsync(Guid? departmentId, Guid ideaId, CancellationToken ct)

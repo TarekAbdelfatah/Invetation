@@ -6,7 +6,9 @@ namespace Ibtikar.Services.Interfaces
     {
         Task<SpecializedDashboardDto?> GetSnapshotAsync(Guid? departmentId, CancellationToken ct);
 
-        Task<SpecializedReferralsDto?> GetReferralsAsync(Guid? departmentId, string? status, int page, int pageSize, CancellationToken ct);
+        Task<SpecializedReferralsDto?> GetReferralsAsync(Guid? departmentId, string? status, string? reference, int page, int pageSize, CancellationToken ct);
+
+        Task<IReadOnlyList<SpecializedStatusOptionDto>> GetStatusOptionsAsync(CancellationToken ct);
 
         Task<SpecializedDetailsDto?> GetDetailsAsync(Guid? departmentId, Guid ideaId, CancellationToken ct);
 
