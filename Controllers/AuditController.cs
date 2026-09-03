@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = RoleCodes.AuditEmployee)]
+    [IbtikarAuthorize(RoleCodes.AuditEmployee)]
     public class AuditController : Controller
     {
         private readonly IAuditService _service;

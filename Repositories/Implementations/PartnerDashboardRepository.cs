@@ -38,9 +38,10 @@ namespace Ibtikar.Repositories
 
             var pending = await assignments.CountAsync(p => p.Status == PartnerAssignment.StatusPending, ct);
 
+            var thresholdDate = DateTime.UtcNow.AddDays(-LateThresholdDays);
             var late = await assignments.CountAsync(p =>
                 p.Status == PartnerAssignment.StatusPending
-                && (DateTime.UtcNow - p.SentAt) > LateThreshold, ct);
+                && p.SentAt < thresholdDate, ct);
 
             var cycleStart = DateTime.UtcNow.AddDays(-30);
             var submitted = await assignments.CountAsync(p =>
@@ -54,23 +55,39 @@ namespace Ibtikar.Repositories
         public async Task<PartnerInboxDto> GetInboxAsync(Guid departmentId, CancellationToken ct)
         {
             var now = DateTime.UtcNow;
-            var rows = await _query.ForDepartment(_db.PartnerAssignments.AsNoTracking(), departmentId)
+            var thresholdDate = now.AddDays(-LateThresholdDays);
+
+            var rawRows = await _query.ForDepartment(_db.PartnerAssignments.AsNoTracking(), departmentId)
                 .OrderByDescending(p => p.SentAt)
-                .Select(p => new PartnerAssignmentRowDto(
+                .Select(p => new
+                {
                     p.Id,
                     p.InnovationIdeaId,
-                    p.InnovationIdea!.ReferenceNumber,
-                    p.InnovationIdea.Title,
-                    p.InnovationIdea.ApplicantUser != null ? p.InnovationIdea.ApplicantUser.FullName : "—",
-                    p.InnovationIdea.AssignedDepartment != null ? p.InnovationIdea.AssignedDepartment.Name : "—",
+                    IdeaReferenceNumber = p.InnovationIdea != null ? p.InnovationIdea.ReferenceNumber : string.Empty,
+                    IdeaTitle = p.InnovationIdea != null ? p.InnovationIdea.Title : string.Empty,
+                    ApplicantFullName = p.InnovationIdea != null && p.InnovationIdea.ApplicantUser != null ? p.InnovationIdea.ApplicantUser.FullName : "—",
+                    AssignedDepartmentName = p.InnovationIdea != null && p.InnovationIdea.AssignedDepartment != null ? p.InnovationIdea.AssignedDepartment.Name : "—",
                     p.SentAt,
                     p.RespondedAt,
-                    p.Status,
-                    p.Status == PartnerAssignment.StatusPending && (now - p.SentAt) > LateThreshold,
-                    p.Status == PartnerAssignment.StatusPending,
-                    p.Status == PartnerAssignment.StatusReturned,
-                    (now - p.SentAt).TotalDays))
+                    p.Status
+                })
                 .ToListAsync(ct);
+
+            var rows = rawRows.Select(p => new PartnerAssignmentRowDto(
+                p.Id,
+                p.InnovationIdeaId,
+                p.IdeaReferenceNumber,
+                p.IdeaTitle,
+                p.ApplicantFullName,
+                p.AssignedDepartmentName,
+                p.SentAt,
+                p.RespondedAt,
+                p.Status,
+                p.Status == PartnerAssignment.StatusPending && p.SentAt < thresholdDate,
+                p.Status == PartnerAssignment.StatusPending,
+                p.Status == PartnerAssignment.StatusReturned,
+                (now - p.SentAt).TotalDays))
+                .ToList();
 
             return new PartnerInboxDto(rows, rows.Count);
         }

@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
+using Ibtikar.Services.Helpers;
+
 namespace Ibtikar.Controllers
 {
-    [Authorize]
+    [IbtikarAuthorize]
     [Route("api/[controller]")]
     public class AttachmentController : ControllerBase
     {

@@ -1,22 +1,26 @@
 using System.Security.Claims;
-using Ibtikar.DTOs.Account;
+using Ibtikar.Data;
+using Ibtikar.DTOs;
 using Ibtikar.Models;
 using Ibtikar.Repositories;
 using Ibtikar.Services;
 using Ibtikar.Services.Helpers;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 
 namespace Ibtikar.Services.Implementations
 {
     public sealed class AuthService
     {
         private readonly IUserRepository _users;
+        private readonly IbtikarDbContext _db;
         private readonly Pbkdf2PasswordHasher _hasher;
         private readonly AuditLogService _audit;
 
-        public AuthService(IUserRepository users, Pbkdf2PasswordHasher hasher, AuditLogService audit)
+        public AuthService(IUserRepository users, IbtikarDbContext db, Pbkdf2PasswordHasher hasher, AuditLogService audit)
         {
             _users = users;
+            _db = db;
             _hasher = hasher;
             _audit = audit;
         }
@@ -28,7 +32,9 @@ namespace Ibtikar.Services.Implementations
             if (string.IsNullOrEmpty(password))
                 return LoginResult.Failed("اسم المستخدم أو كلمة المرور غير صحيحة.");
 
-            var user = await _users.GetActiveByUsernameWithRolesAsync(username, ct);
+            var user = await _db.Users
+                .Include(u => u.Department)
+                .FirstOrDefaultAsync(u => u.Username == username && u.IsActive, ct);
 
             var ok = user is not null && _hasher.Verify(password, user.PasswordSalt, user.PasswordHash);
             if (!ok)
@@ -37,10 +43,7 @@ namespace Ibtikar.Services.Implementations
             return LoginResult.Success(user!);
         }
 
-        public Task<IReadOnlyList<DemoUserDto>> GetDemoUsersAsync(CancellationToken ct = default)
-            => _users.GetDemoUsersAsync(ct);
-
-        public async Task SignInAsync(HttpContext httpContext, User user, CancellationToken ct = default)
+        public async Task SignInAsync(HttpContext httpContext, User user, string roleCode = "", string? idToken = null, CancellationToken ct = default)
         {
             if (httpContext is null) throw new ArgumentNullException(nameof(httpContext));
             if (user is null) throw new ArgumentNullException(nameof(user));
@@ -49,23 +52,58 @@ namespace Ibtikar.Services.Implementations
             {
                 new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new(ClaimTypes.Name, user.Username),
+                new("preferred_username", user.Username),
+                new("networkUser", user.Username),
+                new("NetworkUser", user.Username),
                 new(RoleCodes.UserIdClaim, user.Id.ToString()),
                 new(RoleCodes.FullNameClaim, user.FullName)
             };
 
-            if (user.DepartmentId.HasValue)
+            if (!string.IsNullOrWhiteSpace(idToken))
             {
-                claims.Add(new Claim(RoleCodes.DepartmentIdClaim, user.DepartmentId.Value.ToString()));
-                if (!string.IsNullOrWhiteSpace(user.Department?.Name))
+                claims.Add(new Claim("id_token", idToken));
+            }
+
+            string? resolvedDeptIdStr = user.DepartmentId?.ToString();
+            string? resolvedDeptName = user.Department?.Name;
+
+            if (string.Equals(roleCode, RoleCodes.SpecializedDepartment, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(roleCode, RoleCodes.PartnerDepartment, StringComparison.OrdinalIgnoreCase))
+            {
+                var adminUser = await _db.Admins
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(a => a.NetworkUser == user.Username && a.IsActive, ct);
+
+                if (adminUser?.DeptId.HasValue == true)
                 {
-                    claims.Add(new Claim(RoleCodes.DepartmentNameClaim, user.Department.Name));
+                    var codeStr = adminUser.DeptId.Value.ToString();
+                    var dept = await _db.Departments
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(d => d.Code == codeStr, ct);
+
+                    if (dept != null)
+                    {
+                        resolvedDeptIdStr = dept.Id.ToString();
+                        resolvedDeptName = dept.Name;
+                    }
+                    else
+                    {
+                        resolvedDeptIdStr = codeStr;
+                    }
                 }
             }
 
-            foreach (var ur in user.UserRoles)
+            if (!string.IsNullOrWhiteSpace(resolvedDeptIdStr))
             {
-                var roleCode = ur.Role?.Code;
-                if (string.IsNullOrEmpty(roleCode) || ur.Role is not { IsActive: true }) continue;
+                claims.Add(new Claim(RoleCodes.DepartmentIdClaim, resolvedDeptIdStr));
+            }
+            if (!string.IsNullOrWhiteSpace(resolvedDeptName))
+            {
+                claims.Add(new Claim(RoleCodes.DepartmentNameClaim, resolvedDeptName));
+            }
+
+            if (!string.IsNullOrEmpty(roleCode))
+            {
                 claims.Add(new Claim(RoleCodes.ClaimType, roleCode));
                 claims.Add(new Claim(ClaimTypes.Role, roleCode));
             }
@@ -73,17 +111,51 @@ namespace Ibtikar.Services.Implementations
             var identity = new ClaimsIdentity(claims, CookieAuthExtensions.Scheme);
             var principal = new ClaimsPrincipal(identity);
 
+            var authProps = new AuthenticationProperties
+            {
+                IsPersistent = false,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+            };
+
+            if (!string.IsNullOrWhiteSpace(idToken))
+            {
+                authProps.StoreTokens(new[]
+                {
+                    new AuthenticationToken { Name = "id_token", Value = idToken }
+                });
+            }
+
             await httpContext.SignInAsync(
                 CookieAuthExtensions.Scheme,
                 principal,
-                new AuthenticationProperties
+                authProps);
+
+            try
+            {
+                if (httpContext.Session != null)
                 {
-                    IsPersistent = false,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(20)
-                });
+                    httpContext.Session.SetString("UserId", user.Id.ToString());
+                    httpContext.Session.SetString("Username", user.Username);
+                    httpContext.Session.SetString("FullName", user.FullName ?? string.Empty);
+                    if (!string.IsNullOrEmpty(roleCode))
+                    {
+                        httpContext.Session.SetString("RoleCode", roleCode);
+                    }
+                    if (!string.IsNullOrWhiteSpace(resolvedDeptIdStr))
+                    {
+                        httpContext.Session.SetString("DeptId", resolvedDeptIdStr);
+                    }
+                    if (!string.IsNullOrWhiteSpace(resolvedDeptName))
+                    {
+                        httpContext.Session.SetString("DepartmentName", resolvedDeptName);
+                    }
+                }
+            }
+            catch { }
 
             user.LastLoginAt = DateTime.UtcNow;
-            await _users.SaveChangesAsync(ct);
+            await _db.SaveChangesAsync(ct);
+
             await _audit.WriteAsync(
                 action: "login",
                 entityName: nameof(User),
@@ -104,6 +176,105 @@ namespace Ibtikar.Services.Implementations
                 newValues: null,
                 oldValues: null,
                 ct: httpContext.RequestAborted);
+        }
+
+        /// <summary>
+        /// Syncs SSO user into Users table and resolves effective role without UserRole table dependency.
+        /// 1. Internal User: Checks Admins table for Admin Role. If not found -> InternalBeneficiary.
+        /// 2. External User: ExternalBeneficiary.
+        /// 3. Saves/updates user info in Users table.
+        /// </summary>
+        public async Task<(User User, string RoleCode)> SyncSsoUserAsync(SSoUserInfo userInfo, CancellationToken ct = default)
+        {
+            if (userInfo is null) throw new ArgumentNullException(nameof(userInfo));
+
+            var rawUsername = userInfo.GetEffectiveUsername();
+
+            // 1. Strip @bog.gov.sa from username if present
+            var username = rawUsername;
+            if (!string.IsNullOrWhiteSpace(username) && username.EndsWith("@bog.gov.sa", StringComparison.OrdinalIgnoreCase))
+            {
+                username = username.Substring(0, username.Length - "@bog.gov.sa".Length);
+            }
+
+            var user = await _db.Users
+                .Include(u => u.Department)
+                .FirstOrDefaultAsync(u => u.Username == username, ct);
+
+            var fullName = userInfo.GetEffectiveFullName();
+
+            // Save/Update in Users table
+            if (user is null)
+            {
+                user = new User
+                {
+                    Id = Guid.NewGuid(),
+                    Username = username,
+                    FullName = fullName,
+                    Email = userInfo.Email ?? string.Empty,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _db.Users.Add(user);
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(fullName) && user.FullName != fullName)
+                    user.FullName = fullName;
+                if (!string.IsNullOrWhiteSpace(userInfo.Email) && user.Email != userInfo.Email)
+                    user.Email = userInfo.Email;
+            }
+
+            // Match department if provided
+            if (!string.IsNullOrWhiteSpace(userInfo.DepartmentCode) || !string.IsNullOrWhiteSpace(userInfo.DepartmentName))
+            {
+                var dept = await _db.Departments.FirstOrDefaultAsync(d =>
+                    (!string.IsNullOrEmpty(userInfo.DepartmentCode) && d.Code == userInfo.DepartmentCode) ||
+                    (!string.IsNullOrEmpty(userInfo.DepartmentName) && d.Name == userInfo.DepartmentName), ct);
+                if (dept is not null)
+                {
+                    user.DepartmentId = dept.Id;
+                }
+            }
+
+            // 2. Role Determination without UserRole table dependency:
+            string roleCode;
+            if (userInfo.IsExternalUser)
+            {
+                // External User -> ExternalBeneficiary
+                roleCode = RoleCodes.ExternalBeneficiary;
+            }
+            else
+            {
+                // Internal User -> Check Admins Table for admin Role
+                var adminUser = await _db.Admins
+                    .Include(a => a.Role)
+                    .FirstOrDefaultAsync(a => a.NetworkUser == username && a.IsActive, ct);
+
+                if (adminUser is not null && adminUser.Role is { IsActive: true })
+                {
+                    roleCode = adminUser.Role.Code;
+                }
+                else
+                {
+                    // If not found in Admins table, role is InternalBeneficiary
+                    roleCode = RoleCodes.InternalBeneficiary;
+                }
+            }
+
+            user.LastLoginAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync(ct);
+            return (user, roleCode);
+        }
+
+        public async Task<List<User>> GetDemoUsersAsync(CancellationToken ct = default)
+        {
+            return await _db.Users
+                .Include(u => u.Department)
+                .Where(u => u.IsActive)
+                .OrderBy(u => u.Username)
+                .ToListAsync(ct);
         }
 
         public readonly record struct LoginResult(bool IsSuccess, string? ErrorMessage, User? User)

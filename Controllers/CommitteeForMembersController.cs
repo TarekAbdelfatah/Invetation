@@ -1,4 +1,4 @@
-﻿using Ibtikar.DTOs.Committee;
+using Ibtikar.DTOs.Committee;
 using Ibtikar.Services.Interfaces;
 using Ibtikar.Services.Helpers;
 using Ibtikar.ViewModels;
@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace Ibtikar.Controllers
 {
-    [Authorize(Roles = RoleCodes.InnovationCommitteeMember)]
+    [IbtikarAuthorize(RoleCodes.InnovationCommitteeMember)]
     public class CommitteeForMembersController : Controller
     {
         private readonly ICommitteeDashboardService _dashboardService;
@@ -32,10 +32,7 @@ namespace Ibtikar.Controllers
             try
             {
                 var userId = ResolveUserId();
-                if (!await _dashboardService.IsActiveCommitteeMemberAsync(userId, ct))
-                {
-                    return Forbid();
-                }
+                
 
                 var (p, ps) = PagedRequest.Normalize(page, pageSize);
                 var dto = await _dashboardService.GetSnapshotAsync(userId, ct);

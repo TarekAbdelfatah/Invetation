@@ -41,11 +41,36 @@ namespace Ibtikar.Repositories
 
         public SpecializedDashboardRepository(IbtikarDbContext db) => _db = db;
 
+        private async Task<List<Guid>> GetMatchingDepartmentIdsAsync(Guid departmentId, CancellationToken ct)
+        {
+            var list = new List<Guid>();
+            if (departmentId != Guid.Empty)
+            {
+                list.Add(departmentId);
+                var targetDept = await _db.Departments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == departmentId, ct);
+                if (targetDept != null)
+                {
+                    var matched = await _db.Departments.AsNoTracking()
+                        .Where(d => (!string.IsNullOrEmpty(targetDept.Code) && d.Code == targetDept.Code)
+                                 || (!string.IsNullOrEmpty(targetDept.Name) && d.Name == targetDept.Name))
+                        .Select(d => d.Id)
+                        .ToListAsync(ct);
+                    list.AddRange(matched);
+                }
+            }
+            return list.Distinct().ToList();
+        }
+
         public async Task<SpecializedDashboardDto> GetSnapshotAsync(Guid departmentId, CancellationToken ct)
         {
+            var matchingDeptIds = await GetMatchingDepartmentIdsAsync(departmentId, ct);
+
             var routed = _db.InnovationIdeas
                 .AsNoTracking()
-                .Where(i => i.AssignedDepartmentId == departmentId);
+                .Where(i => !i.IsDraft
+                    && (matchingDeptIds.Count == 0
+                        || (i.AssignedDepartmentId.HasValue && matchingDeptIds.Contains(i.AssignedDepartmentId.Value))
+                        || _db.AuditActionItems.Any(a => a.IdeaId == i.Id && a.TargetDepartmentId.HasValue && matchingDeptIds.Contains(a.TargetDepartmentId.Value))));
 
             var underStudy = await routed.CountAsync(i =>
                 i.CurrentStatus != null && i.CurrentStatus.Code == IdeaStatusCodes.UnderStudy, ct);
@@ -58,7 +83,7 @@ namespace Ibtikar.Repositories
 
             var sentToPartner = await _db.PartnerAssignments
                 .AsNoTracking()
-                .Where(p => p.InnovationIdea!.AssignedDepartmentId == departmentId
+                .Where(p => (matchingDeptIds.Count == 0 || (p.InnovationIdea!.AssignedDepartmentId.HasValue && matchingDeptIds.Contains(p.InnovationIdea.AssignedDepartmentId.Value)))
                     && (p.Status == PartnerAssignment.StatusPending || p.Status == PartnerAssignment.StatusLate))
                 .Select(p => p.InnovationIdeaId)
                 .Distinct()
@@ -73,9 +98,14 @@ namespace Ibtikar.Repositories
             if (pageSize < 1) pageSize = 10;
 
             var now = DateTime.UtcNow;
+            var matchingDeptIds = await GetMatchingDepartmentIdsAsync(departmentId, ct);
+
             var query = _db.InnovationIdeas
                 .AsNoTracking()
-                .Where(i => i.AssignedDepartmentId == departmentId);
+                .Where(i => !i.IsDraft
+                    && (matchingDeptIds.Count == 0
+                        || (i.AssignedDepartmentId.HasValue && matchingDeptIds.Contains(i.AssignedDepartmentId.Value))
+                        || _db.AuditActionItems.Any(a => a.IdeaId == i.Id && a.TargetDepartmentId.HasValue && matchingDeptIds.Contains(a.TargetDepartmentId.Value))));
 
             query = statusFilter switch
             {
@@ -112,9 +142,13 @@ namespace Ibtikar.Repositories
 
         public async Task<SpecializedDetailsDto?> GetDetailsAsync(Guid ideaId, Guid departmentId, CancellationToken ct)
         {
+            var matchingDeptIds = await GetMatchingDepartmentIdsAsync(departmentId, ct);
             var header = await _db.InnovationIdeas
                 .AsNoTracking()
-                .Where(i => i.Id == ideaId && i.AssignedDepartmentId == departmentId)
+                .Where(i => i.Id == ideaId
+                    && (matchingDeptIds.Count == 0
+                        || (i.AssignedDepartmentId.HasValue && matchingDeptIds.Contains(i.AssignedDepartmentId.Value))
+                        || _db.AuditActionItems.Any(a => a.IdeaId == i.Id && a.TargetDepartmentId.HasValue && matchingDeptIds.Contains(a.TargetDepartmentId.Value))))
                 .Select(i => new SpecializedDetailsHeader(
                     i.Id,
                     i.ReferenceNumber,
@@ -183,9 +217,13 @@ namespace Ibtikar.Repositories
 
         public async Task<SpecializedAssessVmDto?> GetAssessVmAsync(Guid ideaId, Guid departmentId, CancellationToken ct)
         {
+            var matchingDeptIds = await GetMatchingDepartmentIdsAsync(departmentId, ct);
             var header = await _db.InnovationIdeas
                 .AsNoTracking()
-                .Where(i => i.Id == ideaId && i.AssignedDepartmentId == departmentId)
+                .Where(i => i.Id == ideaId
+                    && (matchingDeptIds.Count == 0
+                        || (i.AssignedDepartmentId.HasValue && matchingDeptIds.Contains(i.AssignedDepartmentId.Value))
+                        || _db.AuditActionItems.Any(a => a.IdeaId == i.Id && a.TargetDepartmentId.HasValue && matchingDeptIds.Contains(a.TargetDepartmentId.Value))))
                 .Select(i => new
                 {
                     i.Id,
@@ -478,9 +516,13 @@ namespace Ibtikar.Repositories
 
         public async Task<InnovationIdea?> GetIdeaForDepartmentAsync(Guid ideaId, Guid departmentId, CancellationToken ct)
         {
+            var matchingDeptIds = await GetMatchingDepartmentIdsAsync(departmentId, ct);
             return await _db.InnovationIdeas
                 .Include(i => i.CurrentStatus)
-                .FirstOrDefaultAsync(i => i.Id == ideaId && i.AssignedDepartmentId == departmentId, ct);
+                .FirstOrDefaultAsync(i => i.Id == ideaId
+                    && (matchingDeptIds.Count == 0
+                        || (i.AssignedDepartmentId.HasValue && matchingDeptIds.Contains(i.AssignedDepartmentId.Value))
+                        || _db.AuditActionItems.Any(a => a.IdeaId == i.Id && a.TargetDepartmentId.HasValue && matchingDeptIds.Contains(a.TargetDepartmentId.Value))), ct);
         }
 
         public async Task<IReadOnlyList<PartnerAssignment>> GetPartnerAssignmentsForIdeaAsync(Guid ideaId, CancellationToken ct)

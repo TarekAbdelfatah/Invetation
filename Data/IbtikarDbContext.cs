@@ -16,6 +16,7 @@ namespace Ibtikar.Data
         public DbSet<Department> Departments => Set<Department>();
         public DbSet<Role> Roles => Set<Role>();
         public DbSet<User> Users => Set<User>();
+        public DbSet<Admin> Admins => Set<Admin>();
         public DbSet<IdeaStatus> IdeaStatuses => Set<IdeaStatus>();
         public DbSet<UserRole> UserRoles => Set<UserRole>();
         public DbSet<AssessmentCriterion> AssessmentCriteria => Set<AssessmentCriterion>();
