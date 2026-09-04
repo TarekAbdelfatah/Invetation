@@ -132,15 +132,11 @@ namespace Ibtikar.Services.Implementations
                     Id = Guid.NewGuid(),
                     InnovationIdeaId = submission.IdeaId,
                     AssessorUserId = userId,
-                    AssessorDepartmentId = null,
+                    AssessorDepartmentId = submission.AssessorDepartmentId,
                     Source = AssessmentHeader.SourceCommittee,
                     CreatedAt = DateTime.UtcNow
                 };
                 _repo.AddAssessmentHeader(header);
-            }
-            else
-            {
-                _repo.RemoveAssessmentDetails(header.Details);
             }
 
             header.IsDraft = submission.SaveDraft;
@@ -148,16 +144,20 @@ namespace Ibtikar.Services.Implementations
             header.Comment = submission.Comment;
             header.SubmittedAt = submission.SaveDraft ? null : DateTime.UtcNow;
             header.LockedAt = submission.SaveDraft ? null : DateTime.UtcNow;
-
-            header.Details = submission.Scores.Select(s => new AssessmentDetail
-            {
-                Id = Guid.NewGuid(),
-                CriterionId = s.CriterionId,
-                Score = s.Score,
-                Comment = s.Comment
-            }).ToList();
-
             header.TotalScore = submission.Scores.Sum(s => s.Score);
+
+            _repo.RemoveAssessmentDetails(header.Details);
+            foreach (var s in submission.Scores)
+            {
+                _repo.AddAssessmentDetail(new AssessmentDetail
+                {
+                    Id = Guid.NewGuid(),
+                    AssessmentHeaderId = header.Id,
+                    CriterionId = s.CriterionId,
+                    Score = s.Score,
+                    Comment = s.Comment
+                });
+            }
             await _repo.SaveChangesAsync(ct);
 
             var departmentPercent = await GetSpecializedPercentAsync(submission.IdeaId, ct);

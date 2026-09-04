@@ -90,6 +90,14 @@
                                 </td>
                                 <td>@c.CreatedAt.ToString("yyyy-MM-dd")</td>
                                 <td>
+                                    <a asp-action="Details" asp-route-id="@c.Id" class="btn btn-sm btn-outline-primary"
+                                       title="عرض التفاصيل">
+                                        <span class="material-icons" style="font-size:18px">visibility</span>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@c.Id" class="btn btn-sm btn-outline-warning"
+                                       title="تعديل">
+                                        <span class="material-icons" style="font-size:18px">edit</span>
+                                    </a>
                                     @if (!c.IsActive)
                                     {
                                         <form asp-action="Activate" asp-route-id="@c.Id" method="post" class="d-inline">

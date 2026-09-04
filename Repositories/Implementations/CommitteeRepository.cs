@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Ibtikar.Data;
 using Ibtikar.DTOs.Committees;
 using Ibtikar.Models;
@@ -47,15 +49,62 @@ namespace Ibtikar.Repositories
             }).ToList();
         }
 
-        public async Task<CommitteeMemberOptionDto[]> GetMemberCandidatesAsync(Guid? excludeCommitteeId, CancellationToken ct)
+        public async Task<CommitteeDetailDto?> GetDetailAsync(Guid committeeId, CancellationToken ct)
         {
-            var roleCode = RoleCodes.InnovationCommitteeMember;
+            var committee = await _db.InnovationCommittees.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == committeeId, ct);
 
-            var adminRecords = await _db.Admins.AsNoTracking()
-                .Where(a => a.IsActive && a.Role != null && a.Role.Code == roleCode)
+            if (committee is null) return null;
+
+            var members = await _db.CommitteeMembers.AsNoTracking()
+                .Where(m => m.InnovationCommitteeId == committeeId)
                 .ToListAsync(ct);
 
-            if (adminRecords.Count == 0)
+            var userIds = members.Select(m => m.UserId).Distinct().ToList();
+            var users = await _db.Users.AsNoTracking()
+                .Where(u => userIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u, ct);
+
+            var headMember = members.FirstOrDefault(m => m.IsHead);
+            var headUserId = headMember?.UserId ?? Guid.Empty;
+            var headUser = headUserId != Guid.Empty && users.TryGetValue(headUserId, out var hu) ? hu : null;
+
+            var memberDetails = members
+                .OrderBy(m => m.IsHead ? 0 : 1)
+                .ThenBy(m =>
+                    users.TryGetValue(m.UserId, out var u) ? u.FullName : string.Empty)
+                .Select(m =>
+                {
+                    var u = users.TryGetValue(m.UserId, out var usr) ? usr : null;
+                    return new CommitteeMemberDetailDto(
+                        m.UserId,
+                        u?.FullName ?? "—",
+                        u?.Username ?? "—",
+                        m.IsHead);
+                })
+                .ToList();
+
+            return new CommitteeDetailDto(
+                committee.Id,
+                committee.Name,
+                committee.Description,
+                committee.IsActive,
+                committee.CreatedAt,
+                committee.ActivatedAt,
+                headUserId,
+                headUser?.FullName ?? "—",
+                headUser?.Username ?? "—",
+                memberDetails);
+        }
+
+        public async Task<CommitteeMemberOptionDto[]> GetMemberCandidatesAsync(Guid? excludeCommitteeId, CancellationToken ct)
+        {
+            var employees = await _commonDb.Employees.AsNoTracking()
+                .Where(e => e.NetworkUser != null && e.NetworkUser != "")
+                .Select(e => new { e.NetworkUser, e.Name })
+                .ToListAsync(ct);
+
+            if (employees.Count == 0)
             {
                 return Array.Empty<CommitteeMemberOptionDto>();
             }
@@ -70,36 +119,16 @@ namespace Ibtikar.Repositories
                 existingMemberUserIds = new HashSet<Guid>(existing);
             }
 
-            var cleanUsers = adminRecords
-                .Select(a => a.NetworkUser?.Trim())
-                .Where(nu => !string.IsNullOrWhiteSpace(nu))
-                .Distinct()
-                .ToList();
-
-            var employees = await _commonDb.Employees.AsNoTracking()
-                .Where(e => e.NetworkUser != null && e.NetworkUser != "")
-                .Select(e => new { e.NetworkUser, e.Name })
-                .ToListAsync(ct);
-
-            var employeeNameByUser = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var candidates = new List<CommitteeMemberOptionDto>();
             foreach (var emp in employees)
             {
-                var key = NormalizeNetworkUser(emp.NetworkUser);
-                if (!string.IsNullOrWhiteSpace(key) && !employeeNameByUser.ContainsKey(key))
-                    employeeNameByUser[key] = string.IsNullOrWhiteSpace(emp.Name) ? key : emp.Name.Trim();
-            }
-
-            var candidates = new List<CommitteeMemberOptionDto>();
-            foreach (var admin in adminRecords)
-            {
-                if (string.IsNullOrWhiteSpace(admin.NetworkUser)) continue;
-                var cleanUser = NormalizeNetworkUser(admin.NetworkUser);
+                var cleanUser = NormalizeNetworkUser(emp.NetworkUser);
                 if (string.IsNullOrWhiteSpace(cleanUser)) continue;
 
-                var userId = AdminIdToGuid(admin.Id);
+                var userId = NetworkUserToGuid(cleanUser);
                 if (existingMemberUserIds.Contains(userId)) continue;
 
-                var fullName = employeeNameByUser.TryGetValue(cleanUser, out var name) ? name : cleanUser;
+                var fullName = string.IsNullOrWhiteSpace(emp.Name) ? cleanUser : emp.Name.Trim();
 
                 candidates.Add(new CommitteeMemberOptionDto(
                     userId,
@@ -116,19 +145,20 @@ namespace Ibtikar.Repositories
             if (ids is null || ids.Count == 0)
                 return new HashSet<Guid>();
 
-            var roleCode = RoleCodes.InnovationCommitteeMember;
-
-            var activeAdminIds = await _db.Admins.AsNoTracking()
-                .Where(a => a.IsActive && a.Role != null && a.Role.Code == roleCode)
-                .Select(a => a.Id)
+            var employees = await _commonDb.Employees.AsNoTracking()
+                .Where(e => e.NetworkUser != null && e.NetworkUser != "")
+                .Select(e => e.NetworkUser)
                 .ToListAsync(ct);
 
-            var activeAdminUserIdSet = new HashSet<Guid>(activeAdminIds.Select(AdminIdToGuid));
+            var activeEmployeeGuidSet = new HashSet<Guid>(
+                employees
+                    .Where(nu => !string.IsNullOrWhiteSpace(nu))
+                    .Select(nu => NetworkUserToGuid(NormalizeNetworkUser(nu))));
 
             var result = new HashSet<Guid>();
             foreach (var id in ids)
             {
-                if (activeAdminUserIdSet.Contains(id))
+                if (activeEmployeeGuidSet.Contains(id))
                     result.Add(id);
             }
 
@@ -152,9 +182,80 @@ namespace Ibtikar.Repositories
             return new Guid(bytes);
         }
 
+        private static Guid NetworkUserToGuid(string networkUser)
+        {
+            var hash = SHA256.HashData(Encoding.UTF8.GetBytes(networkUser));
+            var bytes = new byte[16];
+            Array.Copy(hash, bytes, 16);
+            return new Guid(bytes);
+        }
+
+        public async Task EnsureUsersExistAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct)
+        {
+            if (userIds is null || userIds.Count == 0) return;
+
+            var existingIds = await _db.Users.AsNoTracking()
+                .Where(u => userIds.Contains(u.Id))
+                .Select(u => u.Id)
+                .ToHashSetAsync(ct);
+
+            var missing = userIds.Where(id => !existingIds.Contains(id)).ToList();
+            if (missing.Count == 0) return;
+
+            var employees = await _commonDb.Employees.AsNoTracking()
+                .Where(e => e.NetworkUser != null && e.NetworkUser != "")
+                .Select(e => new { e.NetworkUser, e.Name })
+                .ToListAsync(ct);
+
+            var empByGuid = new Dictionary<Guid, (string NetworkUser, string? Name)>();
+            foreach (var emp in employees)
+            {
+                var clean = NormalizeNetworkUser(emp.NetworkUser);
+                if (string.IsNullOrWhiteSpace(clean)) continue;
+                var guid = NetworkUserToGuid(clean);
+                if (!empByGuid.ContainsKey(guid))
+                    empByGuid[guid] = (clean, emp.Name);
+            }
+
+            foreach (var userId in missing)
+            {
+                if (!empByGuid.TryGetValue(userId, out var empInfo)) continue;
+
+                var user = new User
+                {
+                    Id = userId,
+                    Username = empInfo.NetworkUser,
+                    FullName = string.IsNullOrWhiteSpace(empInfo.Name) ? empInfo.NetworkUser : empInfo.Name.Trim(),
+                    Email = empInfo.NetworkUser,
+                    PasswordHash = string.Empty,
+                    PasswordSalt = string.Empty,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _db.Users.Add(user);
+            }
+
+            await _db.SaveChangesAsync(ct);
+        }
+
         public async Task AddCommitteeAsync(InnovationCommittee committee, CancellationToken ct)
         {
             await _db.InnovationCommittees.AddAsync(committee, ct);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        public async Task UpdateAsync(InnovationCommittee committee, IReadOnlyList<CommitteeMember> newMembers, CancellationToken ct)
+        {
+            var existing = await _db.CommitteeMembers
+                .Where(m => m.InnovationCommitteeId == committee.Id)
+                .ToListAsync(ct);
+
+            _db.CommitteeMembers.RemoveRange(existing);
+
+            committee.Members = newMembers.ToList();
+            _db.InnovationCommittees.Update(committee);
+
+            await _db.CommitteeMembers.AddRangeAsync(newMembers, ct);
             await _db.SaveChangesAsync(ct);
         }
 

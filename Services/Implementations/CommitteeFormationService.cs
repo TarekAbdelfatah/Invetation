@@ -25,6 +25,9 @@ namespace Ibtikar.Services.Implementations
         public Task<IReadOnlyList<CommitteeSummaryDto>> GetAllAsync(CancellationToken ct)
             => _committees.GetAllAsync(ct);
 
+        public Task<CommitteeDetailDto?> GetDetailAsync(Guid committeeId, CancellationToken ct)
+            => _committees.GetDetailAsync(committeeId, ct);
+
         public Task<CommitteeMemberOptionDto[]> GetMemberCandidatesAsync(Guid? excludeCommitteeId, CancellationToken ct)
             => _committees.GetMemberCandidatesAsync(excludeCommitteeId, ct);
 
@@ -72,6 +75,8 @@ namespace Ibtikar.Services.Implementations
                 return new CommitteeCreateResultDto(false, "بعض الأعضاء المختارين ليسوا أعضاء نشطين في اللجان.", null);
             }
 
+            await _committees.EnsureUsersExistAsync(memberIds, ct);
+
             var committee = new InnovationCommittee
             {
                 Id = Guid.NewGuid(),
@@ -96,6 +101,65 @@ namespace Ibtikar.Services.Implementations
                 committee.Id, committee.Name, committee.Members.Count, actorUserId);
 
             return new CommitteeCreateResultDto(true, "تم إنشاء اللجنة بنجاح.", committee.Id);
+        }
+
+        public async Task<CommitteeEditResultDto> UpdateAsync(Guid actorUserId, CommitteeEditDto dto, CancellationToken ct)
+        {
+            var committee = await _committees.GetWithMembersAsync(dto.CommitteeId, ct);
+            if (committee is null)
+                return new CommitteeEditResultDto(false, "اللجنة غير موجودة.");
+
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                return new CommitteeEditResultDto(false, "اسم اللجنة مطلوب.");
+
+            if (dto.HeadUserId == Guid.Empty)
+                return new CommitteeEditResultDto(false, "يجب اختيار رئيس واحد للجنة.");
+
+            var distinctMembers = (dto.MemberUserIds ?? Array.Empty<Guid>())
+                .Where(id => id != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            if (distinctMembers.Count < 1)
+                return new CommitteeEditResultDto(false, "يجب إضافة عضو واحد على الأقل للجنة.");
+
+            if (distinctMembers.Contains(dto.HeadUserId))
+                return new CommitteeEditResultDto(false, "لا يمكن اختيار رئيس اللجنة من ضمن الأعضاء؛ يُضاف الرئيس تلقائياً كعضو.");
+
+            var memberIds = distinctMembers
+                .Append(dto.HeadUserId)
+                .Where(id => id != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            var activeCommitteeMemberIds = await _committees.GetActiveCommitteeMemberIdsAsync(memberIds, ct);
+            if (!activeCommitteeMemberIds.Contains(dto.HeadUserId))
+                return new CommitteeEditResultDto(false, "المستخدم المختار كرئيس ليس عضواً نشطاً في اللجان.");
+
+            if (activeCommitteeMemberIds.Count != memberIds.Count)
+                return new CommitteeEditResultDto(false, "بعض الأعضاء المختارين ليسوا أعضاء نشطين في اللجان.");
+
+            await _committees.EnsureUsersExistAsync(memberIds, ct);
+
+            committee.Name = dto.Name.Trim();
+            committee.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
+
+            var newMembers = memberIds
+                .Select(uid => new CommitteeMember
+                {
+                    Id = Guid.NewGuid(),
+                    InnovationCommitteeId = committee.Id,
+                    UserId = uid,
+                    IsHead = uid == dto.HeadUserId,
+                    JoinedAt = DateTime.UtcNow
+                }).ToList();
+
+            await _committees.UpdateAsync(committee, newMembers, ct);
+
+            _logger.LogInformation("Committee {Id} '{Name}' updated by user {Actor} with {Count} members",
+                committee.Id, committee.Name, actorUserId, newMembers.Count);
+
+            return new CommitteeEditResultDto(true, "تم تعديل اللجنة بنجاح.");
         }
 
         public async Task<CommitteeCreateResultDto> ActivateAsync(Guid actorUserId, Guid committeeId, CancellationToken ct)

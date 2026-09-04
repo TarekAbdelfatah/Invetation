@@ -349,6 +349,12 @@ namespace Ibtikar.Controllers
             return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
         }
 
+        private Guid? ResolveDepartmentId()
+        {
+            var raw = User.FindFirst(RoleCodes.DepartmentIdClaim)?.Value;
+            return Guid.TryParse(raw, out var id) ? id : null;
+        }
+
         [HttpPost("CommitteeForMembers/Assess")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveAssess(
@@ -369,7 +375,7 @@ namespace Ibtikar.Controllers
                 scores.Add(new CommitteeScoreInputDto(criterionId, score, c));
             }
 
-            var submission = new CommitteeAssessmentSubmissionDto(ideaId, headerId, scores, comment, saveDraft);
+            var submission = new CommitteeAssessmentSubmissionDto(ideaId, headerId, ResolveDepartmentId(), scores, comment, saveDraft);
             var result = await _dashboardService.SaveAssessmentAsync(ResolveUserId(), submission, ct);
 
             TempData[result.Success ? "AlertMessage" : "AlertError"] = result.Message ?? "حدث خطأ.";

@@ -7,8 +7,11 @@ namespace Ibtikar.Repositories
     public interface ICommitteeRepository
     {
         Task<IReadOnlyList<CommitteeSummaryDto>> GetAllAsync(CancellationToken ct);
+        Task<CommitteeDetailDto?> GetDetailAsync(Guid committeeId, CancellationToken ct);
         Task<CommitteeMemberOptionDto[]> GetMemberCandidatesAsync(Guid? excludeCommitteeId, CancellationToken ct);
+        Task UpdateAsync(InnovationCommittee committee, IReadOnlyList<CommitteeMember> newMembers, CancellationToken ct);
         Task<HashSet<Guid>> GetActiveCommitteeMemberIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct);
+        Task EnsureUsersExistAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct);
         Task AddCommitteeAsync(InnovationCommittee committee, CancellationToken ct);
         Task<InnovationCommittee?> GetWithMembersAsync(Guid committeeId, CancellationToken ct);
         Task<bool> IsHeadAsync(Guid committeeId, Guid userId, CancellationToken ct);

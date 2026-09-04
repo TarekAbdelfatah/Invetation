@@ -38,6 +38,7 @@ namespace Ibtikar.DTOs.Committee
     public sealed record CommitteeAssessmentSubmissionDto(
         Guid IdeaId,
         Guid? HeaderId,
+        Guid? AssessorDepartmentId,
         IReadOnlyList<CommitteeScoreInputDto> Scores,
         string? Comment,
         bool SaveDraft);

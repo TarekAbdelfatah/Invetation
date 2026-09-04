@@ -15,6 +15,7 @@ namespace Ibtikar.Repositories
         Task<AssessmentHeader?> GetLatestSubmittedHeaderAsync(Guid ideaId, string source, CancellationToken ct);
         void AddAssessmentHeader(AssessmentHeader header);
         void RemoveAssessmentDetails(IEnumerable<AssessmentDetail> details);
+        void AddAssessmentDetail(AssessmentDetail detail);
         Task<bool> IdeaExistsAsync(Guid ideaId, CancellationToken ct);
         Task<bool> HasSubmittedAssessmentAsync(Guid ideaId, Guid userId, CancellationToken ct);
         Task<Guid?> GetIdeaCurrentStatusIdAsync(Guid ideaId, CancellationToken ct);

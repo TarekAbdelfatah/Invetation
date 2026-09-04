@@ -1,7 +1,7 @@
-@model Ibtikar.ViewModels.CommitteesCreateVm
+@model Ibtikar.ViewModels.CommitteesEditVm
 @using Ibtikar.ViewModels
 @{
-    ViewData["Title"] = "إنشاء لجنة ابتكار";
+    ViewData["Title"] = "تعديل اللجنة — " + Model.Name;
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["SuppressGlobalAlert"] = true;
 }
@@ -11,14 +11,14 @@
         <div class="bog-page-header">
             <h1>
                 <span class="bog-page-icon" aria-hidden="true">
-                    <span class="material-icons">group_add</span>
+                    <span class="material-icons">edit</span>
                 </span>
-                إنشاء لجنة ابتكار
+                تعديل اللجنة
             </h1>
-            <span class="bog-page-role">
-                <span class="material-icons" aria-hidden="true">admin_panel_settings</span>
-                إدارة النظام
-            </span>
+            <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.Id">
+                <span class="material-icons align-middle" style="font-size:18px">arrow_forward</span>
+                العودة للتفاصيل
+            </a>
         </div>
 
         @if (TempData["AlertMessage"] is string ok)
@@ -36,8 +36,9 @@
             @await Html.PartialAsync("_Alert", err)
         }
 
-        <form asp-action="Create" method="post" id="committeeForm" data-loading="false">
+        <form asp-action="Edit" asp-route-id="@Model.Id" method="post" id="committeeForm" data-loading="false">
             @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
 
             <div class="card mb-3">
                 <div class="card-body">
@@ -75,12 +76,14 @@
                         <div class="member-list-container" id="memberList">
                             @foreach (var m in Model.MemberCandidates)
                             {
+                                var isChecked = Model.MemberUserIds.Contains(m.UserId);
                                 <div class="form-check member-item">
                                     <input class="form-check-input member-check"
                                            type="checkbox"
                                            name="MemberUserIds"
                                            id="member_@m.UserId"
-                                           value="@m.UserId" />
+                                           value="@m.UserId"
+                                           @(isChecked ? "checked" : "") />
                                     <label class="form-check-label" for="member_@m.UserId">
                                         @m.FullName <span class="text-muted">(@m.Username)</span>
                                     </label>
@@ -88,14 +91,14 @@
                             }
                         </div>
                         <span asp-validation-for="MemberUserIds" class="text-danger"></span>
-                        <div class="form-text">يجب إضافة عضو واحد على الأقل من غير رئيس اللجنة. الرئيس يُضاف تلقائياً كعضو.</div>
+                        <div class="form-text">يجب إضافة عضو واحد على الأقل من غير رئيس اللجنة.</div>
                     </div>
                 </div>
             </div>
 
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">إنشاء اللجنة</button>
-                <a asp-action="Index" class="btn btn-outline-secondary">إلغاء</a>
+                <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">إلغاء</a>
             </div>
         </form>
     </div>
@@ -137,12 +140,6 @@
     }
     .member-list-container .form-check-label {
         width: 100%;
-    }
-    .member-list-container.hidden-check .form-check {
-        display: none;
-    }
-    #headSearch:placeholder-shown + select {
-        border-color: var(--bs-border-color);
     }
 </style>
 
@@ -198,6 +195,7 @@
         memberChecks.forEach(function (c) {
             c.addEventListener('change', updateMemberCount);
         });
+        updateMemberCount();
 
         if (headSearch) {
             headSearch.addEventListener('input', function () {
@@ -254,7 +252,7 @@
                 return;
             }
             if (window.BogLoading && BogLoading.show) {
-                BogLoading.show('جارٍ إنشاء اللجنة...');
+                BogLoading.show('جارٍ حفظ التعديلات...');
             }
         });
     });

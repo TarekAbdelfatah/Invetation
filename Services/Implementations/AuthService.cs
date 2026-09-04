@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using Ibtikar.Data;
 using Ibtikar.DTOs;
 using Ibtikar.Models;
@@ -180,8 +182,10 @@ namespace Ibtikar.Services.Implementations
 
         /// <summary>
         /// Syncs SSO user into Users table and resolves effective role without UserRole table dependency.
-        /// 1. Internal User: Checks Admins table for Admin Role. If not found -> InternalBeneficiary.
-        /// 2. External User: ExternalBeneficiary.
+        /// 1. External User: ExternalBeneficiary.
+        /// 2. Internal User: Checks Admins table for Admin Role. If found → that role.
+        ///    If not found → checks CommitteeMember table. If found → InnovationCommitteeMember.
+        ///    Otherwise → InternalBeneficiary.
         /// 3. Saves/updates user info in Users table.
         /// </summary>
         public async Task<(User User, string RoleCode)> SyncSsoUserAsync(SSoUserInfo userInfo, CancellationToken ct = default)
@@ -258,8 +262,15 @@ namespace Ibtikar.Services.Implementations
                 }
                 else
                 {
-                    // If not found in Admins table, role is InternalBeneficiary
-                    roleCode = RoleCodes.InternalBeneficiary;
+                    // If not in Admins, check CommitteeMember table
+                    var networkUserGuid = NetworkUserToGuid(username);
+                    var isCommitteeMember = await _db.CommitteeMembers
+                        .AsNoTracking()
+                        .AnyAsync(m => m.UserId == networkUserGuid, ct);
+
+                    roleCode = isCommitteeMember
+                        ? RoleCodes.InnovationCommitteeMember
+                        : RoleCodes.InternalBeneficiary;
                 }
             }
 
@@ -281,6 +292,14 @@ namespace Ibtikar.Services.Implementations
         {
             public static LoginResult Failed(string message) => new(false, message, null);
             public static LoginResult Success(User user) => new(true, null, user);
+        }
+
+        private static Guid NetworkUserToGuid(string networkUser)
+        {
+            var hash = SHA256.HashData(Encoding.UTF8.GetBytes(networkUser));
+            var bytes = new byte[16];
+            Array.Copy(hash, bytes, 16);
+            return new Guid(bytes);
         }
     }
 }

@@ -248,6 +248,9 @@ namespace Ibtikar.Repositories
         public void RemoveAssessmentDetails(IEnumerable<AssessmentDetail> details)
             => _db.AssessmentDetails.RemoveRange(details);
 
+        public void AddAssessmentDetail(AssessmentDetail detail)
+            => _db.AssessmentDetails.Add(detail);
+
         public async Task<bool> IdeaExistsAsync(Guid ideaId, CancellationToken ct)
             => await _db.InnovationIdeas.AsNoTracking().AnyAsync(i => i.Id == ideaId, ct);
 
