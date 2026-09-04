@@ -35,7 +35,7 @@ namespace Ibtikar.Controllers
             if (User.Identity?.IsAuthenticated == true)
             {
                 var home = RoleRedirect.ResolveHomeFor(User);
-                if (!string.IsNullOrEmpty(home)) return Redirect(home);
+                if (home != null) return RedirectToAction(home.Action, home.Controller);
             }
 
             var model = new LoginVm { ReturnUrl = returnUrl };
@@ -53,34 +53,6 @@ namespace Ibtikar.Controllers
                 .ToList();
         }
 
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Login(LoginVm vm)
-        //{
-        //    if (string.IsNullOrWhiteSpace(vm.Username) || string.IsNullOrWhiteSpace(vm.Password))
-        //    {
-        //        ModelState.AddModelError(string.Empty, "يرجى أدخال اسم المستخدم وكلمة المرور.");
-        //        await PopulateDemoUsersAsync(HttpContext.RequestAborted);
-        //        return View(vm);
-        //    }
-
-        //    var result = await _auth.LoginAsync(vm.Username, vm.Password, HttpContext.RequestAborted);
-        //    if (!result.IsSuccess || result.User == null)
-        //    {
-        //        ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "بيانات الدخول غير صحيحة.");
-        //        await PopulateDemoUsersAsync(HttpContext.RequestAborted);
-        //        return View(vm);
-        //    }
-
-        //    await _auth.SignInAsync(HttpContext, result.User);
-
-        //    if (!string.IsNullOrEmpty(vm.ReturnUrl) && Url.IsLocalUrl(vm.ReturnUrl))
-        //    {
-        //        return Redirect(vm.ReturnUrl);
-        //    }
-
-        //    return RedirectToAction("Index", "MyRequests");
-        //}
 
         [HttpPost]
         [HttpGet]
@@ -91,10 +63,12 @@ namespace Ibtikar.Controllers
                 ?? await HttpContext.GetTokenAsync("id_token")
                 ?? Request.Cookies["id_token"];
 
-            var postLogoutRedirectUri = $"https://{Request.Host}/signout-callback-oidc";
+            var postLogoutRedirectUri = _ssoService.GetPostLogoutRedirectUri() 
+                ?? $"https://{Request.Host}{Request.PathBase}/signout-callback-oidc";
             var logoutUrl = _ssoService.BuildLogoutUrl(postLogoutRedirectUri, idTokenHint);
 
-            await ClearAllCookiesAndSessionAsync(HttpContext);
+            await _auth.SignOutAsync(HttpContext);
+            await AuthCookieClearer.ClearAsync(HttpContext, _logger);
 
             _logger.LogInformation("Local cookies & sessions cleared. Redirecting to IdentityServer end session endpoint: {LogoutUrl}", logoutUrl);
             return Redirect(logoutUrl);
@@ -107,64 +81,11 @@ namespace Ibtikar.Controllers
         public async Task<IActionResult> SignOutCallback()
         {
             _logger.LogInformation("SignOut callback received from IdentityServer.");
-            await ClearAllCookiesAndSessionAsync(HttpContext);
+            await _auth.SignOutAsync(HttpContext);
+            await AuthCookieClearer.ClearAsync(HttpContext, _logger);
 
             _logger.LogInformation("All cookies, session and tokens cleared. Redirecting to Login page.");
             return RedirectToAction("Index", "Home");
-        }
-
-        private async Task ClearAllCookiesAndSessionAsync(HttpContext context)
-        {
-            try
-            {
-                await _auth.SignOutAsync(context);
-                await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "SignOutAsync failed during logout.");
-            }
-
-            try
-            {
-                context.Session?.Clear();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Session.Clear() failed during logout.");
-            }
-
-            var pathBase = context.Request.PathBase.HasValue ? context.Request.PathBase.Value : string.Empty;
-            var pathsToDelete = new List<string> { "/", "" };
-            if (!string.IsNullOrEmpty(pathBase))
-            {
-                pathsToDelete.Add(pathBase);
-                pathsToDelete.Add(pathBase + "/");
-                if (pathBase.EndsWith("/")) pathsToDelete.Add(pathBase.TrimEnd('/'));
-            }
-            pathsToDelete = pathsToDelete.Distinct().ToList();
-
-            var requestCookies = context.Request.Cookies.Keys.ToList();
-            var explicitCookies = new[] { ".Ibtikar.Auth", ".AspNetCore.Cookies", ".AspNetCore.Session", "id_token", ".Ibtikar.OidcState", "pkce_verifier", "idsvr.session", "ARRAffinity", "ARRAffinitySameSite" };
-            var allKeys = requestCookies.Union(explicitCookies).Distinct();
-
-            foreach (var key in allKeys)
-            {
-                foreach (var path in pathsToDelete)
-                {
-                    try
-                    {
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path });
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, Secure = true });
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, HttpOnly = true });
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, Secure = true, HttpOnly = true });
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, SameSite = SameSiteMode.Lax });
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, SameSite = SameSiteMode.Lax, Secure = true });
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, SameSite = SameSiteMode.None, Secure = true });
-                    }
-                    catch { }
-                }
-            }
         }
 
         [HttpGet]

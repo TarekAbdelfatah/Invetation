@@ -1,20 +1,17 @@
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Implementations;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Cryptography;
+using System.Text;
+using Ibtikar.Models;
+using Ibtikar.DTOs;
+using System.Text.Json;
 
 namespace Ibtikar.Controllers
 {
-    /// <summary>
-    /// Explicit Custom OAuth2 / PKCE Flow Controller for IdentityServer integration.
-    /// Handles manual authorization URL building, code exchange, user syncing, and local cookie session storage.
-    /// </summary>
+
     [AllowAnonymous]
     public class SignInCallBackController : Controller
     {
@@ -33,22 +30,16 @@ namespace Ibtikar.Controllers
             _authService = authService;
         }
 
-        /// <summary>
-        /// Step 1: Initiates SSO Login by generating PKCE verifier, state, building the authorization URL,
-        /// storing transient state in cookie, and redirecting browser to IdentityServer.
-        /// </summary>
         [HttpGet("/Account/Login")]
         [HttpGet("/Login")]
         public IActionResult Login(string? returnUrl = "/")
         {
-            var traceId = HttpContext.TraceIdentifier;
-            _logger.LogInformation("[TraceId:{TraceId}] Initiating explicit OAuth2 PKCE login flow.", traceId);
+            _logger.LogInformation("Initiating explicit OAuth2 PKCE login flow.");
 
             var (codeVerifier, codeChallenge) = GeneratePkce();
             var state = Guid.NewGuid().ToString("N");
             var nonce = Guid.NewGuid().ToString("N");
 
-            // Save state and verifier in temporary HTTP-only cookie
             var statePayload = JsonSerializer.Serialize(new OidcStateData
             {
                 State = state,
@@ -67,40 +58,59 @@ namespace Ibtikar.Controllers
             var redirectUri = BuildCallbackUrl();
             var authorizeUrl = _ssoService.BuildAuthorizeUrl(redirectUri, state, nonce, codeChallenge);
 
-            _logger.LogInformation("[TraceId:{TraceId}] Redirecting to IdentityServer authorize endpoint. RedirectUri:{RedirectUri}",
-                traceId, redirectUri);
-
             return Redirect(authorizeUrl);
         }
 
-        /// <summary>
-        /// Step 2 & 3 & 4: Callback handler for IdentityServer authorization code response.
-        /// Validates state, exchanges code for tokens, retrieves user profile, syncs database user,
-        /// and establishes local auth cookie session.
-        /// </summary>
         [HttpGet("/signin-callback")]
         public async Task<IActionResult> SignInCallback([FromQuery] string? code, [FromQuery] string? state, [FromQuery] string? error, [FromQuery] string? error_description)
         {
-            var traceId = HttpContext.TraceIdentifier;
-            _logger.LogInformation("[TraceId:{TraceId}] Entering /signin-callback handler.", traceId);
-
             if (!string.IsNullOrEmpty(error))
             {
-                _logger.LogError("[TraceId:{TraceId}] IdentityServer returned error: {Error} - {Description}", traceId, error, error_description);
+                _logger.LogError("IdentityServer returned error: {Error} - {Description}", error, error_description);
                 return RedirectToAction("Index", "Home", new { error = error_description ?? error });
             }
 
             if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(state))
-            {
-                _logger.LogWarning("[TraceId:{TraceId}] Callback missing code or state query parameters.", traceId);
                 return RedirectToAction(nameof(Login));
-            }
 
-            // Retrieve stored state from cookie
+            var (isSuccess, stateData, errorResult) = ValidateAndConsumeStateCookie(state);
+            if (!isSuccess) return errorResult!;
+
+            try
+            {
+                var tokenResult = await _ssoService.ExchangeCodeForTokenDetailsAsync(code, BuildCallbackUrl(), stateData!.CodeVerifier);
+                if (string.IsNullOrWhiteSpace(tokenResult.AccessToken))
+                {
+                    _logger.LogError("Token exchange returned empty access token.");
+                    return RedirectToAction("Index", "Home", new { error = "empty_token" });
+                }
+
+                var userInfo = await _ssoService.GetSSOUserInfoAsync(tokenResult.AccessToken);
+                if (userInfo is null)
+                {
+                    _logger.LogError("UserInfo request returned null profile.");
+                    return RedirectToAction("Index", "Home", new { error = "userinfo_failed" });
+                }
+
+                var (user, roleCode) = await _authService.SyncSsoUserAsync(userInfo);
+
+                await EstablishLocalSessionAsync(user, roleCode, tokenResult);
+
+                return RedirectToTargetUrl(stateData.ReturnUrl, roleCode);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception occurred during signin-callback code exchange or user sync: {Message}", ex.Message);
+                return RedirectToAction("Index", "Home", new { error = Uri.EscapeDataString(ex.Message) });
+            }
+        }
+
+        private (bool IsSuccess, OidcStateData? StateData, IActionResult? ErrorResult) ValidateAndConsumeStateCookie(string incomingState)
+        {
             if (!Request.Cookies.TryGetValue(OidcStateCookieName, out var cookiePayload) || string.IsNullOrWhiteSpace(cookiePayload))
             {
-                _logger.LogError("[TraceId:{TraceId}] OidcState cookie missing or expired. Correlation failed.", traceId);
-                return RedirectToAction("Index", "Home", new { error = "correlation_failed" });
+                _logger.LogError("OidcState cookie missing or expired. Correlation failed.");
+                return (false, null, RedirectToAction("Index", "Home", new { error = "correlation_failed" }));
             }
 
             OidcStateData? stateData = null;
@@ -110,160 +120,78 @@ namespace Ibtikar.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[TraceId:{TraceId}] Failed to deserialize OidcState cookie payload.", traceId);
+                _logger.LogError(ex, "Failed to deserialize OidcState cookie payload.");
             }
 
-            if (stateData is null || !string.Equals(stateData.State, state, StringComparison.Ordinal))
+            if (stateData is null || !string.Equals(stateData.State, incomingState, StringComparison.Ordinal))
             {
-                _logger.LogError("[TraceId:{TraceId}] Mismatched state parameter. State validation failed.", traceId);
+                _logger.LogError("Mismatched state parameter. State validation failed.");
                 Response.Cookies.Delete(OidcStateCookieName);
-                return RedirectToAction("Index", "Home", new { error = "state_mismatch" });
+                return (false, null, RedirectToAction("Index", "Home", new { error = "state_mismatch" }));
             }
 
-            // Delete transient state cookie
             Response.Cookies.Delete(OidcStateCookieName);
+            return (true, stateData, null);
+        }
 
-            var redirectUri = BuildCallbackUrl();
-            try
+        private async Task EstablishLocalSessionAsync(User user, string roleCode, SsoTokenResult tokenResult)
+        {
+            if (!string.IsNullOrWhiteSpace(tokenResult.IdentityToken))
             {
-                _logger.LogInformation("[TraceId:{TraceId}] Exchanging authorization code for tokens...", traceId);
-                var tokenResult = await _ssoService.ExchangeCodeForTokenDetailsAsync(code, redirectUri, stateData.CodeVerifier);
-
-                if (string.IsNullOrWhiteSpace(tokenResult.AccessToken))
+                Response.Cookies.Append("id_token", tokenResult.IdentityToken, new CookieOptions
                 {
-                    _logger.LogError("[TraceId:{TraceId}] Token exchange returned empty access token.", traceId);
-                    return RedirectToAction("Index", "Home", new { error = "empty_token" });
-                }
-
-                _logger.LogInformation("[TraceId:{TraceId}] Token exchange succeeded. Fetching UserInfo profile...", traceId);
-                var userInfo = await _ssoService.GetSSOUserInfoAsync(tokenResult.AccessToken);
-
-                if (userInfo is null)
-                {
-                    _logger.LogError("[TraceId:{TraceId}] UserInfo request returned null profile.", traceId);
-                    return RedirectToAction("Index", "Home", new { error = "userinfo_failed" });
-                }
-
-                _logger.LogInformation("[TraceId:{TraceId}] UserInfo fetched for Username:{Username}. Syncing DB user...", traceId, userInfo.GetEffectiveUsername());
-                var (user, roleCode) = await _authService.SyncSsoUserAsync(userInfo);
-
-                _logger.LogInformation("[TraceId:{TraceId}] User synced in Users table with Role:{RoleCode}. Signing in user to local auth cookie...", traceId, roleCode);
-                
-                if (!string.IsNullOrWhiteSpace(tokenResult.IdentityToken))
-                {
-                    Response.Cookies.Append("id_token", tokenResult.IdentityToken, new CookieOptions
-                    {
-                        HttpOnly = true,
-                        Secure = Request.IsHttps,
-                        SameSite = SameSiteMode.Lax,
-                        Expires = DateTimeOffset.UtcNow.AddHours(8)
-                    });
-                }
-
-                await _authService.SignInAsync(HttpContext, user, roleCode, tokenResult.IdentityToken);
-
-                // Store access_token in AuthenticationProperties for the session if needed
-                var props = new AuthenticationProperties();
-                props.StoreTokens(new[]
-                {
-                    new AuthenticationToken { Name = "access_token", Value = tokenResult.AccessToken },
-                    new AuthenticationToken { Name = "id_token", Value = tokenResult.IdentityToken ?? string.Empty }
+                    HttpOnly = true,
+                    Secure = Request.IsHttps,
+                    SameSite = SameSiteMode.Lax,
+                    Expires = tokenResult.ExpiresIn > 0 
+                        ? DateTimeOffset.UtcNow.AddSeconds(tokenResult.ExpiresIn) 
+                        : DateTimeOffset.UtcNow.AddHours(8)
                 });
-
-                var returnUrl = stateData.ReturnUrl;
-                if (string.IsNullOrWhiteSpace(returnUrl) || returnUrl == "/")
-                {
-                    if (RoleCodes.HomeRedirects.TryGetValue(roleCode, out var redirectPath))
-                    {
-                        returnUrl = redirectPath;
-                    }
-                    else
-                    {
-                        returnUrl = "/MyRequests";
-                    }
-                }
-                _logger.LogInformation("[TraceId:{TraceId}] SSO authentication workflow completed successfully. Redirecting to {ReturnUrl}", traceId, returnUrl);
-
-                return Redirect(returnUrl);
             }
-            catch (Exception ex)
+
+            await _authService.SignInAsync(HttpContext, user, roleCode, tokenResult.IdentityToken, tokenResult.ExpiresIn);
+        }
+
+        private IActionResult RedirectToTargetUrl(string returnUrl, string roleCode)
+        {
+            if (string.IsNullOrWhiteSpace(returnUrl) || returnUrl == "/")
             {
-                _logger.LogError(ex, "[TraceId:{TraceId}] Exception occurred during signin-callback code exchange or user sync: {Message}", traceId, ex.Message);
-                return RedirectToAction("Index", "Home", new { error = Uri.EscapeDataString(ex.Message) });
+                if (RoleCodes.HomeRedirects.TryGetValue(roleCode, out var route))
+                {
+                    _logger.LogInformation("SSO authentication workflow completed successfully. Redirecting to role home.");
+                    return RedirectToAction(route.Action, route.Controller);
+                }
+
+                _logger.LogInformation("SSO authentication workflow completed successfully. Redirecting to default beneficiary home.");
+                return RedirectToAction(RoleCodes.DefaultBeneficiaryHome.Action, RoleCodes.DefaultBeneficiaryHome.Controller);
             }
+
+            _logger.LogInformation("SSO authentication workflow completed successfully. Redirecting to {ReturnUrl}", returnUrl);
+
+            if (returnUrl.StartsWith("/") && !returnUrl.StartsWith(Request.PathBase.Value ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+            {
+                returnUrl = Request.PathBase + returnUrl;
+            }
+            return Redirect(returnUrl);
         }
 
         [HttpGet("/Logout")]
         [HttpGet("/SSO/Logout")]
         public async Task<IActionResult> Logout()
         {
-            var traceId = HttpContext.TraceIdentifier;
-            _logger.LogInformation("[TraceId:{TraceId}] Initiating logout workflow.", traceId);
-
             var idTokenHint = User.FindFirst("id_token")?.Value
                 ?? await HttpContext.GetTokenAsync("id_token")
                 ?? Request.Cookies["id_token"];
 
-            var postLogoutRedirectUri = $"https://{Request.Host}/signout-callback-oidc";
+            var postLogoutRedirectUri = _ssoService.GetPostLogoutRedirectUri() 
+                ?? $"https://{Request.Host}{Request.PathBase}/signout-callback-oidc";
+            
             var logoutUrl = _ssoService.BuildLogoutUrl(postLogoutRedirectUri, idTokenHint);
 
-            await ClearAllCookiesAndSessionAsync(HttpContext);
+            await AuthCookieClearer.ClearAsync(HttpContext, _logger);
 
-            _logger.LogInformation("[TraceId:{TraceId}] Local cookies & sessions cleared. Redirecting to IdentityServer logout URL: {LogoutUrl}", traceId, logoutUrl);
+            _logger.LogInformation("Local cookies & sessions cleared. Redirecting to IdentityServer logout URL: {LogoutUrl}", logoutUrl);
             return Redirect(logoutUrl);
-        }
-
-        private async Task ClearAllCookiesAndSessionAsync(HttpContext context)
-        {
-            try
-            {
-                await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "SignOutAsync failed during logout.");
-            }
-
-            try
-            {
-                context.Session?.Clear();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Session.Clear() failed during logout.");
-            }
-
-            var pathBase = context.Request.PathBase.HasValue ? context.Request.PathBase.Value : string.Empty;
-            var pathsToDelete = new List<string> { "/", "" };
-            if (!string.IsNullOrEmpty(pathBase))
-            {
-                pathsToDelete.Add(pathBase);
-                pathsToDelete.Add(pathBase + "/");
-                if (pathBase.EndsWith("/")) pathsToDelete.Add(pathBase.TrimEnd('/'));
-            }
-            pathsToDelete = pathsToDelete.Distinct().ToList();
-
-            var requestCookies = context.Request.Cookies.Keys.ToList();
-            var explicitCookies = new[] { ".Ibtikar.Auth", ".AspNetCore.Cookies", ".AspNetCore.Session", "id_token", ".Ibtikar.OidcState", "pkce_verifier", "idsvr.session", "ARRAffinity", "ARRAffinitySameSite" };
-            var allKeys = requestCookies.Union(explicitCookies).Distinct();
-
-            foreach (var key in allKeys)
-            {
-                foreach (var path in pathsToDelete)
-                {
-                    try
-                    {
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path });
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, Secure = true });
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, HttpOnly = true });
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, Secure = true, HttpOnly = true });
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, SameSite = SameSiteMode.Lax });
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, SameSite = SameSiteMode.Lax, Secure = true });
-                        context.Response.Cookies.Delete(key, new CookieOptions { Path = path, SameSite = SameSiteMode.None, Secure = true });
-                    }
-                    catch { }
-                }
-            }
         }
 
         private string BuildCallbackUrl()

@@ -10,14 +10,18 @@ namespace Ibtikar.Services.Helpers
         public const string ExternalBeneficiary = "ExternalBeneficiary";
         public const string InternalBeneficiary = "InternalBeneficiary";
 
-        public static readonly IReadOnlyDictionary<string, string> HomeRedirects =
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        public sealed record HomeRoute(string Controller, string Action);
+
+        public static readonly IReadOnlyDictionary<string, HomeRoute> HomeRedirects =
+            new Dictionary<string, HomeRoute>(StringComparer.OrdinalIgnoreCase)
             {
-                [AuditEmployee]            = "/Audit/Inbox",
-                [SpecializedDepartment]    = "/SpecializedDashboard",
-                [InnovationCommitteeMember]= "/CommitteeForMembers",
-                [SystemAdmin]              = "/AdminOverview"
+                [AuditEmployee]             = new("Audit",                "Inbox"),
+                [SpecializedDepartment]     = new("SpecializedDashboard", "Index"),
+                [InnovationCommitteeMember] = new("CommitteeForMembers",  "Index"),
+                [SystemAdmin]               = new("AdminOverview",        "Index"),
             };
+
+        public static readonly HomeRoute DefaultBeneficiaryHome = new("MyRequests", "Index");
 
         public const string ClaimType = "ibtikar_role";
         public const string UserIdClaim = "ibtikar_user_id";

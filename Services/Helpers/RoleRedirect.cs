@@ -4,14 +4,14 @@ namespace Ibtikar.Services.Helpers
 {
     public static class RoleRedirect
     {
-        public static string? ResolveHomeFor(ClaimsPrincipal user)
+        public static RoleCodes.HomeRoute? ResolveHomeFor(ClaimsPrincipal user)
         {
             if (user.Identity?.IsAuthenticated != true) return null;
             var codes = user.FindAll(RoleCodes.ClaimType).Select(c => c.Value).ToList();
             return ResolveHomeFor(codes);
         }
 
-        public static string? ResolveHomeFor(IList<string> roleCodes)
+        public static RoleCodes.HomeRoute? ResolveHomeFor(IList<string> roleCodes)
         {
             foreach (var code in roleCodes)
             {

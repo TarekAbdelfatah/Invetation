@@ -45,7 +45,7 @@ namespace Ibtikar.Services.Implementations
             return LoginResult.Success(user!);
         }
 
-        public async Task SignInAsync(HttpContext httpContext, User user, string roleCode = "", string? idToken = null, CancellationToken ct = default)
+        public async Task SignInAsync(HttpContext httpContext, User user, string roleCode = "", string? idToken = null, int? expiresInSeconds = null, CancellationToken ct = default)
         {
             if (httpContext is null) throw new ArgumentNullException(nameof(httpContext));
             if (user is null) throw new ArgumentNullException(nameof(user));
@@ -116,7 +116,9 @@ namespace Ibtikar.Services.Implementations
             var authProps = new AuthenticationProperties
             {
                 IsPersistent = false,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+                ExpiresUtc = expiresInSeconds.HasValue && expiresInSeconds.Value > 0
+                    ? DateTimeOffset.UtcNow.AddSeconds(expiresInSeconds.Value)
+                    : DateTimeOffset.UtcNow.AddHours(8)
             };
 
             if (!string.IsNullOrWhiteSpace(idToken))

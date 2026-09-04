@@ -30,7 +30,7 @@ namespace Ibtikar.Controllers
             if (User.Identity is { IsAuthenticated: true })
             {
                 var home = RoleRedirect.ResolveHomeFor(User);
-                if (!string.IsNullOrEmpty(home)) return Redirect(home);
+                if (home != null) return RedirectToAction(home.Action, home.Controller);
             }
             return View();
         }
@@ -99,10 +99,10 @@ namespace Ibtikar.Controllers
 
         private string ResolveHome()
         {
-            if (User.Identity?.IsAuthenticated != true) return "/Account/Login";
+            if (User.Identity?.IsAuthenticated != true) return Url.Action("Login", "Account") ?? "/Account/Login";
             foreach (var role in RoleCodes.HomeRedirects)
             {
-                if (User.IsInRole(role.Key)) return role.Value;
+                if (User.IsInRole(role.Key)) return Url.Action(role.Value.Action, role.Value.Controller) ?? "/";
             }
             return "/";
         }

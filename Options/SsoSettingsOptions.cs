@@ -10,5 +10,6 @@ namespace Ibtikar.Options
         public string AuthorizeEndpoint { get; set; } = "connect/authorize";
         public string TokenEndpoint { get; set; } = "connect/token";
         public string EndSessionEndpoint { get; set; } = "connect/endsession";
+        public string? PostLogoutRedirectUri { get; set; }
     }
 }

@@ -24,6 +24,7 @@ namespace Ibtikar.Services.Implementations
         public string GetSettingsAuthority() => EnsureHttps(_settings.Authority);
         public string GetClientId() => _settings.ClientId;
         public string GetRedirectUri() => EnsureHttps(_settings.RedirectUri);
+        public string? GetPostLogoutRedirectUri() => !string.IsNullOrWhiteSpace(_settings.PostLogoutRedirectUri) ? EnsureHttps(_settings.PostLogoutRedirectUri) : null;
 
         private static string EnsureHttps(string url)
         {

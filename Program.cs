@@ -94,6 +94,7 @@ namespace Ibtikar
             builder.Services.AddHostedService<IdeaDeadlineHostedService>();
             builder.Services.Configure<IntegrationOptions>(builder.Configuration.GetSection("Integrations"));
             builder.Services.Configure<ErrorOptions>(builder.Configuration.GetSection("Errors"));
+            builder.Services.Configure<AppOptions>(builder.Configuration.GetSection("App"));
             builder.Services.AddHttpClient<ProcedureGatewayService>();
             builder.Services.AddHttpClient<INotificationClient, NotificationService>();
             builder.Services.Configure<ExternalNotificationOptions>(builder.Configuration.GetSection("ExternalNotifications"));
@@ -140,6 +141,12 @@ namespace Ibtikar
             }
 
             app.UseRequestLocalization(BuildArabicRequestLocalizationOptions());
+
+            var pathBase = app.Configuration["App:PathBase"];
+            if (!string.IsNullOrWhiteSpace(pathBase))
+            {
+                app.UsePathBase(pathBase);
+            }
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();

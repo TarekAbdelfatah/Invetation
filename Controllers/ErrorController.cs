@@ -142,10 +142,10 @@ namespace Ibtikar.Controllers
 
         private string HomeForUser()
         {
-            if (User.Identity?.IsAuthenticated != true) return "/Account/Login";
+            if (User.Identity?.IsAuthenticated != true) return Url.Action("Login", "Account") ?? "/Account/Login";
             foreach (var role in RoleCodes.HomeRedirects)
             {
-                if (User.IsInRole(role.Key)) return role.Value;
+                if (User.IsInRole(role.Key)) return Url.Action(role.Value.Action, role.Value.Controller) ?? "/";
             }
             return "/";
         }

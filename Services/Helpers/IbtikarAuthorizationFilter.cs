@@ -11,6 +11,25 @@ namespace Ibtikar.Services.Helpers
     public class IbtikarAuthorizationFilter : IAsyncAuthorizationFilter
     {
         private readonly string[] _requiredRoles;
+        private const string _domainSuffix = "@bog.gov.sa";
+
+        private static readonly HashSet<string> _beneficiaryRoles = new(StringComparer.OrdinalIgnoreCase)
+        {
+            RoleCodes.ExternalBeneficiary,
+            RoleCodes.InternalBeneficiary,
+            "External-user",
+            "Internal-user"
+        };
+
+        private static readonly string[] _networkUserClaimTypes =
+        {
+            "networkUser",
+            "NetworkUser",
+            "preferred_username",
+            ClaimTypes.NameIdentifier,
+            "sub",
+            "upn"
+        };
 
         public IbtikarAuthorizationFilter(string[] roles)
         {
@@ -19,7 +38,6 @@ namespace Ibtikar.Services.Helpers
 
         public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
-            // 1. AllowAnonymous Exemption Check
             if (context.ActionDescriptor.EndpointMetadata.OfType<AllowAnonymousAttribute>().Any())
             {
                 return;
@@ -27,29 +45,22 @@ namespace Ibtikar.Services.Helpers
 
             var userPrincipal = context.HttpContext.User;
 
-            // 2. Check if user is authenticated
             if (userPrincipal.Identity is not { IsAuthenticated: true })
             {
                 context.Result = new UnauthorizedResult();
                 return;
             }
 
-            // 3. For external or internal users (beneficiaries): check only if user is logged in
-            bool containsBeneficiaryRole = _requiredRoles.Length == 0 || _requiredRoles.Any(r =>
-                string.Equals(r, RoleCodes.ExternalBeneficiary, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(r, RoleCodes.InternalBeneficiary, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(r, "External-user", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(r, "Internal-user", StringComparison.OrdinalIgnoreCase));
+            // Beneficiary logic: if no roles required or if any required role is a beneficiary role, allow access
+            bool containsBeneficiaryRole = _requiredRoles.Length == 0 || _requiredRoles.Any(r => _beneficiaryRoles.Contains(r));
 
             if (containsBeneficiaryRole)
             {
                 return;
             }
 
-            // Extract Network User Claim from Token/Cookie
             var networkUser = ExtractNetworkUserClaim(userPrincipal);
 
-            // 4. Resolve Database Context & Query Admins Table for Network User if needed
             var db = context.HttpContext.RequestServices.GetRequiredService<IbtikarDbContext>();
             Admin? adminUser = null;
             if (!string.IsNullOrWhiteSpace(networkUser))
@@ -60,7 +71,6 @@ namespace Ibtikar.Services.Helpers
                     .FirstOrDefaultAsync(a => a.NetworkUser == networkUser && a.IsActive);
             }
 
-            // 5. Collect Role Codes from Admin record & User Claims
             var roleCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (adminUser?.Role is { IsActive: true })
             {
@@ -75,28 +85,28 @@ namespace Ibtikar.Services.Helpers
                 }
             }
 
-            // 6. Role Authorization Check
             bool hasExplicitRole = _requiredRoles.Any(r => roleCodes.Contains(r));
             if (!hasExplicitRole)
             {
                 context.Result = new ForbidResult();
-                return;
             }
         }
 
         private static string? ExtractNetworkUserClaim(ClaimsPrincipal principal)
         {
-            var raw = principal.FindFirst("networkUser")?.Value
-                ?? principal.FindFirst("NetworkUser")?.Value
-                ?? principal.FindFirst("preferred_username")?.Value
-                ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                ?? principal.FindFirst("sub")?.Value
-                ?? principal.FindFirst("upn")?.Value
-                ?? principal.Identity?.Name;
-
-            if (!string.IsNullOrWhiteSpace(raw) && raw.EndsWith("@bog.gov.sa", StringComparison.OrdinalIgnoreCase))
+            string? raw = null;
+            
+            foreach (var claimType in _networkUserClaimTypes)
             {
-                return raw.Substring(0, raw.Length - "@bog.gov.sa".Length);
+                raw = principal.FindFirst(claimType)?.Value;
+                if (!string.IsNullOrWhiteSpace(raw)) break;
+            }
+
+            raw ??= principal.Identity?.Name;
+
+            if (!string.IsNullOrWhiteSpace(raw) && raw.EndsWith(_domainSuffix, StringComparison.OrdinalIgnoreCase))
+            {
+                return raw.Substring(0, raw.Length - _domainSuffix.Length);
             }
 
             return raw;
