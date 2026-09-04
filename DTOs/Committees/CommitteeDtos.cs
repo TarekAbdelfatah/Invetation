@@ -10,13 +10,13 @@ namespace Ibtikar.DTOs.Committees
         string HeadUserName,
         int MemberCount);
 
-    public sealed record CommitteeMemberOptionDto(int AdminId, string FullName, string Username, bool IsCurrentHead);
+    public sealed record CommitteeMemberOptionDto(Guid UserId, string FullName, string Username, bool IsCurrentHead);
 
     public sealed record CommitteeCreateDto(
         string Name,
         string? Description,
-        int HeadAdminId,
-        IReadOnlyList<int> MemberAdminIds);
+        Guid HeadUserId,
+        IReadOnlyList<Guid> MemberUserIds);
 
     public sealed record CommitteeCreateResultDto(bool Success, string Message, Guid? CommitteeId);
 }

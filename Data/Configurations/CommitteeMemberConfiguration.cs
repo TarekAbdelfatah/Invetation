@@ -12,18 +12,18 @@ namespace Ibtikar.Data.Configurations
             builder.Property(m => m.IsHead).IsRequired();
             builder.Property(m => m.JoinedAt).IsRequired();
 
-            builder.HasOne(m => m.Admin)
+            builder.HasOne(m => m.User)
                 .WithMany()
-                .HasForeignKey(m => m.AdminId)
+                .HasForeignKey(m => m.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(m => m.InnovationCommittee)
                 .WithMany(c => c.Members)
                 .HasForeignKey(m => m.InnovationCommitteeId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasIndex(m => m.InnovationCommitteeId);
-            builder.HasIndex(m => m.AdminId);
+            builder.HasIndex(m => m.UserId);
         }
     }
 }

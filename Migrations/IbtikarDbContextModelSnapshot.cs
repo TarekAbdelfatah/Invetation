@@ -311,10 +311,7 @@ namespace Ibtikar.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("AdminId")
-                        .HasColumnType("int");
-
-                    b.Property<Guid?>("InnovationCommitteeId")
+                    b.Property<Guid>("InnovationCommitteeId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsHead")
@@ -323,11 +320,14 @@ namespace Ibtikar.Migrations
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("AdminId");
-
                     b.HasIndex("InnovationCommitteeId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("CommitteeMembers");
                 });
@@ -1184,20 +1184,21 @@ namespace Ibtikar.Migrations
 
             modelBuilder.Entity("Ibtikar.Models.CommitteeMember", b =>
                 {
-                    b.HasOne("Ibtikar.Models.Admin", "Admin")
-                        .WithMany()
-                        .HasForeignKey("AdminId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Ibtikar.Models.InnovationCommittee", "InnovationCommittee")
                         .WithMany("Members")
                         .HasForeignKey("InnovationCommitteeId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Admin");
+                    b.HasOne("Ibtikar.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("InnovationCommittee");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Ibtikar.Models.CommitteeVote", b =>
