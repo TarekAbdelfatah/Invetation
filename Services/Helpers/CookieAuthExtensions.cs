@@ -1,6 +1,7 @@
 using Ibtikar.Options;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
 
@@ -26,10 +27,10 @@ namespace Ibtikar.Services.Helpers
             services
                 .AddAuthentication(options =>
                 {
-                    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    options.DefaultScheme = "Cookies";
+                    options.DefaultChallengeScheme = "oidc";
                 })
-                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+                .AddCookie("Cookies", options =>
                 {
                     options.Cookie.Name = ".Ibtikar.Auth";
                     options.Cookie.SameSite = SameSiteMode.Lax;
@@ -37,8 +38,56 @@ namespace Ibtikar.Services.Helpers
                     options.Cookie.HttpOnly = true;
                     options.LoginPath = "/Account/Login";
                     options.LogoutPath = "/Account/Logout";
-                    options.AccessDeniedPath = "/AccessDenied";
-                    options.ExpireTimeSpan = TimeSpan.FromHours(2);
+                    options.AccessDeniedPath = "/Account/Login";
+                    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                    options.SlidingExpiration = false;
+                })
+                .AddOpenIdConnect("oidc", options =>
+                {
+                    var ssoConfig = configuration.GetSection("IdentityServer");
+                    options.Authority = ssoConfig["Authority"];
+                    options.ClientId = ssoConfig["ClientId"];
+
+                    options.PushedAuthorizationBehavior = PushedAuthorizationBehavior.Disable;
+
+                    options.ResponseType = "code";
+                    options.ResponseMode = null!;
+                    options.UsePkce = true;
+                    options.DisableTelemetry = true; // removes x-client-SKU / x-client-ver
+
+                    options.CallbackPath = "/signin-callback";
+
+                    options.CorrelationCookie.Name = ".Ibtikar.Correlation";
+                    options.CorrelationCookie.SameSite = SameSiteMode.None;
+                    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+
+                    options.NonceCookie.Name = ".Ibtikar.Nonce";
+                    options.NonceCookie.SameSite = SameSiteMode.None;
+                    options.NonceCookie.SecurePolicy = CookieSecurePolicy.Always;
+
+                    options.Scope.Clear();
+                    options.Scope.Add("openid");
+                    options.SaveTokens = true;
+                    options.RequireHttpsMetadata = true;
+                    options.DisableTelemetry = true; // removes x-client-SKU / x-client-ver
+
+                    options.Events = new OpenIdConnectEvents
+                    {
+                        OnTicketReceived = context =>
+                        {
+                            context.ReturnUri = "/signin-complete";
+                            return Task.CompletedTask;
+                        },
+                        OnRemoteFailure = context =>
+                        {
+                            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("OIDC");
+                            logger.LogError(context.Failure, "OIDC remote authentication failure: {Error}", context.Failure?.Message);
+                            // Redirect to home with error parameter to prevent infinite login loop
+                            context.Response.Redirect("/?error=" + Uri.EscapeDataString(context.Failure?.Message ?? "auth_failed"));
+                            context.HandleResponse();
+                            return Task.CompletedTask;
+                        }
+                    };
                 })
                 .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
                 {

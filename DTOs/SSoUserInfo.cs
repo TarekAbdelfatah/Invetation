@@ -15,9 +15,6 @@ namespace Ibtikar.DTOs
         [JsonPropertyName("networkUser")]
         public string NetworkUser { get; set; } = string.Empty;
 
-        [JsonPropertyName("preferred_username")]
-        public string PreferredUsername { get; set; } = string.Empty;
-
         [JsonPropertyName("firstName")]
         public string FirstName { get; set; } = string.Empty;
 
@@ -41,12 +38,6 @@ namespace Ibtikar.DTOs
 
         [JsonPropertyName("identityNo")]
         public string IdentityNo { get; set; } = string.Empty;
-
-        [JsonPropertyName("IdentityNo")]
-        public string IdentityNoPascal { get; set; } = string.Empty;
-
-        [JsonPropertyName("civil_id")]
-        public string CivilId { get; set; } = string.Empty;
 
         [JsonPropertyName("identityTypeId")]
         public string IdentityTypeId { get; set; } = string.Empty;
@@ -78,36 +69,10 @@ namespace Ibtikar.DTOs
         [JsonPropertyName("department_code")]
         public string DepartmentCode { get; set; } = string.Empty;
 
-        [JsonPropertyName("IsExternal")]
-        public JsonElement? IsExternalPascalElement { get; set; }
-
         [JsonPropertyName("isExternal")]
-        public JsonElement? IsExternalCamelElement { get; set; }
+        public string? IsExternalCamelElement { get; set; }
 
-        [JsonPropertyName("is_external")]
-        public JsonElement? IsExternalSnakeElement { get; set; }
-
-        [JsonIgnore]
-        public bool IsExternalUser
-        {
-            get
-            {
-                var elem = IsExternalPascalElement ?? IsExternalCamelElement ?? IsExternalSnakeElement;
-                if (elem.HasValue)
-                {
-                    var e = elem.Value;
-                    if (e.ValueKind == JsonValueKind.True) return true;
-                    if (e.ValueKind == JsonValueKind.False) return false;
-                    if (e.ValueKind == JsonValueKind.String)
-                    {
-                        var str = e.GetString();
-                        if (bool.TryParse(str, out var parsed)) return parsed;
-                    }
-                }
-                return false;
-            }
-        }
-
+   
         public string GetEffectiveFullName()
         {
             var composed = $"{FirstName} {SecondName} {ThirdName} {FamilyName}".Trim();
@@ -120,7 +85,6 @@ namespace Ibtikar.DTOs
         public string GetEffectiveUsername()
         {
             if (!string.IsNullOrWhiteSpace(NetworkUser)) return NetworkUser;
-            if (!string.IsNullOrWhiteSpace(PreferredUsername)) return PreferredUsername;
             if (!string.IsNullOrWhiteSpace(Email)) return Email;
             return Sub;
         }
@@ -128,8 +92,6 @@ namespace Ibtikar.DTOs
         public string GetEffectiveIdentityNo()
         {
             if (!string.IsNullOrWhiteSpace(IdentityNo)) return IdentityNo;
-            if (!string.IsNullOrWhiteSpace(IdentityNoPascal)) return IdentityNoPascal;
-            if (!string.IsNullOrWhiteSpace(CivilId)) return CivilId;
             return string.Empty;
         }
     }

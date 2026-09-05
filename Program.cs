@@ -1,23 +1,21 @@
-using System.Globalization;
-using System.Threading.RateLimiting;
-using Serilog;
 using Ibtikar.Data;
 using Ibtikar.Data.Seed;
 using Ibtikar.Middleware;
+using Ibtikar.Options;
 using Ibtikar.Repositories;
-using Ibtikar.Repositories.Interfaces;
 using Ibtikar.Repositories.Implementations;
-using Ibtikar.Services;
+using Ibtikar.Repositories.Interfaces;
+using Ibtikar.Services.Helpers;
+using Ibtikar.Services.Hosted;
 using Ibtikar.Services.Implementations;
 using Ibtikar.Services.Interfaces;
-using Ibtikar.Services.Hosted;
-using Ibtikar.Services.Helpers;
 using Ibtikar.Services.Notifications;
-using Ibtikar.Options;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using System.Globalization;
+using System.Threading.RateLimiting;
 
 namespace Ibtikar
 {
@@ -26,7 +24,7 @@ namespace Ibtikar
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-           
+
             Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(builder.Configuration)
                 .Enrich.FromLogContext()
@@ -55,6 +53,7 @@ namespace Ibtikar
             builder.Services.AddDbContext<CommonSysDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("CommonSysDB")));
             builder.Services.AddScoped<Pbkdf2PasswordHasher>();
+            builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<AuthService>();
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<SsoService>();
@@ -125,7 +124,7 @@ namespace Ibtikar
             });
 
             var app = builder.Build();
-           
+
             ApplyPendingMigrations(app);
 
             app.UseExceptionHandler("/Error");
